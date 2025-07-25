@@ -10,10 +10,10 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const LotteryDrawInputSchema = z.object({});
+const LotteryDrawInputSchema = z.object({});
 export type LotteryDrawInput = z.infer<typeof LotteryDrawInputSchema>;
 
-export const LotteryDrawOutputSchema = z.object({
+const LotteryDrawOutputSchema = z.object({
   success: z.boolean().describe('Whether the draw was successful.'),
   winnerName: z.string().describe('The name of the lottery winner.'),
   prizeAmount: z.number().describe('The amount of the prize won.'),

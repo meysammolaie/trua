@@ -11,14 +11,14 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const InvestmentInputSchema = z.object({
+const InvestmentInputSchema = z.object({
   fundId: z.string().describe('The ID of the fund being invested in (e.g., "gold", "bitcoin").'),
   amount: z.number().describe('The amount of the investment in USD.'),
   transactionHash: z.string().describe('The transaction hash (TxID) of the deposit.'),
 });
 export type InvestmentInput = z.infer<typeof InvestmentInputSchema>;
 
-export const InvestmentOutputSchema = z.object({
+const InvestmentOutputSchema = z.object({
   success: z.boolean().describe('Whether the investment submission was accepted.'),
   investmentId: z.string().describe('A unique ID for the new investment.'),
   message: z.string().describe('A confirmation or error message.'),
