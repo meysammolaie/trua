@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { VerdantVaultLogo } from "@/components/icons";
 
 const navLinks = [
-  { name: "Funds", href: "#funds" },
-  { name: "How It Works", href: "#how-it-works" },
-  { name: "Lottery", href: "#lottery" },
-  { name: "FAQ", href: "#faq" },
+  { name: "صندوق‌ها", href: "#funds" },
+  { name: "چگونه کار می‌کند", href: "#how-it-works" },
+  { name: "قرعه‌کشی", href: "#lottery" },
+  { name: "سوالات متداول", href: "#faq" },
 ];
 
 export function Header() {
@@ -17,7 +17,7 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         <Link href="#" className="flex items-center gap-2" prefetch={false}>
           <VerdantVaultLogo className="h-8 w-8" />
-          <span className="font-headline text-lg font-bold">Verdant Vault</span>
+          <span className="font-headline text-lg font-bold">خزانه سرسبز</span>
         </Link>
         
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
@@ -33,8 +33,8 @@ export function Header() {
           ))}
         </nav>
         <div className="hidden items-center gap-4 md:flex">
-          <Button variant="ghost">Log In</Button>
-          <Button>Sign Up</Button>
+          <Button variant="ghost">ورود</Button>
+          <Button>ثبت نام</Button>
         </div>
       </div>
     </header>

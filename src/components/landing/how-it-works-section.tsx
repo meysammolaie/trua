@@ -1,25 +1,24 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowDownToLine, MousePointerClick, Ticket, TrendingUp } from "lucide-react";
 
 const steps = [
   {
-    title: "1. Choose a Fund",
-    description: "Select from Gold, Silver, USD, or Bitcoin to start your investment journey.",
+    title: "۱. یک صندوق انتخاب کنید",
+    description: "از بین طلا، نقره، دلار یا بیت‌کوین برای شروع سفر سرمایه‌گذاری خود انتخاب کنید.",
     icon: <MousePointerClick className="w-10 h-10 text-primary" />,
   },
   {
-    title: "2. Make a Deposit",
-    description: "Easily deposit funds into your chosen pool, starting from just $1.",
+    title: "۲. واریز وجه",
+    description: "به راحتی وجوه را به استخر انتخابی خود واریز کنید، شروع از فقط ۱ دلار.",
     icon: <ArrowDownToLine className="w-10 h-10 text-primary" />,
   },
   {
-    title: "3. Earn Daily Profits",
-    description: "Receive your share of the daily profit pool, rewarding your investment.",
+    title: "۳. سود روزانه کسب کنید",
+    description: "سهم خود را از استخر سود روزانه دریافت کنید و به سرمایه‌گذاری خود پاداش دهید.",
     icon: <TrendingUp className="w-10 h-10 text-primary" />,
   },
   {
-    title: "4. Win the Lottery",
-    description: "Automatically get lottery tickets for every $10 invested and win big.",
+    title: "۴. در قرعه‌کشی برنده شوید",
+    description: "به ازای هر ۱۰ دلار سرمایه‌گذاری، به طور خودکار بلیت قرعه‌کشی دریافت کرده و برنده بزرگ شوید.",
     icon: <Ticket className="w-10 h-10 text-primary" />,
   },
 ];
@@ -30,10 +29,10 @@ export function HowItWorksSection() {
       <div className="container px-4 md:px-6">
         <div className="mb-12 text-center">
           <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
-            Start Investing in 4 Simple Steps
+            در ۴ مرحله ساده سرمایه‌گذاری را شروع کنید
           </h2>
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed">
-            Our platform is designed for simplicity and transparency. Follow these steps to begin.
+            پلتفرم ما برای سادگی و شفافیت طراحی شده است. برای شروع این مراحل را دنبال کنید.
           </p>
         </div>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">

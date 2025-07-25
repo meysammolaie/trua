@@ -7,29 +7,29 @@ import {
 
 const faqs = [
   {
-    question: "How are my profits calculated and distributed?",
+    question: "سود من چگونه محاسبه و توزیع می‌شود؟",
     answer:
-      "Profits are generated from the pool of entry and exit fees. This pool is distributed daily among all active investors. Your share is calculated based on the amount of your investment, the duration it has been invested, and a special incentive multiplier that rewards long-term investors. The longer you keep your funds in the platform, the higher your potential returns.",
+      "سود از محل کارمزدهای ورودی و خروجی تولید می‌شود. این استخر روزانه بین تمام سرمایه‌گذاران فعال توزیع می‌شود. سهم شما بر اساس مقدار سرمایه‌گذاری، مدت زمان سرمایه‌گذاری و یک ضریب تشویقی ویژه که به سرمایه‌گذاران بلندمدت پاداش می‌دهد، محاسبه می‌شود. هر چه مدت بیشتری وجوه خود را در پلتفرم نگه دارید، بازده بالقوه شما بیشتر خواهد بود.",
   },
   {
-    question: "What are the fees for using Verdant Vault?",
+    question: "کارمزدهای استفاده از خزانه سرسبز چقدر است؟",
     answer:
-      "We believe in transparency. There are three types of fees: a 3% entry fee when you invest, a 2% lottery fee that funds the monthly prize pool, and a 1% platform fee for maintenance and operations. If you decide to withdraw your principal investment, a 2% exit fee is applied, which goes back into the profit pool for other investors.",
+      "ما به شفافیت اعتقاد داریم. سه نوع کارمزد وجود دارد: ۳٪ کارمزد ورودی هنگام سرمایه‌گذاری، ۲٪ کارمزد قرعه‌کشی که صندوق جایزه ماهانه را تأمین می‌کند و ۱٪ کارمزد پلتفرم برای نگهداری و عملیات. اگر تصمیم به برداشت اصل سرمایه‌گذاری خود بگیرید، ۲٪ کارمزد خروج اعمال می‌شود که به استخر سود برای سایر سرمایه‌گذاران بازمی‌گردد.",
   },
   {
-    question: "How do I qualify for the monthly lottery?",
+    question: "چگونه برای قرعه‌کشی ماهانه واجد شرایط شوم؟",
     answer:
-      "For every $10 (or its equivalent in other funds) you invest, you automatically receive one ticket for the monthly lottery. The more you invest, the more tickets you get, increasing your chances of winning. The draw is held automatically at the end of each month.",
+      "به ازای هر ۱۰ دلار (یا معادل آن در سایر صندوق‌ها) که سرمایه‌گذاری می‌کنید، به طور خودکار یک بلیت برای قرعه‌کشی ماهانه دریافت می‌کنید. هر چه بیشتر سرمایه‌گذاری کنید، بلیت‌های بیشتری دریافت می‌کنید و شانس برنده شدن شما افزایش می‌یابد. قرعه‌کشی به طور خودکار در پایان هر ماه برگزار می‌شود.",
   },
   {
-    question: "Is my investment secure?",
+    question: "آیا سرمایه‌گذاری من امن است؟",
     answer:
-      "Security is our top priority. We use state-of-the-art security measures, including two-factor authentication for logins, encrypted data storage, and regular security audits. Our platform is built on a robust infrastructure to protect your investments and personal data.",
+      "امنیت اولویت اصلی ماست. ما از به‌روزترین اقدامات امنیتی، از جمله احراز هویت دو مرحله‌ای برای ورود، ذخیره‌سازی داده‌های رمزگذاری شده و ممیزی‌های امنیتی منظم استفاده می‌کنیم. پلتفرم ما بر روی یک زیرساخت قوی برای محافظت از سرمایه‌گذاری‌ها و اطلاعات شخصی شما ساخته شده است.",
   },
   {
-    question: "Can I invest in multiple funds at the same time?",
+    question: "آیا می‌توانم همزمان در چندین صندوق سرمایه‌گذاری کنم؟",
     answer:
-      "Absolutely. You can diversify your portfolio by investing in any or all of the four funds: Gold, Silver, USD, and Bitcoin. You can manage all your investments from your personal dashboard.",
+      "قطعاً. شما می‌توانید با سرمایه‌گذاری در هر یک یا تمام چهار صندوق طلا، نقره، دلار و بیت‌کوین، سبد خود را متنوع کنید. شما می‌توانید تمام سرمایه‌گذاری‌های خود را از داشبورد شخصی خود مدیریت کنید.",
   },
 ];
 
@@ -39,21 +39,20 @@ export function FaqSection() {
       <div className="container px-4 md:px-6">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-            Frequently Asked Questions
+            سوالات متداول
           </h2>
           <p className="mt-4 text-muted-foreground md:text-xl/relaxed">
-            Have questions? We have answers. Here are some of the most common
-            questions we get.
+            سوالی دارید؟ ما پاسخگو هستیم. در اینجا برخی از متداول‌ترین سوالاتی که از ما پرسیده می‌شود آمده است.
           </p>
         </div>
         <div className="mx-auto max-w-3xl mt-12">
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
               <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left font-bold text-lg hover:no-underline">
+                <AccordionTrigger className="text-right font-bold text-lg hover:no-underline">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-base text-muted-foreground">
+                <AccordionContent className="text-base text-muted-foreground text-right">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>

@@ -15,10 +15,10 @@ import {
 import { Home, Landmark, Ticket, User, MessageSquareQuote } from "lucide-react";
 
 const navLinks = [
-  { name: "Home", href: "#", icon: Home },
-  { name: "Funds", href: "#funds", icon: Landmark },
-  { name: "Lottery", href: "#lottery", icon: Ticket },
-  { name: "FAQ", href: "#faq", icon: MessageSquareQuote },
+  { name: "خانه", href: "#", icon: Home },
+  { name: "صندوق‌ها", href: "#funds", icon: Landmark },
+  { name: "قرعه‌کشی", href: "#lottery", icon: Ticket },
+  { name: "سوالات", href: "#faq", icon: MessageSquareQuote },
 ];
 
 export function MobileBottomNav() {
@@ -54,20 +54,20 @@ export function MobileBottomNav() {
               className="inline-flex flex-col items-center justify-center px-1 text-center font-medium hover:bg-accent/50 text-muted-foreground hover:text-foreground group"
             >
               <User className="w-5 h-5 mb-1" />
-              <span className="text-xs">Account</span>
+              <span className="text-xs">حساب</span>
             </button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto rounded-t-lg">
             <SheetHeader className="text-center mb-4">
-              <SheetTitle className="font-headline text-2xl">Join Verdant Vault</SheetTitle>
+              <SheetTitle className="font-headline text-2xl">به خزانه سرسبز بپیوندید</SheetTitle>
               <SheetDescription>
-                Access your portfolio or create a new account to start investing.
+                به سبد خود دسترسی پیدا کنید یا برای شروع سرمایه‌گذاری یک حساب جدید ایجاد کنید.
               </SheetDescription>
             </SheetHeader>
             <div className="flex flex-col gap-3 px-4">
-              <Button size="lg">Sign Up</Button>
+              <Button size="lg">ثبت نام</Button>
               <Button size="lg" variant="outline">
-                Log In
+                ورود
               </Button>
             </div>
           </SheetContent>

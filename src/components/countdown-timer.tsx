@@ -12,18 +12,18 @@ const calculateTimeLeft = () => {
   const difference = lastDayOfMonth.getTime() - now.getTime();
 
   let timeLeft = {
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
+    "روز": 0,
+    "ساعت": 0,
+    "دقیقه": 0,
+    "ثانیه": 0,
   };
 
   if (difference > 0) {
     timeLeft = {
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((difference / 1000 / 60) % 60),
-      seconds: Math.floor((difference / 1000) % 60),
+      "روز": Math.floor(difference / (1000 * 60 * 60 * 24)),
+      "ساعت": Math.floor((difference / (1000 * 60 * 60)) % 24),
+      "دقیقه": Math.floor((difference / 1000 / 60) % 60),
+      "ثانیه": Math.floor((difference / 1000) % 60),
     };
   }
 
@@ -31,16 +31,15 @@ const calculateTimeLeft = () => {
 };
 
 export function CountdownTimer() {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({ "روز": 0, "ساعت": 0, "دقیقه": 0, "ثانیه": 0 });
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    setTimeLeft(calculateTimeLeft());
+    const updateTimer = () => setTimeLeft(calculateTimeLeft());
+    updateTimer(); // Initial call
 
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
+    const timer = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timer);
   }, []);
@@ -64,7 +63,7 @@ export function CountdownTimer() {
 
   return (
     <div className="flex justify-center gap-4 md:gap-8">
-      {timerComponents.length ? timerComponents : <span>Lottery has ended!</span>}
+      {timerComponents.length ? timerComponents : <span>قرعه‌کشی به پایان رسیده است!</span>}
     </div>
   );
 }

@@ -8,17 +8,17 @@ export function LotterySection() {
         <div className="flex flex-col items-center justify-center space-y-6 text-center">
           <div className="space-y-4">
             <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
-              The Monthly Grand Lottery
+              قرعه‌کشی بزرگ ماهانه
             </h2>
             <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed">
-              Invest $10 to get a ticket and stand a chance to win big. The next draw is approaching!
+              ۱۰ دلار سرمایه‌گذاری کنید تا یک بلیت بگیرید و شانس برنده شدن جایزه بزرگ را داشته باشید. قرعه‌کشی بعدی نزدیک است!
             </p>
           </div>
           <div className="w-full max-w-2xl py-8">
             <CountdownTimer />
           </div>
           <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
-            <a href="#funds">Invest Now & Get Tickets</a>
+            <a href="#funds">اکنون سرمایه‌گذاری کنید و بلیت بگیرید</a>
           </Button>
         </div>
       </div>

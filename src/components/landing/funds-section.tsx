@@ -3,23 +3,23 @@ import { Bitcoin, Crown, Landmark, Medal } from "lucide-react";
 
 const funds = [
   {
-    name: "Gold Fund",
-    description: "Invest in the timeless stability of gold. A safe haven for your assets.",
+    name: "صندوق طلا",
+    description: "در ثبات بی‌انتهای طلا سرمایه‌گذاری کنید. پناهگاهی امن برای دارایی‌های شما.",
     icon: <Crown className="w-8 h-8 text-primary" />,
   },
   {
-    name: "Silver Fund",
-    description: "Diversify with silver, a precious metal with strong industrial demand.",
+    name: "صندوق نقره",
+    description: "با نقره، یک فلز گرانبها با تقاضای صنعتی قوی، سبد خود را متنوع کنید.",
     icon: <Medal className="w-8 h-8 text-primary" />,
   },
   {
-    name: "USD Fund",
-    description: "Anchor your portfolio with the world's leading reserve currency.",
+    name: "صندوق دلار",
+    description: "سبد خود را با ارز ذخیره پیشرو در جهان تقویت کنید.",
     icon: <Landmark className="w-8 h-8 text-primary" />,
   },
   {
-    name: "Bitcoin Fund",
-    description: "Embrace the future of finance by investing in the original cryptocurrency.",
+    name: "صندوق بیت‌کوین",
+    description: "با سرمایه‌گذاری در ارز دیجیتال اصلی، آینده مالی را در آغوش بگیرید.",
     icon: <Bitcoin className="w-8 h-8 text-primary" />,
   },
 ];
@@ -31,10 +31,10 @@ export function FundsSection() {
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
             <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
-              Choose Your Investment Fund
+              صندوق سرمایه‌گذاری خود را انتخاب کنید
             </h2>
             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              We offer four distinct funds to match your investment strategy, from traditional assets to digital currencies.
+              ما چهار صندوق متمایز را برای تطابق با استراتژی سرمایه‌گذاری شما ارائه می‌دهیم، از دارایی‌های سنتی تا ارزهای دیجیتال.
             </p>
           </div>
         </div>
