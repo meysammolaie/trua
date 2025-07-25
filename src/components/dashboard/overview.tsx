@@ -41,17 +41,11 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { getUserTransactions } from "@/ai/flows/get-user-transactions-flow";
+import { getUserTransactions, GetUserTransactionsOutput } from "@/ai/flows/get-user-transactions-flow";
 
 
-type Transaction = {
-    id: string;
-    type: string;
-    fund: string;
-    status: string;
-    date: string;
-    amount: number;
-};
+type Transaction = GetUserTransactionsOutput["transactions"][0];
+type Stats = GetUserTransactionsOutput["stats"];
 
 const chartData = [
   { month: "فروردین", value: 1860.5 },
@@ -101,6 +95,7 @@ const cardVariants = {
 export function Overview() {
     const { user } = useAuth();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -108,8 +103,8 @@ export function Overview() {
             setLoading(true);
             getUserTransactions({ userId: user.uid })
                 .then(response => {
-                    // Get top 5 recent transactions
                     setTransactions(response.transactions.slice(0, 5));
+                    setStats(response.stats);
                 })
                 .catch(error => {
                     console.error("Failed to fetch transactions:", error);
@@ -133,10 +128,14 @@ export function Overview() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold font-mono">$35,231.89</div>
-                <p className="text-xs text-muted-foreground">
-                +۲۰.۱٪ نسبت به ماه گذشته
-                </p>
+                {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                    <>
+                        <div className="text-2xl font-bold font-mono">${stats?.totalInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <p className="text-xs text-muted-foreground">
+                        مجموع سرمایه‌گذاری‌های فعال
+                        </p>
+                    </>
+                )}
             </CardContent>
             </Card>
         </motion.div>
@@ -147,10 +146,14 @@ export function Overview() {
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold font-mono">$2,350.00</div>
-                <p className="text-xs text-muted-foreground">
-                +۱۸۰.۱٪ نسبت به ماه گذشته
-                </p>
+                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                    <>
+                        <div className="text-2xl font-bold font-mono">${stats?.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <p className="text-xs text-muted-foreground">
+                        +۰٪ نسبت به ماه گذشته (بزودی)
+                        </p>
+                    </>
+                 )}
             </CardContent>
             </Card>
         </motion.div>
@@ -161,10 +164,14 @@ export function Overview() {
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold font-mono">$5,230.50</div>
-                <p className="text-xs text-muted-foreground">
-                +۱۹٪ نسبت به ماه گذشته
-                </p>
+                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                    <>
+                        <div className="text-2xl font-bold font-mono">${stats?.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <p className="text-xs text-muted-foreground">
+                        آماده برای سرمایه‌گذاری (بزودی)
+                        </p>
+                    </>
+                 )}
             </CardContent>
             </Card>
         </motion.div>
@@ -175,10 +182,14 @@ export function Overview() {
                 <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">573</div>
-                <p className="text-xs text-muted-foreground">
-                +۲۱ از آخرین قرعه‌کشی
-                </p>
+                {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                    <>
+                        <div className="text-2xl font-bold">{stats?.lotteryTickets.toLocaleString() ?? 0}</div>
+                        <p className="text-xs text-muted-foreground">
+                         برای قرعه‌کشی این ماه
+                        </p>
+                    </>
+                )}
             </CardContent>
             </Card>
         </motion.div>
@@ -295,7 +306,7 @@ export function Overview() {
                                     {tx.status}
                                 </Badge>
                             </TableCell>
-                            <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </TableCell>
                         </TableRow>
@@ -310,4 +321,3 @@ export function Overview() {
   );
 }
 
-    

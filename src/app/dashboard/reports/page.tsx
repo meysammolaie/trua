@@ -31,21 +31,16 @@ import {
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Download, ListFilter, Search, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { getUserTransactions } from "@/ai/flows/get-user-transactions-flow";
+import { getUserTransactions, GetUserTransactionsOutput } from "@/ai/flows/get-user-transactions-flow";
 
-type Transaction = {
-    id: string;
-    type: string;
-    fund: string;
-    status: string;
-    date: string;
-    amount: number;
-};
+type Transaction = GetUserTransactionsOutput["transactions"][0];
+type Stats = GetUserTransactionsOutput["stats"];
 
 
 export default function ReportsPage() {
     const { user } = useAuth();
     const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+    const [stats, setStats] = React.useState<Stats | null>(null);
     const [loading, setLoading] = React.useState(true);
 
     React.useEffect(() => {
@@ -54,6 +49,7 @@ export default function ReportsPage() {
             getUserTransactions({ userId: user.uid })
                 .then(response => {
                     setTransactions(response.transactions);
+                    setStats(response.stats);
                 })
                 .catch(error => {
                     console.error("Failed to fetch transactions:", error);
@@ -74,46 +70,46 @@ export default function ReportsPage() {
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>مجموع واریز</CardDescription>
-            <CardTitle className="text-4xl font-mono">$0.00</CardTitle>
+            <CardDescription>مجموع سرمایه‌گذاری</CardDescription>
+            <CardTitle className="text-4xl font-mono">${stats?.totalInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-muted-foreground">
-              +0% نسبت به ماه گذشته
-            </div>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <div className="text-xs text-muted-foreground">
+              بر اساس تمام سرمایه‌گذاری‌های شما
+            </div>}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>مجموع برداشت</CardDescription>
-            <CardTitle className="text-4xl font-mono">$0.00</CardTitle>
+            <CardDescription>موجودی کیف پول</CardDescription>
+            <CardTitle className="text-4xl font-mono">${stats?.walletBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-muted-foreground">
-              +0% نسبت به ماه گذشته
-            </div>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <div className="text-xs text-muted-foreground">
+              قابلیت برداشت (بزودی)
+            </div>}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>سود خالص</CardDescription>
-            <CardTitle className="text-4xl font-mono">$0.00</CardTitle>
+            <CardTitle className="text-4xl font-mono">${stats?.totalProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-muted-foreground">
-              +0% نسبت به ماه گذشته
-            </div>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <div className="text-xs text-muted-foreground">
+              از تمام فعالیت‌های شما (بزودی)
+            </div>}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>تیکت‌های قرعه‌کشی</CardDescription>
-            <CardTitle className="text-4xl">0</CardTitle>
+            <CardTitle className="text-4xl">{stats?.lotteryTickets.toLocaleString() ?? 0}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-muted-foreground">
-              +۰ تیکت در این ماه
-            </div>
+             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <div className="text-xs text-muted-foreground">
+              برای قرعه‌کشی این ماه
+            </div>}
           </CardContent>
         </Card>
       </div>
@@ -210,4 +206,3 @@ export default function ReportsPage() {
     </>
   );
 }
-

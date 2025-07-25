@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview A flow for fetching a user's transactions from Firestore.
+ * @fileOverview A flow for fetching a user's transactions and stats from Firestore.
  *
- * - getUserTransactions - Fetches all transactions for a given user.
+ * - getUserTransactions - Fetches all transactions and calculates stats for a given user.
  * - GetUserTransactionsInput - The input type for the getUserTransactions function.
  * - GetUserTransactionsOutput - The return type for the getUserTransactions function.
  */
@@ -27,8 +27,16 @@ const TransactionSchema = z.object({
     amount: z.number(),
 });
 
+const StatsSchema = z.object({
+    totalInvestment: z.number(),
+    totalProfit: z.number(),
+    lotteryTickets: z.number(),
+    walletBalance: z.number(),
+});
+
 const GetUserTransactionsOutputSchema = z.object({
   transactions: z.array(TransactionSchema),
+  stats: StatsSchema,
 });
 export type GetUserTransactionsOutput = z.infer<typeof GetUserTransactionsOutputSchema>;
 
@@ -76,8 +84,15 @@ const getUserTransactionsFlow = ai.defineFlow(
     );
 
     const querySnapshot = await getDocs(q);
+    
+    let totalInvestment = 0;
+    const lotteryTicketRatio = 10; // $10 for 1 ticket
+
     const investmentsData = querySnapshot.docs.map(doc => {
         const data = doc.data() as InvestmentDocument;
+        if (data.status === 'active' || data.status === 'pending') {
+            totalInvestment += data.amount;
+        }
         return {
             id: doc.id,
             type: "سرمایه‌گذاری",
@@ -91,9 +106,18 @@ const getUserTransactionsFlow = ai.defineFlow(
 
     // In a real app, you would fetch other transaction types (profits, withdrawals, etc.)
     // and merge them with investments, then sort by date.
+    // For now, we only have investments.
+
+    const stats: z.infer<typeof StatsSchema> = {
+        totalInvestment: totalInvestment,
+        totalProfit: 0, // Not implemented yet
+        lotteryTickets: Math.floor(totalInvestment / lotteryTicketRatio),
+        walletBalance: 0, // Not implemented yet
+    };
 
     return {
       transactions: investmentsData,
+      stats: stats
     };
   }
 );
