@@ -54,11 +54,11 @@ export default function SignupPage() {
     },
   });
 
-  useEffect(() => {
-    if (user) {
-      router.push("/dashboard");
-    }
-  }, [user, router]);
+  // useEffect(() => {
+  //   if (user) {
+  //     router.push("/dashboard");
+  //   }
+  // }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
      // Temporarily bypass Firebase for development
@@ -66,7 +66,11 @@ export default function SignupPage() {
         title: "ثبت نام موفق",
         description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
       });
-      router.push("/dashboard");
+      if (values.email === 'admin@example.com') {
+          router.push("/admin");
+      } else {
+          router.push("/dashboard");
+      }
 
     // try {
     //   await createUserWithEmailAndPassword(auth, values.email, values.password);
@@ -92,6 +96,13 @@ export default function SignupPage() {
   }
   
   const handleGoogleSignIn = async () => {
+    // Temporarily bypass Firebase for development
+     toast({
+        title: "ورود موفق",
+        description: "شما با موفقیت از طریق گوگل وارد شدید.",
+      });
+    router.push("/dashboard");
+
     // try {
     //   await signInWithPopup(auth, googleProvider);
     //   toast({
@@ -109,14 +120,14 @@ export default function SignupPage() {
     // }
   };
 
-  if (loading || user) {
-     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
-      </div>
-    );
-  }
+  // if (loading || user) {
+  //    return (
+  //     <div className="flex min-h-screen w-full flex-col items-center justify-center">
+  //       <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  //       <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
+  //     </div>
+  //   );
+  // }
 
 
   return (

@@ -50,16 +50,16 @@ export default function LoginPage() {
     },
   });
 
-  useEffect(() => {
-    if (user) {
-      // Redirect to admin if user is admin, otherwise to dashboard
-      if (user.email === 'admin@example.com') {
-         router.push("/admin");
-      } else {
-         router.push("/dashboard");
-      }
-    }
-  }, [user, router]);
+  // useEffect(() => {
+  //   if (user) {
+  //     // Redirect to admin if user is admin, otherwise to dashboard
+  //     if (user.email === 'admin@example.com') {
+  //        router.push("/admin");
+  //     } else {
+  //        router.push("/dashboard");
+  //     }
+  //   }
+  // }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     // Temporarily bypass Firebase for development
@@ -97,6 +97,13 @@ export default function LoginPage() {
   }
 
   const handleGoogleSignIn = async () => {
+     // Temporarily bypass Firebase for development
+    toast({
+        title: "ورود موفق",
+        description: "شما با موفقیت از طریق گوگل وارد شدید.",
+      });
+    router.push("/dashboard"); 
+
     // try {
     //   await signInWithPopup(auth, googleProvider);
     //   toast({
@@ -114,14 +121,14 @@ export default function LoginPage() {
     // }
   };
 
-  if (loading || user) {
-     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
-      </div>
-    );
-  }
+  // if (loading || user) {
+  //    return (
+  //     <div className="flex min-h-screen w-full flex-col items-center justify-center">
+  //       <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  //       <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
