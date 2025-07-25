@@ -45,8 +45,8 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: "admin@example.com",
+      password: "password123",
     },
   });
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
       let description = "ایمیل یا رمز عبور نامعتبر است.";
        if (error instanceof FirebaseError) {
          if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            description = "ایمیل یا رمز عبور وارد شده صحیح نمی‌باشد.";
+            description = "ایمیل یا رمز عبور وارد شده صحیح نمی‌باشد. لطفاً ابتدا از صفحه ثبت‌نام، حساب کاربری را ایجاد کنید.";
          }
        }
       toast({

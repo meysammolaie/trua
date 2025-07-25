@@ -47,10 +47,10 @@ export default function SignupPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
+      firstName: "Admin",
+      lastName: "User",
+      email: "admin@example.com",
+      password: "password123",
     },
   });
 
@@ -73,7 +73,7 @@ export default function SignupPage() {
       let description = "خطایی در هنگام ثبت‌نام رخ داد. لطفاً دوباره تلاش کنید.";
       if (error instanceof FirebaseError) {
         if (error.code === "auth/email-already-in-use") {
-          description = "این ایمیل قبلاً استفاده شده است.";
+          description = "این ایمیل قبلاً استفاده شده است. لطفاً از صفحه ورود، وارد شوید.";
         }
       }
       toast({
