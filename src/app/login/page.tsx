@@ -50,85 +50,67 @@ export default function LoginPage() {
     },
   });
 
-  // useEffect(() => {
-  //   if (user) {
-  //     // Redirect to admin if user is admin, otherwise to dashboard
-  //     if (user.email === 'admin@example.com') {
-  //        router.push("/admin");
-  //     } else {
-  //        router.push("/dashboard");
-  //     }
-  //   }
-  // }, [user, router]);
+  useEffect(() => {
+    if (user) {
+      // Redirect to admin if user is admin, otherwise to dashboard
+      if (user.email === 'admin@example.com') {
+         router.push("/admin");
+      } else {
+         router.push("/dashboard");
+      }
+    }
+  }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Temporarily bypass Firebase for development
-    toast({
-      title: "ورود موفق",
-      description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
-    });
-    if (values.email === 'admin@example.com') {
-      router.push("/admin");
-    } else {
-      router.push("/dashboard");
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: "ورود موفق",
+        description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
+      });
+      // router.push("/dashboard"); // This will be handled by useEffect
+    } catch (error) {
+       console.error("Error signing in:", error);
+      let description = "ایمیل یا رمز عبور نامعتبر است.";
+       if (error instanceof FirebaseError) {
+         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            description = "ایمیل یا رمز عبور وارد شده صحیح نمی‌باشد. لطفاً ابتدا از صفحه ثبت‌نام، حساب کاربری را ایجاد کنید.";
+         }
+       }
+      toast({
+        variant: "destructive",
+        title: "خطا در ورود",
+        description,
+      });
     }
-    
-    // try {
-    //   await signInWithEmailAndPassword(auth, values.email, values.password);
-    //   toast({
-    //     title: "ورود موفق",
-    //     description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
-    //   });
-    //   // router.push("/dashboard"); // This will be handled by useEffect
-    // } catch (error) {
-    //    console.error("Error signing in:", error);
-    //   let description = "ایمیل یا رمز عبور نامعتبر است.";
-    //    if (error instanceof FirebaseError) {
-    //      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-    //         description = "ایمیل یا رمز عبور وارد شده صحیح نمی‌باشد. لطفاً ابتدا از صفحه ثبت‌نام، حساب کاربری را ایجاد کنید.";
-    //      }
-    //    }
-    //   toast({
-    //     variant: "destructive",
-    //     title: "خطا در ورود",
-    //     description,
-    //   });
-    // }
   }
 
   const handleGoogleSignIn = async () => {
-     // Temporarily bypass Firebase for development
-    toast({
+    try {
+      await signInWithPopup(auth, googleProvider);
+      toast({
         title: "ورود موفق",
         description: "شما با موفقیت از طریق گوگل وارد شدید.",
       });
-    router.push("/dashboard"); 
-
-    // try {
-    //   await signInWithPopup(auth, googleProvider);
-    //   toast({
-    //     title: "ورود موفق",
-    //     description: "شما با موفقیت از طریق گوگل وارد شدید.",
-    //   });
-    //   // router.push("/dashboard"); // This will be handled by useEffect
-    // } catch (error) {
-    //   console.error("Google Sign-In Error:", error);
-    //   toast({
-    //     variant: "destructive",
-    //     title: "خطا در ورود با گوگل",
-    //     description: "مشکلی در هنگام ورود با گوگل پیش آمد. لطفاً دوباره تلاش کنید.",
-    //   });
-    // }
+      // router.push("/dashboard"); // This will be handled by useEffect
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      toast({
+        variant: "destructive",
+        title: "خطا در ورود با گوگل",
+        description: "مشکلی در هنگام ورود با گوگل پیش آمد. لطفاً دوباره تلاش کنید.",
+      });
+    }
   };
 
-  // if (loading || user) {
-  //    return (
-  //     <div className="flex min-h-screen w-full flex-col items-center justify-center">
-  //       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  //       <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
-  //     </div>
-  //   );
-  // }
+  if (loading || user) {
+     return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">

@@ -54,80 +54,62 @@ export default function SignupPage() {
     },
   });
 
-  // useEffect(() => {
-  //   if (user) {
-  //     router.push("/dashboard");
-  //   }
-  // }, [user, router]);
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-     // Temporarily bypass Firebase for development
-     toast({
+    try {
+      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      toast({
         title: "ثبت نام موفق",
         description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
       });
-      if (values.email === 'admin@example.com') {
-          router.push("/admin");
-      } else {
-          router.push("/dashboard");
+      // router.push("/dashboard"); // This will be handled by useEffect
+    } catch (error) {
+      console.error("Error signing up:", error);
+      let description = "خطایی در هنگام ثبت‌نام رخ داد. لطفاً دوباره تلاش کنید.";
+      if (error instanceof FirebaseError) {
+        if (error.code === "auth/email-already-in-use") {
+          description = "این ایمیل قبلاً استفاده شده است. لطفاً از صفحه ورود، وارد شوید.";
+        }
       }
-
-    // try {
-    //   await createUserWithEmailAndPassword(auth, values.email, values.password);
-    //   toast({
-    //     title: "ثبت نام موفق",
-    //     description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
-    //   });
-    //   // router.push("/dashboard"); // This will be handled by useEffect
-    // } catch (error) {
-    //   console.error("Error signing up:", error);
-    //   let description = "خطایی در هنگام ثبت‌نام رخ داد. لطفاً دوباره تلاش کنید.";
-    //   if (error instanceof FirebaseError) {
-    //     if (error.code === "auth/email-already-in-use") {
-    //       description = "این ایمیل قبلاً استفاده شده است. لطفاً از صفحه ورود، وارد شوید.";
-    //     }
-    //   }
-    //   toast({
-    //     variant: "destructive",
-    //     title: "خطا در ثبت نام",
-    //     description,
-    //   });
-    // }
+      toast({
+        variant: "destructive",
+        title: "خطا در ثبت نام",
+        description,
+      });
+    }
   }
   
   const handleGoogleSignIn = async () => {
-    // Temporarily bypass Firebase for development
-     toast({
+    try {
+      await signInWithPopup(auth, googleProvider);
+      toast({
         title: "ورود موفق",
         description: "شما با موفقیت از طریق گوگل وارد شدید.",
       });
-    router.push("/dashboard");
-
-    // try {
-    //   await signInWithPopup(auth, googleProvider);
-    //   toast({
-    //     title: "ورود موفق",
-    //     description: "شما با موفقیت از طریق گوگل وارد شدید.",
-    //   });
-    //   // router.push("/dashboard"); // This will be handled by useEffect
-    // } catch (error) {
-    //   console.error("Google Sign-In Error:", error);
-    //   toast({
-    //     variant: "destructive",
-    //     title: "خطا در ورود با گوگل",
-    //     description: "مشکلی در هنگام ورود با گوگل پیش آمد. لطفاً دوباره تلاش کنید.",
-    //   });
-    // }
+      // router.push("/dashboard"); // This will be handled by useEffect
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      toast({
+        variant: "destructive",
+        title: "خطا در ورود با گوگل",
+        description: "مشکلی در هنگام ورود با گوگل پیش آمد. لطفاً دوباره تلاش کنید.",
+      });
+    }
   };
 
-  // if (loading || user) {
-  //    return (
-  //     <div className="flex min-h-screen w-full flex-col items-center justify-center">
-  //       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  //       <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
-  //     </div>
-  //   );
-  // }
+  if (loading || user) {
+     return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
+      </div>
+    );
+  }
 
 
   return (

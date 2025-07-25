@@ -20,44 +20,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // const unsubscribe = onAuthStateChanged(auth, (user) => {
-    //   setUser(user);
-    //   setLoading(false);
-    // });
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
     
-    // Temporarily bypass auth for development without backend config
-    const mockUser = { email: "test@example.com", uid: "test-uid" } as User;
-    setUser(mockUser);
-    setLoading(false);
-
-
-    // return () => unsubscribe();
+    return () => unsubscribe();
   }, []);
 
-//   useEffect(() => {
-//     const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
-//     const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+  useEffect(() => {
+    const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
+    const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
     
-//     if (loading) return;
+    if (loading) return;
 
-//     if (user) {
-//         // If user is logged in, redirect from auth routes
-//         if (isAuthRoute) {
-//             // Special case for admin user
-//             if (user.email === "admin@example.com") {
-//                 router.push('/admin');
-//             } else {
-//                 router.push('/dashboard');
-//             }
-//         }
-//     } else {
-//         // If user is not logged in, redirect from protected routes
-//         if (isProtectedRoute) {
-//             router.push('/login');
-//         }
-//     }
+    if (user) {
+        // If user is logged in, redirect from auth routes
+        if (isAuthRoute) {
+            // Special case for admin user
+            if (user.email === "admin@example.com") {
+                router.push('/admin');
+            } else {
+                router.push('/dashboard');
+            }
+        }
+    } else {
+        // If user is not logged in, redirect from protected routes
+        if (isProtectedRoute) {
+            router.push('/login');
+        }
+    }
 
-//   }, [user, loading, pathname, router]);
+  }, [user, loading, pathname, router]);
 
 
   return (
