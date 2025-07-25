@@ -15,10 +15,10 @@ import {
 import { Home, Landmark, Ticket, User, MessageSquareQuote } from "lucide-react";
 
 const navLinks = [
-  { name: "خانه", href: "#", icon: Home },
-  { name: "صندوق‌ها", href: "#funds", icon: Landmark },
-  { name: "قرعه‌کشی", href: "#lottery", icon: Ticket },
-  { name: "سوالات", href: "#faq", icon: MessageSquareQuote },
+  { name: "خانه", href: "/", icon: Home },
+  { name: "صندوق‌ها", href: "/#funds", icon: Landmark },
+  { name: "قرعه‌کشی", href: "/#lottery", icon: Ticket },
+  { name: "سوالات", href: "/#faq", icon: MessageSquareQuote },
 ];
 
 export function MobileBottomNav() {
@@ -65,9 +65,9 @@ export function MobileBottomNav() {
               </SheetDescription>
             </SheetHeader>
             <div className="flex flex-col gap-3 px-4">
-              <Button size="lg">ثبت نام</Button>
-              <Button size="lg" variant="outline">
-                ورود
+               <Button size="lg" asChild><Link href="/signup">ثبت نام</Link></Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/login">ورود</Link>
               </Button>
             </div>
           </SheetContent>
