@@ -12,6 +12,9 @@ import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 
+const GetAllUsersInputSchema = z.object({});
+export type GetAllUsersInput = z.infer<typeof GetAllUsersInputSchema>;
+
 const UserSchema = z.object({
   uid: z.string(),
   email: z.string().email(),
@@ -39,17 +42,17 @@ type UserDocument = {
   createdAt: Timestamp;
 };
 
-export async function getAllUsers(): Promise<GetAllUsersOutput> {
-  return await getAllUsersFlow();
+export async function getAllUsers(input: GetAllUsersInput = {}): Promise<GetAllUsersOutput> {
+  return await getAllUsersFlow(input);
 }
 
 const getAllUsersFlow = ai.defineFlow(
   {
     name: 'getAllUsersFlow',
-    inputSchema: z.undefined(),
+    inputSchema: GetAllUsersInputSchema,
     outputSchema: GetAllUsersOutputSchema,
   },
-  async () => {
+  async (input) => {
     
     const usersCollection = collection(db, "users");
     const q = query(usersCollection, orderBy("createdAt", "desc"));

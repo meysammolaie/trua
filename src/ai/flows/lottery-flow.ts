@@ -46,7 +46,7 @@ const lotteryDrawFlow = ai.defineFlow(
 
     // For now, we get all users and pick a random one.
     try {
-        const { users } = await getAllUsers();
+        const { users } = await getAllUsers({});
 
         if (users.length === 0) {
             return {
