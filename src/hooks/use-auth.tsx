@@ -29,7 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loading && !user && pathname === "/dashboard") {
+    const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+    if (!loading && !user && isProtectedRoute) {
       router.push("/login");
     }
   }, [user, loading, pathname, router]);

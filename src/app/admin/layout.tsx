@@ -33,12 +33,10 @@ import { cn } from "@/lib/utils";
 import { VerdantVaultLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-// For now, we assume an admin is logged in. 
-// In a real app, you'd protect this route and get admin user data.
-// import { useAuth } from "@/hooks/use-auth"; 
-// import { useRouter } from "next/navigation";
-// import { signOut } from "firebase/auth";
-// import { auth } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 
 const navItems = [
@@ -57,44 +55,40 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // const { user, loading } = useAuth(); // TODO: Add admin role check
-  // const router = useRouter();
+  const { user, loading } = useAuth(); // TODO: Add admin role check
+  const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    // try {
-    //   await signOut(auth);
-    //   toast({
-    //     title: "خروج موفق",
-    //     description: "شما با موفقیت از حساب خود خارج شدید.",
-    //   });
-    //   router.push("/");
-    // } catch (error) {
-    //   toast({
-    //     variant: "destructive",
-    //     title: "خطا در خروج",
-    //     description: "مشکلی در هنگام خروج از حساب کاربری رخ داد.",
-    //   });
-    // }
-     toast({
-        title: "خروج",
-        description: "قابلیت خروج در دست ساخت است.",
+    try {
+      await signOut(auth);
+      toast({
+        title: "خروج موفق",
+        description: "شما با موفقیت از حساب خود خارج شدید.",
       });
+      router.push("/");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "خطا در خروج",
+        description: "مشکلی در هنگام خروج از حساب کاربری رخ داد.",
+      });
+    }
   };
 
-  // if (loading) { // TODO: Add admin role check
-  //   return (
-  //     <div className="flex min-h-screen w-full flex-col items-center justify-center">
-  //       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  //       <p className="mt-4 text-muted-foreground">در حال بارگذاری...</p>
-  //     </div>
-  //   );
-  // }
+  if (loading) { // TODO: Add admin role check
+    return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">در حال بارگذاری...</p>
+      </div>
+    );
+  }
 
-  // if (!user) { // TODO: Add admin role check
-  //   return null;
-  // }
+  if (!user) { // TODO: Add admin role check
+    return null;
+  }
   
   const NavLink = ({ item }: { item: typeof navItems[0] }) => {
     const isActive = pathname === item.href;
