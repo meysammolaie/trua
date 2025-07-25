@@ -38,6 +38,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Loader2 } from "lucide-react";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
@@ -65,6 +66,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [is2faEnabled, setIs2faEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -86,22 +88,21 @@ export default function ProfilePage() {
   
   useEffect(() => {
     if (user) {
-        // Set email immediately as it's available from auth state
+        setIsLoading(true);
         profileForm.setValue("email", user.email || "");
 
         const userRef = doc(db, "users", user.uid);
         getDoc(userRef).then(userSnap => {
             if (userSnap.exists()) {
                 const userData = userSnap.data();
-                // Reset form with all data from Firestore
                 profileForm.reset({
                     firstName: userData.firstName,
                     lastName: userData.lastName,
-                    email: user.email || "", // Ensure email is still set
+                    email: user.email || "",
                 });
                 setIs2faEnabled(userData.is2faEnabled || false);
             }
-        });
+        }).finally(() => setIsLoading(false));
     }
   }, [user, profileForm]);
 
@@ -130,8 +131,8 @@ export default function ProfilePage() {
   function onPasswordSubmit(values: z.infer<typeof passwordFormSchema>) {
      // TODO: Implement password change logic with Firebase Auth
      toast({
-      title: "موفقیت‌آمیز",
-      description: "رمز عبور شما با موفقیت تغییر کرد.",
+      title: "عملیات موفق",
+      description: "قابلیت تغییر رمز عبور بزودی اضافه خواهد شد.",
     });
     passwordForm.reset();
   }
@@ -153,6 +154,14 @@ export default function ProfilePage() {
           description: "خطایی در تغییر وضعیت احراز هویت دو مرحله‌ای رخ داد.",
         });
     }
+  }
+  
+  if (isLoading) {
+      return (
+          <div className="flex items-center justify-center h-full">
+              <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+      )
   }
 
   return (
@@ -219,6 +228,7 @@ export default function ProfilePage() {
               </CardContent>
               <CardFooter className="border-t px-6 py-4">
                 <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                    {profileForm.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                     {profileForm.formState.isSubmitting ? "در حال ذخیره..." : "ذخیره تغییرات"}
                 </Button>
               </CardFooter>
@@ -280,7 +290,10 @@ export default function ProfilePage() {
                     </div>
                 </CardContent>
                 <CardFooter className="border-t px-6 py-4">
-                    <Button type="submit">تغییر رمز عبور</Button>
+                    <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
+                        {passwordForm.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                        {passwordForm.formState.isSubmitting ? "در حال تغییر..." : "تغییر رمز عبور"}
+                    </Button>
                 </CardFooter>
             </form>
            </Form>
@@ -306,7 +319,7 @@ export default function ProfilePage() {
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
              <CardDescription>
-                تاریخچه ورودهای اخیر به حساب شما
+                تاریخچه ورودهای اخیر به حساب شما (قابلیت نمایشی)
             </CardDescription>
           </CardFooter>
            <CardContent>
@@ -334,3 +347,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
