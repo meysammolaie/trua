@@ -71,45 +71,45 @@ export default function ReportsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>مجموع سرمایه‌گذاری</CardDescription>
-            <CardTitle className="text-4xl font-mono">${stats?.totalInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.totalInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
           </CardHeader>
           <CardContent>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               بر اساس تمام سرمایه‌گذاری‌های شما
-            </div>}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>موجودی کیف پول</CardDescription>
-            <CardTitle className="text-4xl font-mono">${stats?.walletBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.walletBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
           </CardHeader>
           <CardContent>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               قابلیت برداشت (بزودی)
-            </div>}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>سود خالص</CardDescription>
-            <CardTitle className="text-4xl font-mono">${stats?.totalProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>
+             {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.totalProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
           </CardHeader>
           <CardContent>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               از تمام فعالیت‌های شما (بزودی)
-            </div>}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>تیکت‌های قرعه‌کشی</CardDescription>
-            <CardTitle className="text-4xl">{stats?.lotteryTickets.toLocaleString() ?? 0}</CardTitle>
+             {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl">{stats?.lotteryTickets.toLocaleString() ?? 0}</CardTitle>}
           </CardHeader>
           <CardContent>
-             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               برای قرعه‌کشی این ماه
-            </div>}
+            </div>
           </CardContent>
         </Card>
       </div>
