@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Chrome } from "lucide-react";
 
 const formSchema = z.object({
   firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
@@ -61,6 +61,7 @@ export default function SignupPage() {
   }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+     // Temporarily bypass Firebase for development
      toast({
         title: "ثبت نام موفق",
         description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
@@ -73,7 +74,7 @@ export default function SignupPage() {
     //     title: "ثبت نام موفق",
     //     description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
     //   });
-    //   router.push("/dashboard");
+    //   // router.push("/dashboard"); // This will be handled by useEffect
     // } catch (error) {
     //   console.error("Error signing up:", error);
     //   let description = "خطایی در هنگام ثبت‌نام رخ داد. لطفاً دوباره تلاش کنید.";
@@ -89,6 +90,24 @@ export default function SignupPage() {
     //   });
     // }
   }
+  
+  const handleGoogleSignIn = async () => {
+    // try {
+    //   await signInWithPopup(auth, googleProvider);
+    //   toast({
+    //     title: "ورود موفق",
+    //     description: "شما با موفقیت از طریق گوگل وارد شدید.",
+    //   });
+    //   // router.push("/dashboard"); // This will be handled by useEffect
+    // } catch (error) {
+    //   console.error("Google Sign-In Error:", error);
+    //   toast({
+    //     variant: "destructive",
+    //     title: "خطا در ورود با گوگل",
+    //     description: "مشکلی در هنگام ورود با گوگل پیش آمد. لطفاً دوباره تلاش کنید.",
+    //   });
+    // }
+  };
 
   if (loading || user) {
      return (
@@ -118,17 +137,50 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-              <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem className="text-right">
+                        <FormLabel>نام</FormLabel>
+                        <FormControl>
+                          <Input placeholder="علی" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem className="text-right">
+                        <FormLabel>نام خانوادگی</FormLabel>
+                        <FormControl>
+                          <Input placeholder="رضایی" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
-                  name="firstName"
+                  name="email"
                   render={({ field }) => (
                     <FormItem className="text-right">
-                      <FormLabel>نام</FormLabel>
+                      <FormLabel>ایمیل</FormLabel>
                       <FormControl>
-                        <Input placeholder="علی" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="m@example.com"
+                          dir="ltr"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -136,54 +188,39 @@ export default function SignupPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="lastName"
+                  name="password"
                   render={({ field }) => (
                     <FormItem className="text-right">
-                      <FormLabel>نام خانوادگی</FormLabel>
+                      <FormLabel>رمز عبور</FormLabel>
                       <FormControl>
-                        <Input placeholder="رضایی" {...field} />
+                        <Input type="password" dir="ltr" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "در حال ایجاد حساب..." : "ایجاد حساب"}
+                </Button>
+              </form>
+            </Form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
               </div>
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem className="text-right">
-                    <FormLabel>ایمیل</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="m@example.com"
-                        dir="ltr"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem className="text-right">
-                    <FormLabel>رمز عبور</FormLabel>
-                    <FormControl>
-                      <Input type="password" dir="ltr" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "در حال ایجاد حساب..." : "ایجاد حساب"}
-              </Button>
-            </form>
-          </Form>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  یا ادامه با
+                </span>
+              </div>
+            </div>
+             <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+               <Chrome className="ml-2 h-4 w-4" />
+              ثبت‌نام با گوگل
+            </Button>
+          </div>
+
           <div className="mt-4 text-center text-sm">
             قبلاً ثبت‌نام کرده‌اید؟{" "}
             <Link href="/login" className="underline">

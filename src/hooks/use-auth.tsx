@@ -21,15 +21,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      // Temporarily bypass Firebase auth for development without backend config
-      // setUser(user);
-      // setLoading(false);
+      setUser(user);
+      setLoading(false);
     });
     
-    // Mock user for development
-    const mockUser = { email: "test@example.com" } as User;
-    setUser(mockUser);
-    setLoading(false);
+    // Temporarily bypass auth for development without backend config
+    // const mockUser = { email: "test@example.com" } as User;
+    // setUser(mockUser);
+    // setLoading(false);
 
 
     return () => unsubscribe();
@@ -37,15 +36,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
-    // For development, we assume user is always logged in, so if they are on an auth route, redirect them.
-    if (!loading && user && isAuthRoute) {
-       router.push("/dashboard");
+    const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+    
+    if (loading) return;
+
+    if (user) {
+        // If user is logged in, redirect from auth routes
+        if (isAuthRoute) {
+            // Special case for admin user
+            if (user.email === "admin@example.com") {
+                router.push('/admin');
+            } else {
+                router.push('/dashboard');
+            }
+        }
+    } else {
+        // If user is not logged in, redirect from protected routes
+        if (isProtectedRoute) {
+            router.push('/login');
+        }
     }
 
-    const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
-    if (!loading && !user && isProtectedRoute) {
-      router.push("/login");
-    }
   }, [user, loading, pathname, router]);
 
 

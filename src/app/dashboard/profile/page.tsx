@@ -235,7 +235,7 @@ export default function ProfilePage() {
                     <h3 className="font-medium">احراز هویت دو مرحله‌ای (2FA)</h3>
                     <p className="text-sm text-muted-foreground">یک لایه امنیتی بیشتر به حساب خود اضافه کنید.</p>
                 </div>
-                <Switch />
+                <Switch aria-label="Toggle 2FA" />
              </div>
           </CardContent>
           <CardFooter className="border-t px-6 py-4">

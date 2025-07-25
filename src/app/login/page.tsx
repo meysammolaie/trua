@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Chrome } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." }),
@@ -52,16 +52,26 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.push("/dashboard");
+      // Redirect to admin if user is admin, otherwise to dashboard
+      if (user.email === 'admin@example.com') {
+         router.push("/admin");
+      } else {
+         router.push("/dashboard");
+      }
     }
   }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    // Temporarily bypass Firebase for development
     toast({
       title: "ورود موفق",
       description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
     });
-    router.push("/dashboard");
+    if (values.email === 'admin@example.com') {
+      router.push("/admin");
+    } else {
+      router.push("/dashboard");
+    }
     
     // try {
     //   await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -69,7 +79,7 @@ export default function LoginPage() {
     //     title: "ورود موفق",
     //     description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
     //   });
-    //   router.push("/dashboard");
+    //   // router.push("/dashboard"); // This will be handled by useEffect
     // } catch (error) {
     //    console.error("Error signing in:", error);
     //   let description = "ایمیل یا رمز عبور نامعتبر است.";
@@ -85,6 +95,24 @@ export default function LoginPage() {
     //   });
     // }
   }
+
+  const handleGoogleSignIn = async () => {
+    // try {
+    //   await signInWithPopup(auth, googleProvider);
+    //   toast({
+    //     title: "ورود موفق",
+    //     description: "شما با موفقیت از طریق گوگل وارد شدید.",
+    //   });
+    //   // router.push("/dashboard"); // This will be handled by useEffect
+    // } catch (error) {
+    //   console.error("Google Sign-In Error:", error);
+    //   toast({
+    //     variant: "destructive",
+    //     title: "خطا در ورود با گوگل",
+    //     description: "مشکلی در هنگام ورود با گوگل پیش آمد. لطفاً دوباره تلاش کنید.",
+    //   });
+    // }
+  };
 
   if (loading || user) {
      return (
@@ -115,52 +143,68 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem className="text-right">
-                    <FormLabel>ایمیل</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="m@example.com"
-                        dir="ltr"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem className="text-right">
-                     <div className="flex items-center">
-                      <FormLabel>رمز عبور</FormLabel>
-                      <Link
-                        href="#"
-                        className="mr-auto inline-block text-sm underline"
-                      >
-                        رمز عبور خود را فراموش کرده‌اید؟
-                      </Link>
-                    </div>
-                    <FormControl>
-                      <Input type="password" dir="ltr" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "در حال ورود..." : "ورود"}
-              </Button>
-            </form>
-          </Form>
+          <div className="grid gap-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem className="text-right">
+                      <FormLabel>ایمیل</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="m@example.com"
+                          dir="ltr"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem className="text-right">
+                      <div className="flex items-center">
+                        <FormLabel>رمز عبور</FormLabel>
+                        <Link
+                          href="#"
+                          className="mr-auto inline-block text-sm underline"
+                        >
+                          رمز عبور خود را فراموش کرده‌اید؟
+                        </Link>
+                      </div>
+                      <FormControl>
+                        <Input type="password" dir="ltr" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "در حال ورود..." : "ورود"}
+                </Button>
+              </form>
+            </Form>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  یا ادامه با
+                </span>
+              </div>
+            </div>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+              <Chrome className="ml-2 h-4 w-4" />
+              ورود با گوگل
+            </Button>
+          </div>
           <div className="mt-4 text-center text-sm">
             حساب کاربری ندارید؟{" "}
             <Link href="/signup" className="underline">
