@@ -48,16 +48,20 @@ export default function SignupPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
+      firstName: "Admin",
+      lastName: "User",
+      email: "admin@example.com",
+      password: "password123",
     },
   });
 
   useEffect(() => {
     if (user) {
-      router.push("/dashboard");
+      if (user.email === 'admin@example.com') {
+         router.push("/admin");
+      } else {
+         router.push("/dashboard");
+      }
     }
   }, [user, router]);
   
