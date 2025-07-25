@@ -36,6 +36,8 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { ChatWidget } from "@/components/chat/chat-widget";
+
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "داشبورد" },
@@ -174,6 +176,7 @@ export default function DashboardLayout({
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
             {children}
         </main>
+        <ChatWidget />
       </div>
     </div>
   );
