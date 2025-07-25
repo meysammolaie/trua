@@ -5,22 +5,12 @@ import {
   Activity,
   ArrowUpRight,
   Bitcoin,
-  CircleUser,
   CreditCard,
   Crown,
   DollarSign,
   Landmark,
   Medal,
-  Menu,
-  Package2,
-  Search,
-  Users,
 } from "lucide-react";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +33,7 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartConfig
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import Link from "next/link";
@@ -50,19 +41,19 @@ import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
 
 const chartData = [
-  { month: "فروردین", desktop: 186, mobile: 80 },
-  { month: "اردیبهشت", desktop: 305, mobile: 200 },
-  { month: "خرداد", desktop: 237, mobile: 120 },
-  { month: "تیر", desktop: 73, mobile: 190 },
-  { month: "مرداد", desktop: 209, mobile: 130 },
-  { month: "شهریور", desktop: 214, mobile: 140 },
+  { month: "فروردین", value: 1860.5 },
+  { month: "اردیبهشت", value: 2205.1 },
+  { month: "خرداد", value: 2537.9 },
+  { month: "تیر", value: 2873.4 },
+  { month: "مرداد", value: 3209.2 },
+  { month: "شهریور", value: 3514.8 },
 ];
 const chartConfig = {
-  desktop: {
-    label: "رشد",
+  value: {
+    label: "ارزش کل (دلار)",
     color: "hsl(var(--primary))",
   },
-};
+} satisfies ChartConfig;
 
 const funds = [
   {
@@ -87,6 +78,14 @@ const funds = [
   },
 ];
 
+const recentTransactions = [
+    { id: "TXN729", user: "علی رضایی", type: "واریز", status: "موفق", date: "۱۴۰۳/۰۴/۰۱", amount: 2000.00 },
+    { id: "TXN730", user: "علی رضایی", type: "برداشت", status: "در حال انجام", date: "۱۴۰۳/۰۴/۰۲", amount: -500.00 },
+    { id: "TXN731", user: "علی رضایی", type: "سود روزانه", status: "موفق", date: "۱۴۰۳/۰۴/۰۳", amount: 35.70 },
+    { id: "INV001", user: "علی رضایی", type: "سرمایه‌گذاری", status: "موفق", date: "۱۴۰۳/۰۴/۰۳", amount: -1000.00 },
+    { id: "TXN733", user: "علی رضایی", type: "واریز", status: "ناموفق", date: "۱۴۰۳/۰۴/۰۴", amount: 1500.00 },
+];
+
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
@@ -108,9 +107,9 @@ export function Overview() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">$45,231.89</div>
+                <div className="text-2xl font-bold font-mono">$35,231.89</div>
                 <p className="text-xs text-muted-foreground">
-                +20.1% نسبت به ماه گذشته
+                +۲۰.۱٪ نسبت به ماه گذشته
                 </p>
             </CardContent>
             </Card>
@@ -119,12 +118,12 @@ export function Overview() {
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">سود کل</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">$2,350.00</div>
+                <div className="text-2xl font-bold font-mono">$2,350.00</div>
                 <p className="text-xs text-muted-foreground">
-                +180.1% نسبت به ماه گذشته
+                +۱۸۰.۱٪ نسبت به ماه گذشته
                 </p>
             </CardContent>
             </Card>
@@ -136,9 +135,9 @@ export function Overview() {
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">$12,234.00</div>
+                <div className="text-2xl font-bold font-mono">$5,230.50</div>
                 <p className="text-xs text-muted-foreground">
-                +19% نسبت به ماه گذشته
+                +۱۹٪ نسبت به ماه گذشته
                 </p>
             </CardContent>
             </Card>
@@ -152,7 +151,7 @@ export function Overview() {
             <CardContent>
                 <div className="text-2xl font-bold">573</div>
                 <p className="text-xs text-muted-foreground">
-                +21 از آخرین قرعه‌کشی
+                +۲۱ از آخرین قرعه‌کشی
                 </p>
             </CardContent>
             </Card>
@@ -179,7 +178,7 @@ export function Overview() {
                       cursor={false}
                       content={<ChartTooltipContent hideLabel />}
                     />
-                    <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8} />
+                    <Bar dataKey="value" fill="var(--color-value)" radius={8} />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -200,7 +199,9 @@ export function Overview() {
                                     {fund.icon}
                                     <CardTitle className="text-base font-semibold">{fund.name}</CardTitle>
                                 </div>
-                                <Button size="sm">سرمایه‌گذاری</Button>
+                                 <Button asChild size="sm">
+                                    <Link href="/dashboard/invest">سرمایه‌گذاری</Link>
+                                 </Button>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-lg font-bold">APY: {fund.apy}</div>
@@ -233,86 +234,30 @@ export function Overview() {
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>کاربر</TableHead>
-                    <TableHead className="text-left">نوع</TableHead>
-                    <TableHead className="text-left">وضعیت</TableHead>
-                    <TableHead className="text-left">تاریخ</TableHead>
+                    <TableHead>نوع</TableHead>
+                    <TableHead>وضعیت</TableHead>
                     <TableHead className="text-right">مبلغ</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow>
-                    <TableCell>
-                        <div className="font-medium">Liam Johnson</div>
-                        <div className="hidden text-sm text-muted-foreground md:inline">
-                        liam@example.com
-                        </div>
-                    </TableCell>
-                    <TableCell className="text-left">واریز</TableCell>
-                    <TableCell className="text-left">
-                        <Badge className="text-xs" variant="outline">
-                        موفق
-                        </Badge>
-                    </TableCell>
-                    <TableCell className="text-left">
-                        2023-06-23
-                    </TableCell>
-                    <TableCell className="text-right">$250.00</TableCell>
+                   {recentTransactions.map((tx) => (
+                    <TableRow key={tx.id}>
+                        <TableCell>
+                            <div className="font-medium">{tx.type}</div>
+                            <div className="hidden text-sm text-muted-foreground md:inline">
+                                {tx.date}
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <Badge className="text-xs" variant={tx.status === 'موفق' ? 'secondary' : tx.status === 'ناموفق' ? 'destructive' : 'outline'}>
+                                {tx.status}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                           {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
                     </TableRow>
-                    <TableRow>
-                    <TableCell>
-                        <div className="font-medium">Olivia Smith</div>
-                        <div className="hidden text-sm text-muted-foreground md:inline">
-                        olivia@example.com
-                        </div>
-                    </TableCell>
-                    <TableCell className="text-left">برداشت</TableCell>
-                    <TableCell className="text-left">
-                        <Badge className="text-xs" variant="outline">
-                        در حال انجام
-                        </Badge>
-                    </TableCell>
-                    <TableCell className="text-left">
-                        2023-06-24
-                    </TableCell>
-                    <TableCell className="text-right">$150.00</TableCell>
-                    </TableRow>
-                    <TableRow>
-                    <TableCell>
-                        <div className="font-medium">Noah Williams</div>
-                        <div className="hidden text-sm text-muted-foreground md:inline">
-                        noah@example.com
-                        </div>
-                    </TableCell>
-                    <TableCell className="text-left">سود روزانه</TableCell>
-                    <TableCell className="text-left">
-                        <Badge className="text-xs" variant="outline">
-                        موفق
-                        </Badge>
-                    </TableCell>
-                    <TableCell className="text-left">
-                        2023-06-25
-                    </TableCell>
-                    <TableCell className="text-right">$32.50</TableCell>
-                    </TableRow>
-                    <TableRow>
-                    <TableCell>
-                        <div className="font-medium">Emma Brown</div>
-                        <div className="hidden text-sm text-muted-foreground md:inline">
-                        emma@example.com
-                        </div>
-                    </TableCell>
-                    <TableCell className="text-left">واریز</TableCell>
-                    <TableCell className="text-left">
-                        <Badge className="text-xs" variant="destructive">
-                        ناموفق
-                        </Badge>
-                    </TableCell>
-                    <TableCell className="text-left">
-                        2023-06-26
-                    </TableCell>
-                    <TableCell className="text-right">$450.00</TableCell>
-                    </TableRow>
+                   ))}
                 </TableBody>
                 </Table>
             </CardContent>
