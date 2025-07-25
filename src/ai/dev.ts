@@ -5,3 +5,4 @@ import "./flows/chat-flow";
 import "./flows/lottery-flow";
 import "./flows/get-user-transactions-flow";
 import "./flows/get-all-users-flow";
+import "./flows/get-user-wallet-flow";
