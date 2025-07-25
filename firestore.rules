@@ -1,41 +1,28 @@
 rules_version = '2';
 
-// Helper function to check for admin role
-function isAdmin() {
-  return request.auth.token.email == 'admin@example.com';
-}
-
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Rules for the 'users' collection
-    match /users/{userId} {
-      // Any authenticated user can create their own user document
-      allow create: if request.auth != null && request.auth.uid == userId;
-      
-      // A user can read their own document, or an admin can read any user document
-      allow read: if (request.auth != null && request.auth.uid == userId) || isAdmin();
-      
-      // A user can update their own document
-      allow update: if request.auth != null && request.auth.uid == userId;
-
-      // No one should be able to delete a user document from the client
-      allow delete: if false;
+    
+    // Helper function to check for admin role by checking a custom claim.
+    // Make sure to set this custom claim for your admin user.
+    function isAdmin() {
+      return request.auth.token.admin == true || request.auth.token.email == 'admin@example.com';
     }
 
-    // Rules for the 'investments' collection
+    // Users can read/update their own doc. Admins can read/write any user doc.
+    match /users/{userId} {
+      allow read, update: if request.auth.uid == userId || isAdmin();
+      allow create: if request.auth.uid != null;
+      allow list: if isAdmin(); // Admins can list all users
+    }
+
+    // Users can create investments for themselves.
+    // Users can read their own investments.
+    // Admins can read any investment and list them all.
     match /investments/{investmentId} {
-        // Any authenticated user can create an investment for themselves
-        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-
-        // A user can read their own investments, or an admin can read any investment
-        allow read: if (request.auth != null && request.auth.uid == resource.data.userId) || isAdmin();
-
-        // An admin can update the status of an investment (e.g., from 'pending' to 'active')
-        allow update: if isAdmin();
-        
-        // No one should be able to delete an investment from the client
-        allow delete: if false;
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow read: if (resource.data.userId == request.auth.uid) || isAdmin();
+      allow list: if isAdmin();
     }
   }
 }
