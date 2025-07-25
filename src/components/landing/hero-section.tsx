@@ -27,7 +27,7 @@ export function HeroSection() {
                 width={600}
                 height={400}
                 alt="رشد مالی"
-                data-ai-hint="finance abstract"
+                data-ai-hint="finance growth"
                 className="overflow-hidden rounded-xl object-cover"
             />
         </div>

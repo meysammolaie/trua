@@ -38,7 +38,7 @@ export function HowItWorksSection() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step) => (
             <div key={step.title} className="flex flex-col items-center text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/30">
+              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-accent">
                 {step.icon}
               </div>
               <h3 className="text-xl font-bold font-headline mb-2">{step.title}</h3>
