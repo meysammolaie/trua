@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -34,78 +35,83 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp } from "lucide-react";
+import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2 } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
+import { collection, query, orderBy, getDocs, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
-const investments = [
-  {
-    id: "INV-001",
-    user: "علی رضایی",
-    email: "ali.rezaei@example.com",
-    fund: "بیت‌کوین",
-    amount: 5000.00,
-    date: "۱۴۰۳/۰۴/۰۵",
-    status: "فعال",
-  },
-  {
-    id: "INV-002",
-    user: "مریم حسینی",
-    email: "maryam.hosseini@example.com",
-    fund: "طلا",
-    amount: 2500.50,
-    date: "۱۴۰۳/۰۴/۰۴",
-    status: "فعال",
-  },
-  {
-    id: "INV-003",
-    user: "رضا محمدی",
-    email: "reza.mohammadi@example.com",
-    fund: "دلار",
-    amount: 1000.00,
-    date: "۱۴۰۳/۰۴/۰۴",
-    status: "در انتظار تایید",
-  },
-   {
-    id: "INV-004",
-    user: "سارا احمدی",
-    email: "sara.ahmadi@example.com",
-    fund: "نقره",
-    amount: 7500.00,
-    date: "۱۴۰۳/۰۴/۰۳",
-    status: "خاتمه یافته",
-  },
-  {
-    id: "INV-005",
-    user: "حسین کریمی",
-    email: "hossein.karimi@example.com",
-    fund: "دلار",
-    amount: 500.00,
-    date: "۱۴۰۳/۰۴/۰۱",
-    status: "فعال",
-  },
-];
+type Investment = {
+  id: string;
+  userId: string;
+  fundId: string;
+  amount: number;
+  transactionHash: string;
+  status: 'pending' | 'active' | 'completed';
+  createdAt: Timestamp;
+};
+
+const fundNames = {
+    gold: "طلا",
+    silver: "نقره",
+    dollar: "دلار",
+    bitcoin: "بیت‌کوین"
+};
+
+const statusNames = {
+    pending: "در انتظار تایید",
+    active: "فعال",
+    completed: "خاتمه یافته",
+};
+
 
 export default function AdminInvestmentsPage() {
+    const [investments, setInvestments] = useState<Investment[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchInvestments = async () => {
+            try {
+                const investmentsCollection = collection(db, "investments");
+                const q = query(investmentsCollection, orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                const investmentsData = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as Investment[];
+                setInvestments(investmentsData);
+            } catch (error) {
+                console.error("Error fetching investments: ", error);
+                // TODO: Add toast notification for error
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchInvestments();
+    }, []);
+
+
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "فعال":
+      case "active":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "در انتظار تایید":
+      case "pending":
         return <Clock className="h-4 w-4 text-yellow-500" />;
-      case "خاتمه یافته":
+      case "completed":
         return <XCircle className="h-4 w-4 text-red-500" />;
       default:
         return null;
     }
   };
-    const getStatusBadgeVariant = (status: string) => {
+
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case "فعال":
+      case "active":
         return "secondary";
-      case "در انتظار تایید":
+      case "pending":
         return "outline";
-      case "خاتمه یافته":
+      case "completed":
         return "destructive";
       default:
         return "default";
@@ -213,8 +219,7 @@ export default function AdminInvestmentsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>شناسه</TableHead>
-                            <TableHead>کاربر</TableHead>
+                            <TableHead>شناسه کاربر</TableHead>
                             <TableHead className="hidden md:table-cell">صندوق</TableHead>
                              <TableHead className="text-right">مبلغ</TableHead>
                             <TableHead className="hidden md:table-cell text-center">تاریخ</TableHead>
@@ -225,50 +230,67 @@ export default function AdminInvestmentsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {investments.map((inv) => (
-                             <TableRow key={inv.id}>
-                                <TableCell className="font-mono">{inv.id}</TableCell>
-                                <TableCell>
-                                    <div className="font-medium">{inv.user}</div>
-                                    <div className="text-xs text-muted-foreground">{inv.email}</div>
-                                </TableCell>
-                                <TableCell className="hidden md:table-cell">{inv.fund}</TableCell>
-                                 <TableCell className="text-right font-mono">
-                                    ${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </TableCell>
-                                <TableCell className="hidden md:table-cell text-center">{inv.date}</TableCell>
-                                <TableCell>
-                                    <Badge variant={getStatusBadgeVariant(inv.status)}>
-                                       <div className="flex items-center gap-2">
-                                            {getStatusIcon(inv.status)}
-                                            <span>{inv.status}</span>
-                                       </div>
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                     <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                            <span className="sr-only">Toggle menu</span>
-                                        </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                                            <DropdownMenuItem>مشاهده جزئیات کاربر</DropdownMenuItem>
-                                            <DropdownMenuItem>مشاهده تراکنش</DropdownMenuItem>
-                                            <DropdownMenuItem>تغییر وضعیت</DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center py-10">
+                                    <div className="flex justify-center items-center gap-2">
+                                        <Loader2 className="h-5 w-5 animate-spin"/>
+                                        <span>در حال بارگذاری سرمایه‌گذاری‌ها...</span>
+                                    </div>
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : investments.length === 0 ? (
+                             <TableRow>
+                                <TableCell colSpan={6} className="text-center py-10">
+                                    هیچ سرمایه‌گذاری‌ای یافت نشد.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            investments.map((inv) => (
+                                <TableRow key={inv.id}>
+                                    <TableCell>
+                                        <div className="font-medium truncate" title={inv.userId}>{inv.userId.substring(0, 8)}...</div>
+                                    </TableCell>
+                                    <TableCell className="hidden md:table-cell">{fundNames[inv.fundId as keyof typeof fundNames]}</TableCell>
+                                    <TableCell className="text-right font-mono">
+                                        ${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </TableCell>
+                                    <TableCell className="hidden md:table-cell text-center">
+                                        {inv.createdAt.toDate().toLocaleDateString('fa-IR')}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={getStatusBadgeVariant(inv.status)}>
+                                        <div className="flex items-center gap-2">
+                                                {getStatusIcon(inv.status)}
+                                                <span>{statusNames[inv.status as keyof typeof statusNames]}</span>
+                                        </div>
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                                <span className="sr-only">Toggle menu</span>
+                                            </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>عملیات</DropdownMenuLabel>
+                                                <DropdownMenuItem>مشاهده جزئیات کاربر</DropdownMenuItem>
+                                                <DropdownMenuItem>مشاهده تراکنش</DropdownMenuItem>
+                                                <DropdownMenuItem>تغییر وضعیت</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>
              <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                    نمایش <strong>۱-۵</strong> از <strong>{investments.length}</strong> سرمایه‌گذاری
+                    نمایش <strong>{investments.length}</strong> سرمایه‌گذاری
                 </div>
                  {/* Pagination can be added here */}
             </CardFooter>
@@ -276,5 +298,3 @@ export default function AdminInvestmentsPage() {
     </>
   );
 }
-
-    
