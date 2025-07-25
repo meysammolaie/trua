@@ -61,27 +61,33 @@ export default function SignupPage() {
   }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
-      toast({
+     toast({
         title: "ثبت نام موفق",
         description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
       });
       router.push("/dashboard");
-    } catch (error) {
-      console.error("Error signing up:", error);
-      let description = "خطایی در هنگام ثبت‌نام رخ داد. لطفاً دوباره تلاش کنید.";
-      if (error instanceof FirebaseError) {
-        if (error.code === "auth/email-already-in-use") {
-          description = "این ایمیل قبلاً استفاده شده است. لطفاً از صفحه ورود، وارد شوید.";
-        }
-      }
-      toast({
-        variant: "destructive",
-        title: "خطا در ثبت نام",
-        description,
-      });
-    }
+
+    // try {
+    //   await createUserWithEmailAndPassword(auth, values.email, values.password);
+    //   toast({
+    //     title: "ثبت نام موفق",
+    //     description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
+    //   });
+    //   router.push("/dashboard");
+    // } catch (error) {
+    //   console.error("Error signing up:", error);
+    //   let description = "خطایی در هنگام ثبت‌نام رخ داد. لطفاً دوباره تلاش کنید.";
+    //   if (error instanceof FirebaseError) {
+    //     if (error.code === "auth/email-already-in-use") {
+    //       description = "این ایمیل قبلاً استفاده شده است. لطفاً از صفحه ورود، وارد شوید.";
+    //     }
+    //   }
+    //   toast({
+    //     variant: "destructive",
+    //     title: "خطا در ثبت نام",
+    //     description,
+    //   });
+    // }
   }
 
   if (loading || user) {

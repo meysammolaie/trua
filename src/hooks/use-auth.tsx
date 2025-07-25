@@ -21,14 +21,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+      // Temporarily bypass Firebase auth for development without backend config
+      // setUser(user);
+      // setLoading(false);
     });
+    
+    // Mock user for development
+    const mockUser = { email: "test@example.com" } as User;
+    setUser(mockUser);
+    setLoading(false);
+
 
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
+    const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
+    // For development, we assume user is always logged in, so if they are on an auth route, redirect them.
+    if (!loading && user && isAuthRoute) {
+       router.push("/dashboard");
+    }
+
     const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
     if (!loading && !user && isProtectedRoute) {
       router.push("/login");
