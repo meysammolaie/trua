@@ -9,6 +9,7 @@ import {
   Crown,
   DollarSign,
   Landmark,
+  Loader2,
   Medal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,18 @@ import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { getUserTransactions } from "@/ai/flows/get-user-transactions-flow";
+
+
+type Transaction = {
+    id: string;
+    type: string;
+    fund: string;
+    status: string;
+    date: string;
+    amount: number;
+};
 
 const chartData = [
   { month: "فروردین", value: 1860.5 },
@@ -78,13 +91,6 @@ const funds = [
   },
 ];
 
-const recentTransactions = [
-    { id: "TXN729", user: "علی رضایی", type: "واریز", status: "موفق", date: "۱۴۰۳/۰۴/۰۱", amount: 2000.00 },
-    { id: "TXN730", user: "علی رضایی", type: "برداشت", status: "در حال انجام", date: "۱۴۰۳/۰۴/۰۲", amount: -500.00 },
-    { id: "TXN731", user: "علی رضایی", type: "سود روزانه", status: "موفق", date: "۱۴۰۳/۰۴/۰۳", amount: 35.70 },
-    { id: "INV001", user: "علی رضایی", type: "سرمایه‌گذاری", status: "موفق", date: "۱۴۰۳/۰۴/۰۳", amount: -1000.00 },
-    { id: "TXN733", user: "علی رضایی", type: "واریز", status: "ناموفق", date: "۱۴۰۳/۰۴/۰۴", amount: 1500.00 },
-];
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -94,6 +100,26 @@ const cardVariants = {
 
 export function Overview() {
     const { user } = useAuth();
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            setLoading(true);
+            getUserTransactions({ userId: user.uid })
+                .then(response => {
+                    // Get top 5 recent transactions
+                    setTransactions(response.transactions.slice(0, 5));
+                })
+                .catch(error => {
+                    console.error("Failed to fetch transactions:", error);
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        }
+    }, [user]);
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -240,24 +266,40 @@ export function Overview() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                   {recentTransactions.map((tx) => (
-                    <TableRow key={tx.id}>
-                        <TableCell>
-                            <div className="font-medium">{tx.type}</div>
-                            <div className="hidden text-sm text-muted-foreground md:inline">
-                                {tx.date}
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                            <Badge className="text-xs" variant={tx.status === 'موفق' ? 'secondary' : tx.status === 'ناموفق' ? 'destructive' : 'outline'}>
-                                {tx.status}
-                            </Badge>
-                        </TableCell>
-                        <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                           {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </TableCell>
-                    </TableRow>
-                   ))}
+                   {loading ? (
+                        <TableRow>
+                            <TableCell colSpan={3} className="text-center py-10">
+                                <div className="flex justify-center items-center gap-2">
+                                    <Loader2 className="h-5 w-5 animate-spin"/>
+                                    <span>در حال بارگذاری تراکنش‌ها...</span>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                   ) : transactions.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={3} className="text-center py-10">
+                                هیچ تراکنشی یافت نشد.
+                            </TableCell>
+                        </TableRow>
+                   ) : (
+                    transactions.map((tx) => (
+                        <TableRow key={tx.id}>
+                            <TableCell>
+                                <div className="font-medium">{tx.type}</div>
+                                <div className="hidden text-sm text-muted-foreground md:inline">
+                                    {tx.date}
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <Badge className="text-xs" variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'در انتظار' ? 'outline' : 'destructive'}>
+                                    {tx.status}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </TableCell>
+                        </TableRow>
+                   )))}
                 </TableBody>
                 </Table>
             </CardContent>
@@ -267,3 +309,5 @@ export function Overview() {
     </>
   );
 }
+
+    
