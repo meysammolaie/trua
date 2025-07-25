@@ -28,6 +28,9 @@ import { Input } from "@/components/ui/input";
 import { VerdantVaultLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
+import { useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." }),
@@ -37,6 +40,8 @@ const formSchema = z.object({
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, loading } = useAuth();
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -44,6 +49,12 @@ export default function LoginPage() {
       password: "",
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -67,6 +78,15 @@ export default function LoginPage() {
         description,
       });
     }
+  }
+
+  if (loading || user) {
+     return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
+      </div>
+    );
   }
 
   return (

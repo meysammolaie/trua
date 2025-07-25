@@ -28,6 +28,9 @@ import { Input } from "@/components/ui/input";
 import { VerdantVaultLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
+import { useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
@@ -39,6 +42,8 @@ const formSchema = z.object({
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, loading } = useAuth();
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,6 +53,12 @@ export default function SignupPage() {
       password: "",
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -72,6 +83,16 @@ export default function SignupPage() {
       });
     }
   }
+
+  if (loading || user) {
+     return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
