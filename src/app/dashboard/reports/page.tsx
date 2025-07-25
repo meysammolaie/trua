@@ -29,24 +29,43 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { DateRangePicker } from "@/components/date-range-picker";
-import { Download, ListFilter, Search } from "lucide-react";
+import { Download, ListFilter, Search, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { getUserTransactions } from "@/ai/flows/get-user-transactions-flow";
 
-
-const allTransactions = [
-    { id: "TXN729", type: "واریز", fund: "دلار", status: "موفق", date: "۱۴۰۳/۰۴/۰۱", amount: 2000.00 },
-    { id: "TXN730", type: "برداشت", fund: "کیف پول", status: "در حال انجام", date: "۱۴۰۳/۰۴/۰۲", amount: -500.00 },
-    { id: "TXN731", type: "سود روزانه", fund: "طلا", status: "موفق", date: "۱۴۰۳/۰۴/۰۳", amount: 35.70 },
-    { id: "INV001", type: "سرمایه‌گذاری", fund: "طلا", status: "موفق", date: "۱۴۰۳/۰۴/۰۳", amount: -1000.00 },
-    { id: "TXN733", type: "واریز", fund: "دلار", status: "ناموفق", date: "۱۴۰۳/۰۴/۰۴", amount: 1500.00 },
-    { id: "INV002", type: "سرمایه‌گذاری", fund: "بیت‌کوین", status: "موفق", date: "۱۴۰۳/۰۴/۰۵", amount: -5000.00 },
-    { id: "WDR001", type: "برداشت سود", fund: "نقره", status: "موفق", date: "۱۴۰۳/۰۴/۰۶", amount: 150.25 },
-    { id: "TXN734", type: "سود روزانه", fund: "دلار", status: "موفق", date: "۱۴۰۳/۰۴/۰۷", amount: 12.45 },
-    { id: "INV003", type: "خروج از سرمایه", fund: "طلا", status: "موفق", date: "۱۴۰۳/۰۴/۰۸", amount: 980.00 },
-    { id: "TXN735", type: "واریز", fund: "بیت‌کوین", status: "موفق", date: "۱۴۰۳/۰۴/۰۹", amount: 3000.00 },
-];
+type Transaction = {
+    id: string;
+    type: string;
+    fund: string;
+    status: string;
+    date: string;
+    amount: number;
+};
 
 
 export default function ReportsPage() {
+    const { user } = useAuth();
+    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        if (user) {
+            setLoading(true);
+            getUserTransactions({ userId: user.uid })
+                .then(response => {
+                    setTransactions(response.transactions);
+                })
+                .catch(error => {
+                    console.error("Failed to fetch transactions:", error);
+                    // Optionally set an error state and show a toast
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        }
+    }, [user]);
+
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -56,44 +75,44 @@ export default function ReportsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>مجموع واریز</CardDescription>
-            <CardTitle className="text-4xl font-mono">$6,500.00</CardTitle>
+            <CardTitle className="text-4xl font-mono">$0.00</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              +15% نسبت به ماه گذشته
+              +0% نسبت به ماه گذشته
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>مجموع برداشت</CardDescription>
-            <CardTitle className="text-4xl font-mono">$500.00</CardTitle>
+            <CardTitle className="text-4xl font-mono">$0.00</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              +5% نسبت به ماه گذشته
+              +0% نسبت به ماه گذشته
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>سود خالص</CardDescription>
-            <CardTitle className="text-4xl font-mono">$1,250.75</CardTitle>
+            <CardTitle className="text-4xl font-mono">$0.00</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              +30.2% نسبت به ماه گذشته
+              +0% نسبت به ماه گذشته
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>تیکت‌های قرعه‌کشی</CardDescription>
-            <CardTitle className="text-4xl">135</CardTitle>
+            <CardTitle className="text-4xl">0</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              +40 تیکت در این ماه
+              +۰ تیکت در این ماه
             </div>
           </CardContent>
         </Card>
@@ -145,30 +164,50 @@ export default function ReportsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {allTransactions.map((tx) => (
-                <TableRow key={tx.id}>
-                  <TableCell className="font-mono">{tx.id}</TableCell>
-                  <TableCell className="font-medium">{tx.type}</TableCell>
-                  <TableCell>{tx.fund}</TableCell>
-                  <TableCell>
-                    <Badge variant={tx.status === 'موفق' ? 'secondary' : tx.status === 'ناموفق' ? 'destructive' : 'outline'}>
-                      {tx.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{tx.date}</TableCell>
-                  <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </TableCell>
+              {loading ? (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10">
+                        <div className="flex justify-center items-center gap-2">
+                            <Loader2 className="h-5 w-5 animate-spin"/>
+                            <span>در حال بارگذاری تراکنش‌ها...</span>
+                        </div>
+                    </TableCell>
                 </TableRow>
-              ))}
+              ) : transactions.length === 0 ? (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10">
+                        هیچ تراکنشی یافت نشد.
+                    </TableCell>
+                </TableRow>
+              ) : (
+                transactions.map((tx) => (
+                    <TableRow key={tx.id}>
+                    <TableCell className="font-mono" title={tx.id}>{tx.id.substring(0, 8)}...</TableCell>
+                    <TableCell className="font-medium">{tx.type}</TableCell>
+                    <TableCell>{tx.fund}</TableCell>
+                    <TableCell>
+                        <Badge variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'در انتظار' ? 'outline' : 'destructive'}>
+                        {tx.status}
+                        </Badge>
+                    </TableCell>
+                    <TableCell>{tx.date}</TableCell>
+                    <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </TableCell>
+                    </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
-         <CardFooter className="flex justify-center border-t pt-4">
-             {/* Pagination can be added here later */}
-             <Button variant="outline">بارگذاری بیشتر</Button>
+         <CardFooter className="flex justify-between items-center border-t pt-4">
+             <div className="text-xs text-muted-foreground">
+                نمایش <strong>{transactions.length}</strong> تراکنش
+             </div>
+             <Button variant="outline" disabled={transactions.length === 0}>بارگذاری بیشتر</Button>
         </CardFooter>
       </Card>
     </>
   );
 }
+
