@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for running the lottery draw.
@@ -9,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { getAllUsers } from './get-all-users-flow';
 
 const LotteryDrawInputSchema = z.object({});
 export type LotteryDrawInput = z.infer<typeof LotteryDrawInputSchema>;
@@ -42,15 +44,38 @@ const lotteryDrawFlow = ai.defineFlow(
     // 4. Get the prize pool amount.
     // 5. Record the win in the database and create the payout transaction.
 
-    const potentialWinners = ["علی رضایی", "مریم حسینی", "رضا محمدی", "سارا احمدی", "حسین کریمی"];
-    const winner = potentialWinners[Math.floor(Math.random() * potentialWinners.length)];
-    const prize = Math.floor(Math.random() * (10000 - 4000 + 1) + 4000);
-    
-    return {
-      success: true,
-      winnerName: winner,
-      prizeAmount: prize,
-      message: `قرعه‌کشی با موفقیت انجام شد! برنده این دوره ${winner} با جایزه $${prize.toLocaleString()} است.`,
-    };
+    // For now, we get all users and pick a random one.
+    try {
+        const { users } = await getAllUsers();
+
+        if (users.length === 0) {
+            return {
+                success: false,
+                winnerName: '',
+                prizeAmount: 0,
+                message: 'هیچ کاربری برای شرکت در قرعه‌کشی یافت نشد.',
+            }
+        }
+
+        const winner = users[Math.floor(Math.random() * users.length)];
+        const winnerName = `${winner.firstName} ${winner.lastName}`;
+        const prize = Math.floor(Math.random() * (10000 - 4000 + 1) + 4000);
+        
+        return {
+        success: true,
+        winnerName: winnerName,
+        prizeAmount: prize,
+        message: `قرعه‌کشی با موفقیت انجام شد! برنده این دوره ${winnerName} با جایزه $${prize.toLocaleString()} است.`,
+        };
+
+    } catch (error) {
+         console.error("Error running lottery draw: ", error);
+         return {
+            success: false,
+            winnerName: '',
+            prizeAmount: 0,
+            message: 'خطایی در هنگام واکشی کاربران برای قرعه‌کشی رخ داد.',
+        };
+    }
   }
 );

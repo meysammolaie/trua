@@ -54,7 +54,7 @@ export default function AdminLotteryPage() {
             if (result.success) {
                 toast({
                     title: "قرعه‌کشی با موفقیت انجام شد!",
-                    description: `برنده: ${result.winnerName} | جایزه: $${result.prizeAmount.toLocaleString()}`,
+                    description: result.message,
                 });
                 // Optionally, you could add the new winner to the recentWinners list here
             } else {
