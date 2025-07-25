@@ -71,7 +71,7 @@ export default function ProfilePage() {
     defaultValues: {
       firstName: "",
       lastName: "",
-      email: user?.email || "",
+      email: "",
     },
   });
 
@@ -86,20 +86,25 @@ export default function ProfilePage() {
   
   useEffect(() => {
     if (user) {
+        // Set email immediately as it's available from auth state
+        profileForm.setValue("email", user.email || "");
+
         const userRef = doc(db, "users", user.uid);
         getDoc(userRef).then(userSnap => {
             if (userSnap.exists()) {
                 const userData = userSnap.data();
+                // Reset form with all data from Firestore
                 profileForm.reset({
                     firstName: userData.firstName,
                     lastName: userData.lastName,
-                    email: userData.email,
+                    email: user.email || "", // Ensure email is still set
                 });
                 setIs2faEnabled(userData.is2faEnabled || false);
             }
         });
     }
   }, [user, profileForm]);
+
 
   async function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
     if (!user) return;

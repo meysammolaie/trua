@@ -35,6 +35,7 @@ import { Bitcoin, Crown, DollarSign, Landmark, Medal, Copy, TrendingUp, Loader2 
 import { useToast } from "@/hooks/use-toast";
 import { submitInvestment } from "@/ai/flows/investment-flow";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 const investmentSchema = z.object({
   amount: z.coerce.number().positive({ message: "مقدار باید مثبت باشد." }),
@@ -51,6 +52,7 @@ type Fund = {
 };
 
 export default function InvestPage() {
+  const { user } = useAuth();
   const [prices, setPrices] = useState({
     gold: 75.50, // per gram
     silver: 0.95, // per gram
@@ -102,6 +104,15 @@ export default function InvestPage() {
   const netInvestment = amountInUsd - totalFee;
 
   async function onSubmit(values: z.infer<typeof investmentSchema>) {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "خطا",
+            description: "برای ثبت سرمایه‌گذاری باید ابتدا وارد شوید.",
+        });
+        return;
+    }
+
     if (amountInUsd < 1) {
         form.setError("amount", { message: `حداقل سرمایه‌گذاری معادل ۱ دلار است.` });
         return;
@@ -109,6 +120,7 @@ export default function InvestPage() {
 
     try {
       const result = await submitInvestment({
+        userId: user.uid,
         fundId: activeFund.id,
         amount: amountInUsd,
         transactionHash: values.transactionHash,

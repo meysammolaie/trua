@@ -10,8 +10,12 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
 
 const InvestmentInputSchema = z.object({
+  userId: z.string().describe('The ID of the user making the investment.'),
   fundId: z.string().describe('The ID of the fund being invested in (e.g., "gold", "bitcoin").'),
   amount: z.number().describe('The amount of the investment in USD.'),
   transactionHash: z.string().describe('The transaction hash (TxID) of the deposit.'),
@@ -38,19 +42,35 @@ const investmentFlow = ai.defineFlow(
     outputSchema: InvestmentOutputSchema,
   },
   async (input) => {
-    console.log('Received investment submission:', input);
+    console.log('Received investment submission for user:', input.userId);
     
-    // In a real application, you would:
-    // 1. Validate the transactionHash with a blockchain service.
-    // 2. Save the investment details to a database.
-    // 3. Return the real ID from the database.
+    try {
+      // 1. Validate the transactionHash with a blockchain service (mocked for now).
+      // 2. Save the investment details to the database.
+      const investmentsCollection = collection(db, 'investments');
+      const docRef = await addDoc(investmentsCollection, {
+        userId: input.userId,
+        fundId: input.fundId,
+        amount: input.amount,
+        transactionHash: input.transactionHash,
+        status: 'pending', // Status can be 'pending', 'active', 'completed'
+        createdAt: serverTimestamp(),
+      });
 
-    const fakeInvestmentId = `INV-${Date.now()}`;
+      console.log("Investment document written with ID: ", docRef.id);
 
-    return {
-      success: true,
-      investmentId: fakeInvestmentId,
-      message: `سرمایه‌گذاری شما در صندوق ${input.fundId} با شناسه ${fakeInvestmentId} ثبت و در حال پردازش است.`,
-    };
+      return {
+        success: true,
+        investmentId: docRef.id,
+        message: `سرمایه‌گذاری شما در صندوق ${input.fundId} با شناسه ${docRef.id} ثبت و در حال پردازش است.`,
+      };
+    } catch (e) {
+        console.error("Error adding document: ", e);
+        return {
+            success: false,
+            investmentId: '',
+            message: 'خطایی در ثبت سرمایه‌گذاری شما در پایگاه داده رخ داد.',
+        };
+    }
   }
 );
