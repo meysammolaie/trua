@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -31,46 +31,86 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Bitcoin, Crown, DollarSign, Landmark, Medal, Copy } from "lucide-react";
+import { Bitcoin, Crown, DollarSign, Landmark, Medal, Copy, TrendingUp, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { submitInvestment } from "@/ai/flows/investment-flow";
-
-const funds = [
-  { id: "gold", name: "صندوق طلا", icon: <Crown className="w-5 h-5 ml-2" />, walletAddress: "0xAddressGold...SAMPLE..." },
-  { id: "silver", name: "صندوق نقره", icon: <Medal className="w-5 h-5 ml-2" />, walletAddress: "0xAddressSilver...SAMPLE..." },
-  { id: "dollar", name: "صندوق دلار", icon: <DollarSign className="w-5 h-5 ml-2" />, walletAddress: "0xAddressDollar...SAMPLE..." },
-  { id: "bitcoin", name: "صندوق بیت‌کوین", icon: <Bitcoin className="w-5 h-5 ml-2" />, walletAddress: "bc1qAddressBitcoin...SAMPLE..." },
-];
+import { cn } from "@/lib/utils";
 
 const investmentSchema = z.object({
-  amount: z.coerce.number().min(1, { message: "حداقل مبلغ سرمایه‌گذاری ۱ دلار است." }),
+  amount: z.coerce.number().positive({ message: "مقدار باید مثبت باشد." }),
   transactionHash: z.string().min(10, { message: "لطفاً شناسه تراکنش معتبر وارد کنید." }),
 });
 
+type Fund = {
+  id: "gold" | "silver" | "dollar" | "bitcoin";
+  name: string;
+  icon: React.ReactNode;
+  walletAddress: string;
+  unit: string;
+  price: number;
+};
+
 export default function InvestPage() {
-  const [activeFund, setActiveFund] = useState(funds[0]);
+  const [prices, setPrices] = useState({
+    gold: 75.50, // per gram
+    silver: 0.95, // per gram
+    bitcoin: 65000.00,
+  });
+  const [activeFundId, setActiveFundId] = useState<Fund["id"]>("gold");
   const { toast } = useToast();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPrices(prevPrices => ({
+        gold: prevPrices.gold * (1 + (Math.random() - 0.5) * 0.01),
+        silver: prevPrices.silver * (1 + (Math.random() - 0.5) * 0.01),
+        bitcoin: prevPrices.bitcoin * (1 + (Math.random() - 0.5) * 0.02),
+      }));
+    }, 3000); // Update prices every 3 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const funds: Fund[] = [
+    { id: "gold", name: "صندوق طلا", icon: <Crown className="w-5 h-5 ml-2" />, walletAddress: "0xAddressGold...SAMPLE...", unit: "گرم", price: prices.gold },
+    { id: "silver", name: "صندوق نقره", icon: <Medal className="w-5 h-5 ml-2" />, walletAddress: "0xAddressSilver...SAMPLE...", unit: "گرم", price: prices.silver },
+    { id: "dollar", name: "صندوق دلار", icon: <DollarSign className="w-5 h-5 ml-2" />, walletAddress: "0xAddressDollar...SAMPLE...", unit: "دلار", price: 1 },
+    { id: "bitcoin", name: "صندوق بیت‌کوین", icon: <Bitcoin className="w-5 h-5 ml-2" />, walletAddress: "bc1qAddressBitcoin...SAMPLE...", unit: "BTC", price: prices.bitcoin },
+  ];
+
+  const activeFund = funds.find(f => f.id === activeFundId)!;
+  const minInvestmentUnit = 1 / activeFund.price;
 
   const form = useForm<z.infer<typeof investmentSchema>>({
     resolver: zodResolver(investmentSchema),
     defaultValues: {
-      amount: 1,
+      amount: minInvestmentUnit,
       transactionHash: "",
     },
   });
+  
+  useEffect(() => {
+     form.setValue("amount", minInvestmentUnit);
+  }, [activeFundId, form, minInvestmentUnit]);
 
-  const watchAmount = form.watch("amount", 1);
-  const entryFee = watchAmount * 0.03;
-  const lotteryFee = watchAmount * 0.02;
-  const platformFee = watchAmount * 0.01;
+  const watchAmount = form.watch("amount", minInvestmentUnit);
+  const amountInUsd = watchAmount * activeFund.price;
+
+  const entryFee = amountInUsd * 0.03;
+  const lotteryFee = amountInUsd * 0.02;
+  const platformFee = amountInUsd * 0.01;
   const totalFee = entryFee + lotteryFee + platformFee;
-  const netInvestment = watchAmount - totalFee;
+  const netInvestment = amountInUsd - totalFee;
 
   async function onSubmit(values: z.infer<typeof investmentSchema>) {
+    if (amountInUsd < 1) {
+        form.setError("amount", { message: `حداقل سرمایه‌گذاری معادل ۱ دلار است.` });
+        return;
+    }
+
     try {
       const result = await submitInvestment({
         fundId: activeFund.id,
-        amount: values.amount,
+        amount: amountInUsd,
         transactionHash: values.transactionHash,
       });
 
@@ -105,6 +145,20 @@ export default function InvestPage() {
        <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl">سرمایه‌گذاری</h1>
       </div>
+       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {funds.filter(f => f.id !== 'dollar').map(fund => (
+          <Card key={fund.id} className="text-center">
+            <CardHeader className="p-4 flex-row items-center justify-center gap-2">
+                {fund.icon}
+                <CardTitle className="text-md">{fund.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+                <p className="text-lg font-bold font-mono">${fund.price.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">قیمت هر {fund.unit}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>ایجاد سرمایه‌گذاری جدید</CardTitle>
@@ -113,7 +167,7 @@ export default function InvestPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={activeFund.id} className="w-full" onValueChange={(value) => setActiveFund(funds.find(f => f.id === value) || funds[0])}>
+          <Tabs defaultValue={activeFund.id} className="w-full" onValueChange={(value) => setActiveFundId(value as Fund["id"])}>
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
               {funds.map((fund) => (
                 <TabsTrigger key={fund.id} value={fund.id} className="py-2">
@@ -133,12 +187,12 @@ export default function InvestPage() {
                         name="amount"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>مبلغ سرمایه‌گذاری (دلار)</FormLabel>
+                            <FormLabel>مقدار سرمایه‌گذاری ({activeFund.unit})</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} />
+                              <Input type="number" step="any" {...field} />
                             </FormControl>
                             <FormDescription>
-                              حداقل مبلغ برای شروع ۱ دلار است.
+                              حداقل مقدار: ~{minInvestmentUnit.toFixed(6)} {activeFund.unit} (معادل ۱ دلار)
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -154,7 +208,7 @@ export default function InvestPage() {
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                          مبلغ مورد نظر را به این آدرس واریز کرده و سپس شناسه تراکنش را در فرم زیر وارد کنید.
+                          مقدار ({activeFund.unit}) را به این آدرس واریز کرده و سپس شناسه تراکنش را در فرم زیر وارد کنید.
                         </p>
                       </div>
 
@@ -180,33 +234,36 @@ export default function InvestPage() {
                     <div className="space-y-4">
                        <Card className="bg-muted/50">
                           <CardHeader>
-                            <CardTitle className="text-lg">خلاصه کارمزدها</CardTitle>
+                            <CardTitle className="text-lg">خلاصه مالی</CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-4 text-sm">
                             <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground">مبلغ سرمایه‌گذاری:</span>
-                              <span className="font-mono font-semibold">${watchAmount.toFixed(2)}</span>
+                              <span className="text-muted-foreground">ارزش دلاری سرمایه‌گذاری:</span>
+                              <span className="font-mono font-semibold">${amountInUsd.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-muted-foreground">کارمزد ورود (۳٪):</span>
-                              <span className="font-mono font-semibold text-red-500">-${entryFee.toFixed(2)}</span>
+                              <span className={cn("font-mono font-semibold", amountInUsd > 0 && "text-red-500")}>-${entryFee.toFixed(2)}</span>
                             </div>
                              <div className="flex justify-between items-center">
                               <span className="text-muted-foreground">کارمزد قرعه‌کشی (۲٪):</span>
-                              <span className="font-mono font-semibold text-red-500">-${lotteryFee.toFixed(2)}</span>
+                              <span className={cn("font-mono font-semibold", amountInUsd > 0 && "text-red-500")}>-${lotteryFee.toFixed(2)}</span>
                             </div>
                              <div className="flex justify-between items-center">
                               <span className="text-muted-foreground">کارمزد پلتفرم (۱٪):</span>
-                              <span className="font-mono font-semibold text-red-500">-${platformFee.toFixed(2)}</span>
+                              <span className={cn("font-mono font-semibold", amountInUsd > 0 && "text-red-500")}>-${platformFee.toFixed(2)}</span>
                             </div>
                             <hr />
                              <div className="flex justify-between items-center text-base">
                               <span className="font-bold">سرمایه خالص شما:</span>
-                              <span className="font-mono font-bold text-green-600">${netInvestment.toFixed(2)}</span>
+                              <span className={cn("font-mono font-bold", netInvestment >= 0 ? "text-green-500" : "text-red-500")}>
+                                ${netInvestment.toFixed(2)}
+                              </span>
                             </div>
                           </CardContent>
                        </Card>
                        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                         {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                          {form.formState.isSubmitting ? "در حال ثبت..." : "ثبت سرمایه‌گذاری"}
                        </Button>
                     </div>
