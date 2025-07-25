@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, signInWithPopup, UserCredential } from "firebase/auth";
+import { auth, db, googleProvider } from "@/lib/firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,10 +48,10 @@ export default function SignupPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: "Admin",
-      lastName: "User",
-      email: "admin@example.com",
-      password: "password123",
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
     },
   });
 
@@ -59,15 +60,32 @@ export default function SignupPage() {
       router.push("/dashboard");
     }
   }, [user, router]);
+  
+  const createUserDocument = async (userCred: UserCredential, firstName?: string, lastName?: string) => {
+    const userRef = doc(db, "users", userCred.user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+        const { email, uid } = userCred.user;
+        const displayName = userCred.user.displayName?.split(" ") || [firstName, lastName];
+        await setDoc(userRef, {
+            uid,
+            email,
+            firstName: displayName[0] || "",
+            lastName: displayName.slice(1).join(" ") || "",
+            createdAt: new Date(),
+        });
+    }
+  };
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      await createUserDocument(userCredential, values.firstName, values.lastName);
       toast({
         title: "ثبت نام موفق",
         description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
       });
-      // router.push("/dashboard"); // This will be handled by useEffect
     } catch (error) {
       console.error("Error signing up:", error);
       let description = "خطایی در هنگام ثبت‌نام رخ داد. لطفاً دوباره تلاش کنید.";
@@ -86,12 +104,12 @@ export default function SignupPage() {
   
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      await createUserDocument(userCredential);
       toast({
         title: "ورود موفق",
         description: "شما با موفقیت از طریق گوگل وارد شدید.",
       });
-      // router.push("/dashboard"); // This will be handled by useEffect
     } catch (error) {
       console.error("Google Sign-In Error:", error);
       toast({
@@ -208,7 +226,7 @@ export default function SignupPage() {
                 </span>
               </div>
             </div>
-             <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+             <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={form.formState.isSubmitting}>
                <Chrome className="ml-2 h-4 w-4" />
               ثبت‌نام با گوگل
             </Button>

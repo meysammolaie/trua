@@ -35,6 +35,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
+import { useEffect, useState } from "react";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
@@ -61,13 +64,14 @@ const loginHistory = [
 export default function ProfilePage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [is2faEnabled, setIs2faEnabled] = useState(false);
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      firstName: "علی",
-      lastName: "رضایی",
-      email: user?.email || "user@example.com",
+      firstName: "",
+      lastName: "",
+      email: user?.email || "",
     },
   });
 
@@ -79,20 +83,71 @@ export default function ProfilePage() {
       confirmPassword: "",
     },
   });
+  
+  useEffect(() => {
+    if (user) {
+        const userRef = doc(db, "users", user.uid);
+        getDoc(userRef).then(userSnap => {
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                profileForm.reset({
+                    firstName: userData.firstName,
+                    lastName: userData.lastName,
+                    email: userData.email,
+                });
+                setIs2faEnabled(userData.is2faEnabled || false);
+            }
+        });
+    }
+  }, [user, profileForm]);
 
-  function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
-    toast({
-      title: "موفقیت‌آمیز",
-      description: "اطلاعات پروفایل شما با موفقیت به‌روزرسانی شد.",
-    });
+  async function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    try {
+        await updateDoc(userRef, {
+            firstName: values.firstName,
+            lastName: values.lastName,
+        });
+        toast({
+          title: "موفقیت‌آمیز",
+          description: "اطلاعات پروفایل شما با موفقیت به‌روزرسانی شد.",
+        });
+    } catch (error) {
+         toast({
+          variant: "destructive",
+          title: "خطا",
+          description: "خطایی در به‌روزرسانی پروفایل رخ داد.",
+        });
+    }
   }
 
   function onPasswordSubmit(values: z.infer<typeof passwordFormSchema>) {
+     // TODO: Implement password change logic with Firebase Auth
      toast({
       title: "موفقیت‌آمیز",
       description: "رمز عبور شما با موفقیت تغییر کرد.",
     });
     passwordForm.reset();
+  }
+
+  const handle2faToggle = async (enabled: boolean) => {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    try {
+        await updateDoc(userRef, { is2faEnabled: enabled });
+        setIs2faEnabled(enabled);
+        toast({
+            title: "موفقیت‌آمیز",
+            description: `احراز هویت دو مرحله‌ای ${enabled ? 'فعال' : 'غیرفعال'} شد.`
+        });
+    } catch (error) {
+         toast({
+          variant: "destructive",
+          title: "خطا",
+          description: "خطایی در تغییر وضعیت احراز هویت دو مرحله‌ای رخ داد.",
+        });
+    }
   }
 
   return (
@@ -158,7 +213,9 @@ export default function ProfilePage() {
                 />
               </CardContent>
               <CardFooter className="border-t px-6 py-4">
-                <Button type="submit">ذخیره تغییرات</Button>
+                <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                    {profileForm.formState.isSubmitting ? "در حال ذخیره..." : "ذخیره تغییرات"}
+                </Button>
               </CardFooter>
             </form>
           </Form>
@@ -235,7 +292,11 @@ export default function ProfilePage() {
                     <h3 className="font-medium">احراز هویت دو مرحله‌ای (2FA)</h3>
                     <p className="text-sm text-muted-foreground">یک لایه امنیتی بیشتر به حساب خود اضافه کنید.</p>
                 </div>
-                <Switch aria-label="Toggle 2FA" />
+                <Switch 
+                    checked={is2faEnabled}
+                    onCheckedChange={handle2faToggle}
+                    aria-label="Toggle 2FA" 
+                />
              </div>
           </CardContent>
           <CardFooter className="border-t px-6 py-4">

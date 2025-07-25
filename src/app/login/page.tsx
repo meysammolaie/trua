@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithEmailAndPassword, signInWithPopup, UserCredential } from "firebase/auth";
+import { auth, googleProvider, db } from "@/lib/firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -52,7 +53,6 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      // Redirect to admin if user is admin, otherwise to dashboard
       if (user.email === 'admin@example.com') {
          router.push("/admin");
       } else {
@@ -60,6 +60,22 @@ export default function LoginPage() {
       }
     }
   }, [user, router]);
+  
+  const createUserDocument = async (userCred: UserCredential) => {
+    const userRef = doc(db, "users", userCred.user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+        const { email, uid, displayName } = userCred.user;
+        const nameParts = displayName?.split(" ") || [];
+        await setDoc(userRef, {
+            uid,
+            email,
+            firstName: nameParts[0] || "",
+            lastName: nameParts.slice(1).join(" ") || "",
+            createdAt: new Date(),
+        });
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -68,13 +84,12 @@ export default function LoginPage() {
         title: "ورود موفق",
         description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
       });
-      // router.push("/dashboard"); // This will be handled by useEffect
     } catch (error) {
        console.error("Error signing in:", error);
       let description = "ایمیل یا رمز عبور نامعتبر است.";
        if (error instanceof FirebaseError) {
          if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            description = "ایمیل یا رمز عبور وارد شده صحیح نمی‌باشد. لطفاً ابتدا از صفحه ثبت‌نام، حساب کاربری را ایجاد کنید.";
+            description = "ایمیل یا رمز عبور وارد شده صحیح نمی‌باشد.";
          }
        }
       toast({
@@ -87,12 +102,12 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      await createUserDocument(userCredential);
       toast({
         title: "ورود موفق",
         description: "شما با موفقیت از طریق گوگل وارد شدید.",
       });
-      // router.push("/dashboard"); // This will be handled by useEffect
     } catch (error) {
       console.error("Google Sign-In Error:", error);
       toast({
@@ -189,7 +204,7 @@ export default function LoginPage() {
                 </span>
               </div>
             </div>
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={form.formState.isSubmitting}>
               <Chrome className="ml-2 h-4 w-4" />
               ورود با گوگل
             </Button>

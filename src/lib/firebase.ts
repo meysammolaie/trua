@@ -1,9 +1,8 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-// مقادیر نمونه برای جلوگیری از خطا در محیط توسعه
-// لطفاً این مقادیر را با پیکربندی واقعی پروژه Firebase خود جایگزین کنید.
 const firebaseConfig = {
   "projectId": "verdant-vault-7k4w3",
   "appId": "1:983159235723:web:3e19f9d3265da955d1a08e",
@@ -16,6 +15,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
+const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-export { app, auth, googleProvider };
+export { app, auth, db, googleProvider };
