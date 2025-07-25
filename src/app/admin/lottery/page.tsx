@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -18,10 +19,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Ticket, Users, DollarSign, PlayCircle, History } from "lucide-react";
+import { Ticket, Users, DollarSign, PlayCircle, History, Loader2 } from "lucide-react";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { runLotteryDraw } from "@/ai/flows/lottery-flow";
 
 
 const lotteryStats = {
@@ -38,12 +40,35 @@ const recentWinners = [
 
 export default function AdminLotteryPage() {
     const { toast } = useToast();
+    const [isDrawing, setIsDrawing] = useState(false);
 
-    const handleManualDraw = () => {
+    const handleManualDraw = async () => {
+        setIsDrawing(true);
         toast({
             title: "عملیات در حال انجام",
-            description: "فرآیند اجرای دستی قرعه‌کشی آغاز شد. نتایج به زودی اعلام خواهد شد.",
+            description: "فرآیند اجرای دستی قرعه‌کشی آغاز شد...",
         });
+        
+        try {
+            const result = await runLotteryDraw({});
+            if (result.success) {
+                toast({
+                    title: "قرعه‌کشی با موفقیت انجام شد!",
+                    description: `برنده: ${result.winnerName} | جایزه: $${result.prizeAmount.toLocaleString()}`,
+                });
+                // Optionally, you could add the new winner to the recentWinners list here
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "خطا در اجرای قرعه‌کشی",
+                description: error instanceof Error ? error.message : "مشکلی در ارتباط با سرور رخ داد.",
+            });
+        } finally {
+            setIsDrawing(false);
+        }
     }
 
   return (
@@ -103,9 +128,13 @@ export default function AdminLotteryPage() {
                 </div>
             </CardContent>
             <CardFooter className="border-t pt-4">
-                 <Button onClick={handleManualDraw} className="w-full">
-                    <PlayCircle className="h-4 w-4 ml-2"/>
-                    اجرای دستی قرعه‌کشی
+                 <Button onClick={handleManualDraw} className="w-full" disabled={isDrawing}>
+                    {isDrawing ? (
+                        <Loader2 className="h-4 w-4 ml-2 animate-spin"/>
+                    ) : (
+                        <PlayCircle className="h-4 w-4 ml-2"/>
+                    )}
+                    {isDrawing ? "در حال اجرا..." : "اجرای دستی قرعه‌کشی"}
                  </Button>
             </CardFooter>
         </Card>
@@ -157,4 +186,3 @@ export default function AdminLotteryPage() {
     </>
   );
 }
-
