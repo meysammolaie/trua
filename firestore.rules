@@ -3,26 +3,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check for admin role by checking a custom claim.
-    // Make sure to set this custom claim for your admin user.
-    function isAdmin() {
-      return request.auth.token.admin == true || request.auth.token.email == 'admin@example.com';
-    }
-
-    // Users can read/update their own doc. Admins can read/write any user doc.
-    match /users/{userId} {
-      allow read, update: if request.auth.uid == userId || isAdmin();
-      allow create: if request.auth.uid != null;
-      allow list: if isAdmin(); // Admins can list all users
-    }
-
-    // Users can create investments for themselves.
-    // Users can read their own investments.
-    // Admins can read any investment and list them all.
-    match /investments/{investmentId} {
-      allow create: if request.auth.uid == request.resource.data.userId;
-      allow read: if (resource.data.userId == request.auth.uid) || isAdmin();
-      allow list: if isAdmin();
+    // Allow read/write access to all documents for any authenticated user.
+    // WARNING: This is for development purposes only. 
+    // You should implement more granular rules before production.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
