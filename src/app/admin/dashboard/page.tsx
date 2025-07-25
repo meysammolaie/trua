@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -25,9 +26,22 @@ import {
   Cell,
   Tooltip,
 } from "recharts";
-import { DollarSign, Users, Package, Activity, TrendingUp } from "lucide-react";
+import { DollarSign, Users, Package, Activity, TrendingUp, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { User, getAllUsers } from "@/ai/flows/get-all-users-flow";
+
+type Investment = {
+  id: string;
+  userId: string;
+  fundId: string;
+  amount: number;
+  transactionHash: string;
+  status: 'pending' | 'active' | 'completed';
+  createdAt: Timestamp;
+};
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -67,6 +81,48 @@ const recentActivities = [
 
 
 export default function AdminDashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalTVL: 0,
+    totalUsers: 0,
+    activeInvestments: 0,
+    monthlyRevenue: 15320.50, // This can be calculated later
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch Users
+        const usersResponse = await getAllUsers();
+        const totalUsers = usersResponse.users.length;
+        
+        // Fetch Investments
+        const investmentsCollection = collection(db, "investments");
+        const investmentsSnapshot = await getDocs(investmentsCollection);
+        const investmentsData = investmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Investment[];
+
+        const totalTVL = investmentsData
+            .filter(inv => inv.status === 'active' || inv.status === 'pending')
+            .reduce((sum, inv) => sum + inv.amount, 0);
+            
+        const activeInvestments = investmentsData.filter(inv => inv.status === 'active' || inv.status === 'pending').length;
+
+        setStats(prev => ({
+            ...prev,
+            totalUsers,
+            totalTVL,
+            activeInvestments,
+        }));
+
+      } catch (error) {
+        console.error("Failed to fetch admin dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -80,10 +136,14 @@ export default function AdminDashboardPage() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold font-mono">$1,750,000</div>
-                <p className="text-xs text-muted-foreground">
-                +12.5% در ماه گذشته
-                </p>
+                {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
+                    <>
+                        <div className="text-2xl font-bold font-mono">${stats.totalTVL.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <p className="text-xs text-muted-foreground">
+                        +۰٪ در ماه گذشته
+                        </p>
+                    </>
+                )}
             </CardContent>
             </Card>
         </motion.div>
@@ -94,10 +154,14 @@ export default function AdminDashboardPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">5,842</div>
-                <p className="text-xs text-muted-foreground">
-                +520 کاربر جدید در این ماه
-                </p>
+                {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
+                    <>
+                        <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">
+                        +۰ کاربر جدید در این ماه
+                        </p>
+                    </>
+                )}
             </CardContent>
             </Card>
         </motion.div>
@@ -108,10 +172,14 @@ export default function AdminDashboardPage() {
                 <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">8,123</div>
-                <p className="text-xs text-muted-foreground">
-                +680 در ماه گذشته
-                </p>
+                {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
+                    <>
+                        <div className="text-2xl font-bold">{stats.activeInvestments.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">
+                        +۰ در ماه گذشته
+                        </p>
+                    </>
+                )}
             </CardContent>
             </Card>
         </motion.div>
@@ -122,10 +190,14 @@ export default function AdminDashboardPage() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold font-mono">$15,320.50</div>
-                <p className="text-xs text-muted-foreground">
-                +8.2% نسبت به ماه قبل
-                </p>
+                {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
+                    <>
+                        <div className="text-2xl font-bold font-mono">${stats.monthlyRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <p className="text-xs text-muted-foreground">
+                        محاسبه بزودی
+                        </p>
+                    </>
+                )}
             </CardContent>
             </Card>
         </motion.div>
