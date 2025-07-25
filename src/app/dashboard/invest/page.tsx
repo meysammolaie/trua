@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/form";
 import { Bitcoin, Crown, DollarSign, Landmark, Medal, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { submitInvestment } from "@/ai/flows/investment-flow";
 
 const funds = [
   { id: "gold", name: "صندوق طلا", icon: <Crown className="w-5 h-5 ml-2" />, walletAddress: "0xAddressGold...SAMPLE..." },
@@ -65,16 +66,30 @@ export default function InvestPage() {
   const totalFee = entryFee + lotteryFee + platformFee;
   const netInvestment = watchAmount - totalFee;
 
-  function onSubmit(values: z.infer<typeof investmentSchema>) {
-    console.log({
-      fund: activeFund.id,
-      ...values,
-    });
-    toast({
-      title: "درخواست ثبت شد",
-      description: "سرمایه‌گذاری شما پس از تأیید تراکنش به حساب شما اضافه خواهد شد.",
-    });
-    form.reset();
+  async function onSubmit(values: z.infer<typeof investmentSchema>) {
+    try {
+      const result = await submitInvestment({
+        fundId: activeFund.id,
+        amount: values.amount,
+        transactionHash: values.transactionHash,
+      });
+
+      if (result.success) {
+        toast({
+          title: "درخواست شما ثبت شد",
+          description: result.message,
+        });
+        form.reset();
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "خطا در ثبت سرمایه‌گذاری",
+        description: error instanceof Error ? error.message : "مشکلی پیش آمده است.",
+      });
+    }
   }
 
   const handleCopyToClipboard = () => {
