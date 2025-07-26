@@ -8,7 +8,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardFooter,
   CardDescription,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -364,7 +363,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
           </motion.div>
         )}
       </AnimatePresence>
-      <button
+      <div
         className="fixed bottom-4 right-4 z-50 cursor-pointer group"
         onClick={toggleOpen}
         aria-label="Toggle chat widget"
@@ -431,7 +430,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             </Button>
           )}
         </AnimatePresence>
-      </button>
+      </div>
     </>
   );
 }
