@@ -13,13 +13,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, Send, X, Loader2 } from "lucide-react";
+import { Bot, User, Send, X, Loader2, Mic } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { chat } from "@/ai/flows/chat-flow";
 import { voiceChat } from "@/ai/flows/voice-chat-flow";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -32,12 +31,14 @@ interface ChatWidgetProps {
     isEmbedded?: boolean;
 }
 
+type ChatMode = 'text' | 'voice';
+
 export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(isEmbedded);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("text");
+  const [mode, setMode] = useState<ChatMode>('text');
   const [isListening, setIsListening] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -56,7 +57,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     }
   };
   
-  const handleSend = async (messageText: string, mode: "text" | "voice") => {
+  const handleSend = async (messageText: string) => {
     if (messageText.trim() === "" || isLoading) return;
 
     const userMessage: Message = { sender: "user", text: messageText };
@@ -74,7 +75,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             audioRef.current.src = result.audio;
             audioRef.current.play();
             audioRef.current.onended = () => {
-                if (recognitionRef.current && activeTab === "voice" && isOpen) {
+                if (recognitionRef.current && mode === "voice" && isOpen) {
                     recognitionRef.current.start();
                 }
             };
@@ -116,7 +117,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   }, [isOpen, messages.length]);
 
   useEffect(() => {
-    if (activeTab !== "voice" || !SpeechRecognition || !isOpen) {
+    if (mode !== "voice" || !SpeechRecognition || !isOpen) {
         if (recognitionRef.current) {
             recognitionRef.current.stop();
         }
@@ -136,7 +137,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     };
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        handleSend(transcript, "voice");
+        handleSend(transcript);
     };
 
     recognitionRef.current = recognition;
@@ -149,14 +150,14 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, isOpen, SpeechRecognition]);
+  }, [mode, isOpen, SpeechRecognition]);
 
   
   const { toast } = useToast();
 
   const ChatWindow = (
      <Card className={cn(
-        "w-[380px] h-[600px] flex flex-col shadow-2xl transition-all duration-300", 
+        "w-[380px] h-[600px] flex flex-col shadow-2xl transition-all duration-300 overflow-hidden", 
         isEmbedded && "w-full h-full shadow-none",
         )}>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -177,12 +178,35 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             )}
         </CardHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="text">چت متنی</TabsTrigger>
-                <TabsTrigger value="voice">گفتگوی صوتی</TabsTrigger>
-            </TabsList>
-            <TabsContent value="text" className="flex flex-col flex-1 m-0">
+        <div className="p-2 border-b">
+            <div className="bg-muted p-1 rounded-lg flex">
+                <AnimatePresence>
+                    {['text', 'voice'].map((item) => (
+                        <Button 
+                            key={item}
+                            onClick={() => setMode(item as ChatMode)}
+                            className={cn(
+                                "flex-1 relative transition-colors h-8",
+                                mode === item ? "text-foreground" : "text-muted-foreground bg-transparent hover:bg-transparent"
+                            )}
+                            variant="ghost"
+                        >
+                             {mode === item && (
+                                <motion.div
+                                    layoutId="chatModePill"
+                                    className="absolute inset-0 bg-background rounded-md z-0"
+                                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                                />
+                             )}
+                            <span className="relative z-10">{item === 'text' ? 'چت متنی' : 'گفتگوی صوتی'}</span>
+                        </Button>
+                    ))}
+                </AnimatePresence>
+            </div>
+        </div>
+
+         {mode === 'text' ? (
+            <div className="flex flex-col flex-1">
                  <CardContent className="flex-1 p-0 overflow-hidden">
                     <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
                         <div className="space-y-4">
@@ -224,7 +248,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                         className="flex w-full items-center space-x-2"
                         onSubmit={(e) => {
                             e.preventDefault();
-                            handleSend(input, "text");
+                            handleSend(input);
                         }}
                     >
                         <Input
@@ -239,8 +263,9 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                         </Button>
                     </form>
                 </CardFooter>
-            </TabsContent>
-            <TabsContent value="voice" className="flex flex-col flex-1 items-center justify-center m-0">
+            </div>
+         ) : (
+             <div className="flex flex-col flex-1 items-center justify-center m-0">
                  <motion.div 
                     animate={{ scale: isListening ? [1, 1.2, 1] : 1 }}
                     transition={{ repeat: isListening ? Infinity : 0, duration: 1.5 }}
@@ -250,8 +275,8 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                 <p className="mt-4 text-lg font-semibold">{isListening ? "در حال گوش دادن..." : "من آماده‌ام!"}</p>
                 <p className="mt-1 text-sm text-muted-foreground">برای صحبت کردن آماده‌ام</p>
                  {isLoading && messages.length > 0 && <p className="mt-4 text-sm text-yellow-400">در حال پردازش...</p>}
-            </TabsContent>
-        </Tabs>
+            </div>
+         )}
     </Card>
   )
 
@@ -332,3 +357,4 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     </>
   );
 }
+
