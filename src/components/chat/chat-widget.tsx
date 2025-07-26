@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, User, Send, X, Loader2, Mic } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { chat } from "@/ai/flows/chat-flow";
 import { voiceChat } from "@/ai/flows/voice-chat-flow";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -43,7 +42,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   
-  const [activeMode, setActiveMode] = useState<'voice' | 'text'>('voice');
+  const [activeMode, setActiveMode] = useState<'voice' | 'text'>('text');
 
   useEffect(() => {
     setIsClient(true);
@@ -102,45 +101,43 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
+    if (isOpen && messages.length === 0 && !isEmbedded) {
       const timer = setTimeout(() => {
         setMessages([
           {
             sender: "bot",
-            text: "سلام! من دستیار هوشمند Trusva هستم. برای شروع گفتگو، روی آیکون ربات کلیک کنید.",
+            text: "سلام! من دستیار هوشمند Trusva هستم. برای شروع گفتگو، پیام خود را بنویسید یا به حالت گفتگوی صوتی بروید.",
           },
         ]);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, messages.length]);
+  }, [isOpen, messages.length, isEmbedded]);
 
  useEffect(() => {
     if (!isSpeechSupported || !isOpen || activeMode !== 'voice') {
         recognitionRef.current?.abort();
-        setIsListening(false);
         return;
     }
 
     if (!recognitionRef.current) {
         const recognition = new SpeechRecognition();
-        recognition.continuous = true; // Keep listening even after a pause
-        recognition.interimResults = false;
-        // Not setting lang to allow auto-detection
+        recognition.continuous = true;
+        recognition.interimResults = false; 
+        recognition.lang = 'fa-IR';
         recognitionRef.current = recognition;
 
         recognition.onstart = () => setIsListening(true);
         recognition.onend = () => {
             setIsListening(false);
-            // Restart listening automatically if not speaking
-            if (!isSpeaking) {
+            if (!isSpeaking && activeMode === 'voice') {
                  setTimeout(() => recognitionRef.current?.start(), 100);
             }
         };
 
         recognition.onerror = (event) => {
             if (event.error === 'no-speech' || event.error === 'aborted') {
-                return; // Ignore these non-errors
+                return;
             }
             console.error('Speech recognition error:', event.error);
             setIsListening(false);
@@ -154,7 +151,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         };
     }
     
-    // Start listening
     if (!isListening && !isSpeaking) {
         recognitionRef.current.start();
     }
@@ -169,10 +165,12 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handlePlay = () => setIsSpeaking(true);
+    const handlePlay = () => {
+        setIsSpeaking(true);
+        recognitionRef.current?.abort();
+    };
     const handleEnd = () => {
         setIsSpeaking(false);
-        // Restart listening after speaking
         if(isOpen && activeMode === 'voice') {
             recognitionRef.current?.start();
         }
@@ -213,11 +211,11 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
               <div
                 className={cn(
                   "h-2 w-2 rounded-full transition-colors",
-                   isSpeaking ? "bg-red-500 animate-pulse" : (isListening ? "bg-green-500 animate-pulse" : "bg-muted-foreground")
+                   isSpeaking ? "bg-red-500 animate-pulse" : (isListening && activeMode === 'voice' ? "bg-green-500 animate-pulse" : "bg-muted-foreground")
                 )}
               />
               <CardDescription>
-                 {isSpeaking ? "در حال صحبت..." : isListening ? "در حال گوش دادن..." : "آنلاین"}
+                 {isSpeaking ? "در حال صحبت..." : (isListening && activeMode === 'voice' ? "در حال گوش دادن..." : "آنلاین")}
               </CardDescription>
             </div>
           </div>
@@ -234,22 +232,22 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             <motion.div
                 layoutId="activeModeHighlight"
                 className="absolute h-full w-1/2 bg-background rounded-full shadow-sm"
-                animate={{ x: activeMode === 'voice' ? '-50%' : '50%' }}
+                animate={{ x: activeMode === 'text' ? '-50%' : '50%' }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
             />
+             <Button
+                variant="ghost"
+                className="w-1/2 z-10 rounded-full"
+                onClick={() => setActiveMode('text')}
+            >
+                چت متنی
+            </Button>
             <Button
                 variant="ghost"
                 className="w-1/2 z-10 rounded-full"
                 onClick={() => setActiveMode('voice')}
             >
                 گفتگوی زنده صوتی
-            </Button>
-            <Button
-                variant="ghost"
-                className="w-1/2 z-10 rounded-full"
-                onClick={() => setActiveMode('text')}
-            >
-                چت متنی
             </Button>
         </div>
        </div>
