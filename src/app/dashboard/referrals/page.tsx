@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Gift, Users, Copy } from "lucide-react";
+import { Loader2, Gift, Users, Copy, Link as LinkIcon } from "lucide-react";
 import { getUserReferrals, GetUserReferralsOutput } from "@/ai/flows/get-user-referrals-flow";
 import { Badge } from "@/components/ui/badge";
 
@@ -33,8 +33,10 @@ export default function ReferralsPage() {
   const { toast } = useToast();
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     if (user) {
       setLoading(true);
       getUserReferrals({ userId: user.uid })
@@ -50,6 +52,8 @@ export default function ReferralsPage() {
         .finally(() => setLoading(false));
     }
   }, [user, toast]);
+  
+  const referralLink = isClient ? `${window.location.origin}/signup?ref=${data?.referralCode}` : "";
 
   const copyReferralCode = () => {
     if (!data?.referralCode) return;
@@ -59,6 +63,15 @@ export default function ReferralsPage() {
       description: "کد معرف شما در کلیپ‌بورد کپی شد.",
     });
   };
+
+  const copyReferralLink = () => {
+    if (!referralLink) return;
+    navigator.clipboard.writeText(referralLink);
+    toast({
+        title: "کپی شد!",
+        description: "لینک معرف شما در کلیپ‌بورد کپی شد."
+    });
+  }
   
   const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -83,15 +96,27 @@ export default function ReferralsPage() {
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>کد معرف شما</CardTitle>
-            <CardDescription>این کد را با دوستانتان به اشتراک بگذارید.</CardDescription>
+            <CardTitle>کد و لینک معرف شما</CardTitle>
+            <CardDescription>کد یا لینک زیر را با دوستانتان به اشتراک بگذارید.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Input readOnly value={data.referralCode} dir="ltr" className="font-mono text-lg tracking-widest"/>
-              <Button type="button" variant="outline" size="icon" onClick={copyReferralCode}>
-                <Copy className="h-4 w-4" />
-              </Button>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm font-medium mb-2">کد معرف</p>
+              <div className="flex items-center gap-2">
+                <Input readOnly value={data.referralCode} dir="ltr" className="font-mono text-lg tracking-widest"/>
+                <Button type="button" variant="outline" size="icon" onClick={copyReferralCode}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+             <div>
+              <p className="text-sm font-medium mb-2">لینک معرف</p>
+              <div className="flex items-center gap-2">
+                <Input readOnly value={referralLink} dir="ltr" className="font-mono text-sm"/>
+                <Button type="button" variant="outline" size="icon" onClick={copyReferralLink}>
+                  <LinkIcon className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

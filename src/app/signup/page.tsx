@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -30,7 +30,7 @@ import { VerdantVaultLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { Loader2, Chrome } from "lucide-react";
 
 const formSchema = z.object({
@@ -41,8 +41,10 @@ const formSchema = z.object({
   referralCode: z.string().optional(),
 });
 
-export default function SignupPage() {
+
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user, loading } = useAuth();
   
@@ -56,6 +58,14 @@ export default function SignupPage() {
       referralCode: "",
     },
   });
+
+  useEffect(() => {
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      form.setValue('referralCode', refCode);
+    }
+  }, [searchParams, form]);
+
 
   useEffect(() => {
     if (user) {
@@ -131,19 +141,19 @@ export default function SignupPage() {
   }
   
   const handleGoogleSignIn = async () => {
-    // This flow needs adjustment to allow for referral code entry.
-    // For simplicity, Google Sign-In won't support referrals for now.
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
       const { displayName } = userCredential.user;
       const nameParts = displayName?.split(" ") || ["", ""];
+      
+      const referralCodeFromUrl = searchParams.get('ref') || '';
 
-      // Since we can't ask for a referral code in the Google popup, we'll create the doc without it.
       await createUserDocument(userCredential, {
         firstName: nameParts[0],
         lastName: nameParts.slice(1).join(" "),
         email: userCredential.user.email || "",
         password: "", // Not applicable
+        referralCode: referralCodeFromUrl,
       });
 
       toast({
@@ -257,7 +267,7 @@ export default function SignupPage() {
                     <FormItem className="text-right">
                       <FormLabel>کد معرف (اختیاری)</FormLabel>
                       <FormControl>
-                        <Input placeholder="کد معرف خود را وارد کنید" dir="ltr" {...field} />
+                        <Input placeholder="کد معرف خود را وارد کنید" dir="ltr" {...field} disabled={!!searchParams.get('ref')}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -295,4 +305,13 @@ export default function SignupPage() {
       </Card>
     </div>
   );
+}
+
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SignupForm />
+        </Suspense>
+    )
 }
