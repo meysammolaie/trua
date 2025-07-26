@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, Send, X, Loader2, Mic } from "lucide-react";
+import { Bot, User, Send, X, Loader2, AudioLines } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { voiceChat } from "@/ai/flows/voice-chat-flow";
 import { cn } from "@/lib/utils";
@@ -75,8 +75,8 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         audioRef.current.src = result.audio;
         audioRef.current.play();
       } else {
-        // If there is no audio, it means we should exit voice mode if active
         if (isVoiceMode) {
+            // If we are in voice mode but get no audio, exit voice mode.
              setTimeout(() => setIsVoiceMode(false), 500);
         }
       }
@@ -110,7 +110,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         setMessages([
           {
             sender: "bot",
-            text: "سلام! من دستیار هوشمند Trusva هستم. برای شروع گفتگو، پیام خود را بنویسید یا روی آیکون میکروفون ضربه بزنید.",
+            text: "سلام! من دستیار هوشمند Trusva هستم. برای شروع گفتگو، پیام خود را بنویسید یا روی آیکون گفتگوی زنده ضربه بزنید.",
           },
         ]);
       }, 500);
@@ -153,9 +153,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         };
     }
     
-    // Start listening when entering voice mode
-    recognitionRef.current.start();
-
     return () => {
         recognitionRef.current?.abort();
     };
@@ -187,13 +184,17 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     };
   }, [audioRef]);
 
-  const toggleVoiceMode = () => {
-      if (isVoiceMode) {
-          setIsVoiceMode(false);
-          recognitionRef.current?.abort();
-      } else {
-          setIsVoiceMode(true);
-      }
+  const openVoiceMode = () => {
+    if (isSpeechSupported) {
+        setIsVoiceMode(true);
+        recognitionRef.current?.start();
+    } else {
+        toast({
+            variant: "destructive",
+            title: "مرورگر شما پشتیبانی نمی‌کند",
+            description: "قابلیت گفتگوی صوتی در مرورگر شما فعال نیست."
+        })
+    }
   }
 
 
@@ -270,22 +271,18 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
 
             <div className="p-4 border-t">
                 <form onSubmit={(e) => { e.preventDefault(); handleSend(input); }} className="flex items-center gap-2">
-                <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="پیام خود را تایپ کنید..."
-                    disabled={isLoading}
-                />
-                {input ? (
-                     <Button type="submit" disabled={isLoading}>
+                    <Button type="button" variant="ghost" size="icon" onClick={openVoiceMode} disabled={isLoading}>
+                        <AudioLines className="h-5 w-5" />
+                    </Button>
+                    <Input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="پیام خود را تایپ کنید..."
+                        disabled={isLoading}
+                    />
+                     <Button type="submit" disabled={isLoading || input.trim() === ""}>
                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                      </Button>
-                ) : (
-                    <Button type="button" variant="ghost" size="icon" onClick={toggleVoiceMode} disabled={isLoading || !isSpeechSupported}>
-                        <Mic className="h-4 w-4" />
-                    </Button>
-                )}
-               
                 </form>
             </div>
         </div>
@@ -297,26 +294,23 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 p-6"
              >
-                 <button onClick={toggleVoiceMode} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+                 <button onClick={() => setIsVoiceMode(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
                     <X className="w-6 h-6"/>
                  </button>
                  <motion.div
                     animate={{
                         scale: isListening ? 1.05 : 1,
-                        boxShadow: isListening ? '0 0 25px hsl(var(--primary))' : '0 0 0px hsl(var(--primary))',
-                        height: isSpeaking ? ['192px', '180px', '192px'] : '192px',
+                        boxShadow: isListening ? '0 0 35px hsl(var(--primary))' : '0 0 0px hsl(var(--primary))',
+                        height: isSpeaking ? ['96px', '88px', '96px'] : '96px',
                     }}
                     transition={{
                         height: { repeat: Infinity, duration: 0.4, ease: 'easeInOut' },
                         default: { type: 'spring', stiffness: 300, damping: 20 }
                     }}
-                    className="w-48 h-48 rounded-full bg-card cursor-pointer"
+                    className="w-24 h-24 rounded-full bg-card flex items-center justify-center cursor-pointer text-primary"
                     onClick={() => recognitionRef.current?.start()}
                 >
-                    <Avatar className="w-full h-full">
-                        <AvatarImage src="https://placehold.co/192x192/17192A/FBBF24" alt="AI Assistant" data-ai-hint="robot friendly"/>
-                        <AvatarFallback>AI</AvatarFallback>
-                    </Avatar>
+                    <Bot className="w-12 h-12"/>
                 </motion.div>
                  <p className="text-muted-foreground text-center min-h-[20px] font-semibold">
                     {isLoading ? "در حال پردازش..." : isSpeaking ? "..." : (isListening ? "در حال شنیدن..." : "برای صحبت کردن، روی من ضربه بزنید")}
@@ -427,4 +421,3 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     </>
   );
 }
-
