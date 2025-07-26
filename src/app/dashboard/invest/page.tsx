@@ -55,6 +55,16 @@ const fundMinimums: Partial<Record<FundId, number>> = {
     bitcoin: 0.00001, // Example minimum for BTC
 };
 
+const formatCryptoValue = (value: number): string => {
+    if (value === 0) return "0.0000";
+    // If the number is very small, use exponential notation to avoid long strings of zeros.
+    if (value > 0 && value < 0.0001) {
+        return value.toExponential(2);
+    }
+    // Otherwise, show a reasonable number of decimal places.
+    return value.toFixed(8);
+};
+
 
 export default function InvestPage() {
   const { user } = useAuth();
@@ -264,26 +274,26 @@ export default function InvestPage() {
                              <CardContent className="space-y-4 text-sm">
                                <div className="flex justify-between items-center">
                                  <span className="text-muted-foreground">مبلغ سرمایه‌گذاری:</span>
-                                 <span className="font-mono font-semibold">{numericAmount.toFixed(4)} {activeFund.unit}</span>
+                                 <span className="font-mono font-semibold">{formatCryptoValue(numericAmount)} {activeFund.unit}</span>
                                </div>
                                <div className="flex justify-between items-center">
                                  <span className="text-muted-foreground">کارمزد ورود ({fundDetails.settings?.entryFee}%):</span>
-                                 <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{entryFee.toFixed(4)} {activeFund.unit}</span>
+                                 <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{formatCryptoValue(entryFee)} {activeFund.unit}</span>
                                </div>
                                 <div className="flex justify-between items-center">
                                  <span className="text-muted-foreground">کارمزد قرعه‌کشی ({fundDetails.settings?.lotteryFee}%):</span>
-                                 <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{lotteryFee.toFixed(4)} {activeFund.unit}</span>
+                                 <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{formatCryptoValue(lotteryFee)} {activeFund.unit}</span>
                                </div>
                                 <div className="flex justify-between items-center">
                                  <span className="text-muted-foreground">کارمزد پلتفرم ({fundDetails.settings?.platformFee}%):</span>
-                                 <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{platformFee.toFixed(4)} {activeFund.unit}</span>
+                                 <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{formatCryptoValue(platformFee)} {activeFund.unit}</span>
                                </div>
                                <hr />
                                 <div className="flex justify-between items-center text-base">
                                  <span className="font-bold">سرمایه خالص شما:</span>
                                  <div className="flex flex-col items-end">
                                     <span className={cn("font-mono font-bold", netInvestment >= 0 ? "text-green-500" : "text-red-500")}>
-                                        {netInvestment.toFixed(4)} {activeFund.unit}
+                                        {formatCryptoValue(netInvestment)} {activeFund.unit}
                                     </span>
                                      <span className="text-xs text-muted-foreground font-mono">
                                         ~${netInvestmentUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
