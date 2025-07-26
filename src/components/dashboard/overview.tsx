@@ -166,9 +166,9 @@ export function Overview() {
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">$0.00</div>
+                        <div className="text-2xl font-bold font-mono">${stats?.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
                         <p className="text-xs text-muted-foreground">
-                        آماده برای سرمایه‌گذاری (بزودی)
+                          موجودی قابل برداشت شما
                         </p>
                     </>
                  )}

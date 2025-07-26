@@ -41,6 +41,7 @@ const StatsSchema = z.object({
     totalInvestment: z.number(),
     totalProfit: z.number(),
     lotteryTickets: z.number(),
+    walletBalance: z.number(),
 });
 
 const GetUserDetailsOutputSchema = z.object({
@@ -136,6 +137,7 @@ const getUserDetailsFlow = ai.defineFlow(
         totalInvestment: totalInvestment,
         totalProfit: 0, // Not implemented yet
         lotteryTickets: Math.floor(totalInvestment / lotteryTicketRatio),
+        walletBalance: userData.walletBalance || 0,
     };
 
     return {
