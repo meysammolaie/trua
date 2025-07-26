@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/select";
 import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2 } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
-import { getAllInvestments, InvestmentWithUser } from "@/ai/flows/get-all-investments-flow";
+import { getAllTransactions, TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
 import { useToast } from "@/hooks/use-toast";
 
 const fundNames: Record<string, string> = {
@@ -55,8 +55,8 @@ const statusNames: Record<string, string> = {
 
 export default function AdminInvestmentsPage() {
     const { toast } = useToast();
-    const [allInvestments, setAllInvestments] = useState<InvestmentWithUser[]>([]);
-    const [filteredInvestments, setFilteredInvestments] = useState<InvestmentWithUser[]>([]);
+    const [allInvestments, setAllInvestments] = useState<TransactionWithUser[]>([]);
+    const [filteredInvestments, setFilteredInvestments] = useState<TransactionWithUser[]>([]);
     const [stats, setStats] = useState({ totalAmount: 0, activeCount: 0, averageAmount: 0 });
     const [loading, setLoading] = useState(true);
     
@@ -67,11 +67,18 @@ export default function AdminInvestmentsPage() {
 
     useEffect(() => {
         setLoading(true);
-        getAllInvestments()
+        // We fetch all transactions and then filter for just the "investment" type
+        getAllTransactions()
             .then(data => {
-                setAllInvestments(data.investments);
-                setFilteredInvestments(data.investments);
-                setStats(data.stats);
+                const investmentsOnly = data.transactions.filter(t => t.type === 'investment');
+                setAllInvestments(investmentsOnly);
+                setFilteredInvestments(investmentsOnly);
+                
+                // Recalculate stats based on investments only
+                const totalAmount = investmentsOnly.reduce((sum, inv) => sum + inv.amount, 0);
+                const activeCount = investmentsOnly.filter(inv => inv.status === 'active' || inv.status === 'pending').length;
+                const averageAmount = investmentsOnly.length > 0 ? totalAmount / investmentsOnly.length : 0;
+                setStats({ totalAmount, activeCount, averageAmount });
             })
             .catch(error => {
                 console.error("Error fetching investments:", error);
@@ -135,7 +142,7 @@ export default function AdminInvestmentsPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `$${Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
 
@@ -282,10 +289,10 @@ export default function AdminInvestmentsPage() {
                                         {inv.createdAt}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={getStatusBadgeVariant(inv.status)}>
+                                        <Badge variant={getStatusBadgeVariant(inv.status!)}>
                                         <div className="flex items-center gap-2">
-                                                {getStatusIcon(inv.status)}
-                                                <span>{statusNames[inv.status]}</span>
+                                                {getStatusIcon(inv.status!)}
+                                                <span>{statusNames[inv.status!]}</span>
                                         </div>
                                         </Badge>
                                     </TableCell>

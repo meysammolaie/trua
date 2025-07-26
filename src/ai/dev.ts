@@ -7,5 +7,5 @@ import "./flows/get-user-transactions-flow";
 import "./flows/get-all-users-flow";
 import "./flows/get-user-wallet-flow";
 import "./flows/get-admin-dashboard-data-flow";
-import "./flows/get-all-investments-flow";
+import "./flows/get-all-transactions-flow";
 import "./flows/get-lottery-data-flow";
