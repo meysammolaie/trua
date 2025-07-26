@@ -384,9 +384,9 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
               >
                  <Button
                     size="icon"
-                    className="rounded-full w-20 h-20 shadow-2xl border-4 border-primary/50"
+                    className="rounded-full w-16 h-16 shadow-2xl border-4 border-primary/50"
                   >
-                     <Bot className="h-10 w-10" />
+                     <Bot className="h-8 w-8" />
                  </Button>
 
                 <motion.div
