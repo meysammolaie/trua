@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, Send, X, Loader2 } from "lucide-react";
+import { Bot, User, Send, X, Loader2, Mic } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { chat } from "@/ai/flows/chat-flow";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const toggleOpen = () => {
@@ -48,9 +50,16 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     setIsLoading(true);
 
     try {
-      const result = await chat({ message: input });
+      // In the future, we could have a dedicated voiceChatFlow
+      const flowToCall = isVoiceMode ? chat : chat;
+      const result = await flowToCall({ message: input });
       const botMessage: Message = { sender: "bot", text: result.response };
       setMessages((prev) => [...prev, botMessage]);
+
+      // Placeholder for TTS (Text-to-Speech)
+      if (isVoiceMode) {
+        console.log("Would play audio for:", result.response);
+      }
     } catch (error) {
       const errorMessage: Message = {
         sender: "bot",
@@ -80,23 +89,70 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     }
   }, [isOpen]);
 
+  const toggleVoiceMode = () => {
+      setIsVoiceMode(!isVoiceMode);
+      // Placeholder for TTS welcome message
+      if (!isVoiceMode) {
+          console.log("Voice mode activated. Would play welcome message.");
+      }
+  }
+
   const ChatWindow = (
-     <Card className={cn("w-[350px] h-[500px] flex flex-col shadow-2xl", isEmbedded && "w-full h-full")}>
+     <Card className={cn(
+        "w-[380px] h-[600px] flex flex-col shadow-2xl transition-all duration-300", 
+        isEmbedded && "w-full h-full shadow-none",
+        isVoiceMode && "bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900"
+        )}>
         <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-                <CardTitle className="flex items-center gap-2">
-                <Bot className="w-5 h-5 text-primary" />
-                دستیار هوشمند Trusva
-                </CardTitle>
-                <CardDescription>هر سوالی دارید از من بپرسید</CardDescription>
+            <div className="flex items-center gap-3">
+                 <div className="relative">
+                    <Bot className="w-8 h-8 text-primary" />
+                    <AnimatePresence>
+                    {isVoiceMode && (
+                        <motion.span 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0 }}
+                            className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card"
+                        />
+                    )}
+                    </AnimatePresence>
+                 </div>
+                 <div>
+                    <CardTitle>دستیار Trusva</CardTitle>
+                    <CardDescription>پشتیبان هوشمند شما</CardDescription>
+                </div>
             </div>
-            {!isEmbedded && (
-                <Button variant="ghost" size="icon" onClick={toggleOpen}>
-                <X className="h-4 w-4" />
-            </Button>
-            )}
+            <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={toggleVoiceMode} title="حالت مکالمه صوتی">
+                    <Mic className={cn("h-5 w-5", isVoiceMode && "text-green-400")} />
+                </Button>
+                {!isEmbedded && (
+                    <Button variant="ghost" size="icon" onClick={toggleOpen}>
+                        <X className="h-4 w-4" />
+                    </Button>
+                )}
+            </div>
         </CardHeader>
-        <CardContent className="flex-1 p-0">
+
+        {isVoiceMode && (
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center p-4 text-center border-b"
+            >
+                <motion.div 
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                    <Mic className="w-16 h-16 text-primary drop-shadow-lg"/>
+                </motion.div>
+                <p className="mt-2 text-sm text-muted-foreground">در حال گوش دادن...</p>
+                <p className="text-xs text-muted-foreground/50">(قابلیت مکالمه صوتی در دست توسعه است)</p>
+            </motion.div>
+        )}
+
+        <CardContent className="flex-1 p-0 overflow-hidden">
         <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
             <div className="space-y-4">
             {messages.map((message, index) => (
@@ -144,10 +200,10 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="پیام خود را تایپ کنید..."
-            disabled={isLoading}
+            disabled={isLoading || isVoiceMode}
             className="flex-1"
             />
-            <Button type="submit" size="icon" disabled={isLoading}>
+            <Button type="submit" size="icon" disabled={isLoading || isVoiceMode}>
             <Send className="h-4 w-4" />
             </Button>
         </form>
