@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from 'next/navigation'
 import {
   Card,
@@ -37,17 +37,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2, AlertTriangle, Check, Ban } from "lucide-react";
+import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2, AlertTriangle, Check, Ban, Undo2 } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { getAllTransactions, TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
 import { updateInvestmentStatus } from "@/ai/flows/update-investment-status-flow";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import React from "react";
 
 const fundNames: Record<string, string> = {
     gold: "طلا",
     silver: "نقره",
     dollar: "دلار",
+    usdt: "تتر",
     bitcoin: "بیت‌کوین"
 };
 
@@ -119,7 +121,8 @@ function AdminInvestmentsPageContent() {
         }
 
         if (fundFilter !== "all") {
-            result = result.filter(inv => inv.fundId === fundFilter);
+            const fundKey = Object.keys(fundNames).find(key => fundNames[key] === fundFilter);
+            result = result.filter(inv => inv.fundId === fundKey);
         }
         
         if (statusFilter !== "all") {
@@ -130,7 +133,7 @@ function AdminInvestmentsPageContent() {
     }, [searchTerm, fundFilter, statusFilter, allInvestments]);
 
 
-    const handleStatusUpdate = async (investmentId: string, newStatus: 'active' | 'rejected') => {
+    const handleStatusUpdate = async (investmentId: string, newStatus: 'active' | 'rejected' | 'completed') => {
         try {
             const result = await updateInvestmentStatus({ investmentId, newStatus });
             if (result.success) {
@@ -265,10 +268,7 @@ function AdminInvestmentsPageContent() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">همه صندوق‌ها</SelectItem>
-                            <SelectItem value="gold">طلا</SelectItem>
-                            <SelectItem value="silver">نقره</SelectItem>
-                            <SelectItem value="usdt">تتر</SelectItem>
-                            <SelectItem value="bitcoin">بیت‌کوین</SelectItem>
+                            {Object.values(fundNames).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -323,7 +323,7 @@ function AdminInvestmentsPageContent() {
                                         <div className="font-medium">{inv.userFullName}</div>
                                         <div className="text-xs text-muted-foreground">{inv.userEmail}</div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell">{fundNames[inv.fundId] || inv.fundId}</TableCell>
+                                    <TableCell className="hidden md:table-cell">{fundNames[inv.fundId!] || inv.fundId}</TableCell>
                                     <TableCell className="text-right font-mono">
                                         {formatCurrency(inv.amount)}
                                     </TableCell>
@@ -355,13 +355,22 @@ function AdminInvestmentsPageContent() {
                                                 {inv.status === 'pending' && (
                                                     <>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="text-green-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId, 'active')}>
+                                                        <DropdownMenuItem className="text-green-600 focus:text-green-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId!, 'active')}>
                                                             <Check className="ml-2 h-4 w-4" />
                                                             تایید سرمایه‌گذاری
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-red-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId, 'rejected')}>
+                                                        <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId!, 'rejected')}>
                                                             <Ban className="ml-2 h-4 w-4" />
                                                             رد سرمایه‌گذاری
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                                {inv.status === 'active' && (
+                                                    <>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem className="text-blue-600 focus:text-blue-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId!, 'completed')}>
+                                                            <Undo2 className="ml-2 h-4 w-4" />
+                                                            تکمیل و بازپرداخت سرمایه
                                                         </DropdownMenuItem>
                                                     </>
                                                 )}
@@ -388,8 +397,8 @@ function AdminInvestmentsPageContent() {
 // that are children of a <Suspense> boundary.
 export default function AdminInvestmentsPage() {
     return (
-        <React.Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div>Loading...</div>}>
             <AdminInvestmentsPageContent />
-        </React.Suspense>
+        </Suspense>
     )
 }

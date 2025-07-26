@@ -17,7 +17,7 @@ import { getPlatformSettings } from './platform-settings-flow';
 // Input Schema
 const UpdateInvestmentStatusInputSchema = z.object({
   investmentId: z.string().describe('The ID of the investment to update.'),
-  newStatus: z.enum(['active', 'rejected']).describe('The new status for the investment.'),
+  newStatus: z.enum(['active', 'rejected', 'completed']).describe('The new status for the investment.'),
 });
 export type UpdateInvestmentStatusInput = z.infer<typeof UpdateInvestmentStatusInputSchema>;
 
@@ -50,48 +50,70 @@ const updateInvestmentStatusFlow = ai.defineFlow(
           throw new Error(`Investment with ID ${investmentId} not found.`);
         }
         
+        const investmentData = investmentDoc.data();
+        const userRef = doc(db, 'users', investmentData.userId);
+
         // Update investment status
         transaction.update(investmentRef, { status: newStatus });
         
-        // If activating, handle referral commission
+        // Handle different statuses
         if (newStatus === 'active') {
-          const investmentData = investmentDoc.data();
-          const userRef = doc(db, 'users', investmentData.userId);
+          // If activating, handle referral commission
           const userDoc = await transaction.get(userRef);
 
           if (userDoc.exists() && userDoc.data().referredBy) {
             const referrerId = userDoc.data().referredBy;
             const settings = await getPlatformSettings();
             
-            const commissionAmount = investmentData.amount * (settings.entryFee * 2/3 / 100); // 2% of investment
+            const commissionAmount = investmentData.amount * (settings.entryFee * 2/3 / 100); // 2/3 of entry fee
 
-            const commissionData = {
-              referrerId: referrerId,
-              referredUserId: investmentData.userId,
-              investmentId: investmentId,
-              investmentAmount: investmentData.amount,
-              commissionAmount: commissionAmount,
-              createdAt: serverTimestamp(),
-            };
-            
-            // 1. Create the commission document
-            const commissionRef = doc(collection(db, 'commissions'));
-            transaction.set(commissionRef, commissionData);
+            if (commissionAmount > 0) {
+              const commissionData = {
+                referrerId: referrerId,
+                referredUserId: investmentData.userId,
+                investmentId: investmentId,
+                investmentAmount: investmentData.amount,
+                commissionAmount: commissionAmount,
+                createdAt: serverTimestamp(),
+              };
+              
+              // 1. Create the commission document
+              const commissionRef = doc(collection(db, 'commissions'));
+              transaction.set(commissionRef, commissionData);
 
-            // 2. Add commission amount to referrer's wallet balance
-            const referrerUserRef = doc(db, 'users', referrerId);
-            transaction.update(referrerUserRef, {
-                walletBalance: increment(commissionAmount)
-            });
+              // 2. Add commission amount to referrer's wallet balance
+              const referrerUserRef = doc(db, 'users', referrerId);
+              transaction.update(referrerUserRef, {
+                  walletBalance: increment(commissionAmount)
+              });
+            }
           }
+        } else if (newStatus === 'completed') {
+            // If completing, return principal to user's wallet after exit fee
+            const settings = await getPlatformSettings();
+            const exitFee = investmentData.amount * (settings.exitFee / 100);
+            const amountToReturn = investmentData.amount - exitFee;
+
+            if (amountToReturn > 0) {
+                 transaction.update(userRef, {
+                    walletBalance: increment(amountToReturn)
+                });
+            }
+            // Note: The exitFee should ideally be added to the profit pool for distribution.
+            // This logic can be added later.
         }
       });
 
       console.log(`Investment ${investmentId} status updated to ${newStatus}.`);
 
-      const message = newStatus === 'active' 
-        ? `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت تایید و فعال شد.`
-        : `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت رد شد.`;
+      let message = '';
+      if (newStatus === 'active') {
+        message = `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت تایید و فعال شد.`;
+      } else if (newStatus === 'rejected') {
+        message = `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت رد شد.`;
+      } else if (newStatus === 'completed') {
+        message = `سرمایه‌گذاری با شناسه ${investmentId} تکمیل شد و اصل پول به کیف پول کاربر بازگردانده شد.`;
+      }
 
       return {
         success: true,
