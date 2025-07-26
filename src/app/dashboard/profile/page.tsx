@@ -37,7 +37,9 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
 import { Loader2, Copy } from "lucide-react";
 
 const profileFormSchema = z.object({
@@ -47,7 +49,7 @@ const profileFormSchema = z.object({
 });
 
 const passwordFormSchema = z.object({
-  currentPassword: z.string().min(6, { message: "رمز عبور فعلی را وارد کنید." }),
+  currentPassword: z.string().min(1, { message: "رمز عبور فعلی را وارد کنید." }),
   newPassword: z.string().min(6, { message: "رمز عبور جدید باید حداقل ۶ کاراکتر باشد." }),
   confirmPassword: z.string(),
 }).refine((data) => data.newPassword === data.confirmPassword, {
@@ -130,13 +132,38 @@ export default function ProfilePage() {
     }
   }
 
-  function onPasswordSubmit(values: z.infer<typeof passwordFormSchema>) {
-     // TODO: Implement password change logic with Firebase Auth
-     toast({
-      title: "عملیات موفق",
-      description: "قابلیت تغییر رمز عبور بزودی اضافه خواهد شد.",
-    });
-    passwordForm.reset();
+  async function onPasswordSubmit(values: z.infer<typeof passwordFormSchema>) {
+    if (!user || !user.email) {
+        toast({ variant: "destructive", title: "خطا", description: "کاربر معتبر نیست." });
+        return;
+    }
+
+    const credential = EmailAuthProvider.credential(user.email, values.currentPassword);
+    
+    try {
+        await reauthenticateWithCredential(user, credential);
+        // User re-authenticated. Now, change the password.
+        await updatePassword(user, values.newPassword);
+        
+        toast({
+            title: "موفقیت‌آمیز",
+            description: "رمز عبور شما با موفقیت تغییر کرد.",
+        });
+        passwordForm.reset();
+
+    } catch (error) {
+        let description = "خطایی در تغییر رمز عبور رخ داد.";
+        if (error instanceof FirebaseError) {
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                description = "رمز عبور فعلی شما اشتباه است.";
+            }
+        }
+        toast({
+            variant: "destructive",
+            title: "خطا",
+            description: description,
+        });
+    }
   }
 
   const handle2faToggle = async (enabled: boolean) => {
@@ -332,12 +359,13 @@ export default function ProfilePage() {
              <div className="flex items-center justify-between rounded-lg border p-4">
                 <div>
                     <h3 className="font-medium">احراز هویت دو مرحله‌ای (2FA)</h3>
-                    <p className="text-sm text-muted-foreground">یک لایه امنیتی بیشتر به حساب خود اضافه کنید.</p>
+                    <p className="text-sm text-muted-foreground">یک لایه امنیتی بیشتر به حساب خود اضافه کنید (بزودی).</p>
                 </div>
                 <Switch 
                     checked={is2faEnabled}
                     onCheckedChange={handle2faToggle}
                     aria-label="Toggle 2FA" 
+                    disabled={true}
                 />
              </div>
           </CardContent>
@@ -371,3 +399,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
