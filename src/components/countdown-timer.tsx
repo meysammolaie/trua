@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -48,7 +49,11 @@ export function CountdownTimer() {
     return null;
   }
 
-  const timerComponents = Object.entries(timeLeft).map(([interval, value]) => {
+  // Correct order for display
+  const displayOrder: Array<keyof typeof timeLeft> = ["روز", "ساعت", "دقیقه", "ثانیه"];
+
+  const timerComponents = displayOrder.map((interval) => {
+    const value = timeLeft[interval];
     return (
       <div key={interval} className="flex flex-col items-center">
         <span className="text-4xl md:text-6xl font-bold font-headline text-primary tracking-wider">
