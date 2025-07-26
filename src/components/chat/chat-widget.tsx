@@ -118,14 +118,15 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   }, [isOpen, messages.length, isEmbedded]);
 
  useEffect(() => {
-    if (!isSpeechSupported) {
+    if (!isSpeechSupported || !isVoiceMode) {
+        recognitionRef.current?.abort();
         return;
     }
 
     if (!recognitionRef.current) {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
-        recognition.interimResults = true; 
+        recognition.interimResults = false; 
         recognition.lang = 'fa-IR';
         recognitionRef.current = recognition;
 
@@ -133,12 +134,14 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         recognition.onend = () => {
             setIsListening(false);
             if (isVoiceMode && !isSpeaking) {
-                recognition.start();
+                // Automatically restart listening if in voice mode and bot is not speaking
+                setTimeout(() => recognitionRef.current?.start(), 100);
             }
         };
 
         recognition.onerror = (event) => {
             if (event.error === 'no-speech' || event.error === 'aborted') {
+                // Ignore these common events, as they are part of the normal flow
                 return;
             }
             console.error('Speech recognition error:', event.error);
@@ -146,18 +149,14 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         };
 
         recognition.onresult = (event) => {
-            const transcript = Array.from(event.results)
-                .map(result => result[0])
-                .map(result => result.transcript)
-                .join('');
-            
-            if (event.results[event.results.length - 1].isFinal) {
-                if(transcript.trim()) {
-                    handleSend(transcript);
-                }
+            const transcript = event.results[event.results.length - 1][0].transcript.trim();
+            if (transcript) {
+                handleSend(transcript);
             }
         };
     }
+    
+    recognitionRef.current.start();
     
     return () => {
         recognitionRef.current?.abort();
@@ -171,7 +170,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
 
     const handlePlay = () => {
         setIsSpeaking(true);
-        recognitionRef.current?.stop();
+        recognitionRef.current?.abort(); // Use abort to stop listening immediately
     };
     const handleEnd = () => {
         setIsSpeaking(false);
@@ -191,7 +190,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const openVoiceMode = () => {
     if (isSpeechSupported) {
         setIsVoiceMode(true);
-        recognitionRef.current?.start();
     } else {
         toast({
             variant: "destructive",
@@ -205,7 +203,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const ChatWindow = (
     <Card
       className={cn(
-        "w-[380px] h-[600px] flex flex-col shadow-2xl transition-all duration-300 overflow-hidden",
+        "w-[400px] h-[700px] flex flex-col shadow-2xl transition-all duration-300 overflow-hidden",
         isEmbedded && "w-full h-full shadow-none"
       )}
     >
@@ -270,6 +268,17 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                     )}
                     </div>
                 ))}
+                 {isLoading && (
+                    <div className="flex items-center gap-3 justify-start">
+                        <Avatar className="w-8 h-8">
+                            <AvatarImage src="https://placehold.co/32x32/17192A/FBBF24" alt="Bot" data-ai-hint="robot assistant" />
+                            <AvatarFallback>AI</AvatarFallback>
+                        </Avatar>
+                        <div className="bg-muted p-3 rounded-lg">
+                           <Loader2 className="w-5 h-5 animate-spin" />
+                        </div>
+                    </div>
+                 )}
                 </div>
             </ScrollArea>
 
@@ -300,7 +309,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
              >
                  <button onClick={() => {
                      setIsVoiceMode(false);
-                     recognitionRef.current?.stop();
                  }} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
                     <X className="w-6 h-6"/>
                  </button>
@@ -322,7 +330,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                     {isLoading ? "در حال پردازش..." : isSpeaking ? "..." : (isListening ? "در حال شنیدن..." : "در حال اتصال...")}
                 </p>
                 <div className="text-xs text-muted-foreground text-center mt-4 h-4">
-                   `آخرین پیام: ${messages.filter(m=>m.sender==='user').slice(-1)[0]?.text || "..."}` 
+                   آخرین پیام: {messages.filter(m=>m.sender==='user').slice(-1)[0]?.text || "..."}
                 </div>
             </motion.div>
           )}
