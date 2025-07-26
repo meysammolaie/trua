@@ -44,20 +44,14 @@ import { useEffect, useState } from "react";
 import { GetUserDetailsOutput, getUserDetails } from "@/ai/flows/get-user-details-flow";
 
 
-type Transaction = GetUserDetailsOutput["transactions"][0];
-type Stats = GetUserDetailsOutput["stats"];
+type UserDetails = GetUserDetailsOutput;
+type Transaction = UserDetails["transactions"][0];
+type Stats = UserDetails["stats"];
+type ChartData = UserDetails["investmentChartData"];
 
-const chartData = [
-  { month: "فروردین", value: 1860.5 },
-  { month: "اردیبهشت", value: 2205.1 },
-  { month: "خرداد", value: 2537.9 },
-  { month: "تیر", value: 2873.4 },
-  { month: "مرداد", value: 3209.2 },
-  { month: "شهریور", value: 3514.8 },
-];
 const chartConfig = {
-  value: {
-    label: "ارزش کل (دلار)",
+  investment: {
+    label: "سرمایه (دلار)",
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
@@ -96,6 +90,7 @@ export function Overview() {
     const { user } = useAuth();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [stats, setStats] = useState<Stats | null>(null);
+    const [chartData, setChartData] = useState<ChartData>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -105,9 +100,10 @@ export function Overview() {
                 .then(response => {
                     setTransactions(response.transactions.slice(0, 5));
                     setStats(response.stats);
+                    setChartData(response.investmentChartData);
                 })
                 .catch(error => {
-                    console.error("Failed to fetch transactions:", error);
+                    console.error("Failed to fetch user details:", error);
                 })
                 .finally(() => {
                     setLoading(false);
@@ -166,9 +162,9 @@ export function Overview() {
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">$0.00</div>
+                        <div className="text-2xl font-bold font-mono">${stats?.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
                         <p className="text-xs text-muted-foreground">
-                        آماده برای سرمایه‌گذاری (بزودی)
+                          موجودی قابل برداشت شما
                         </p>
                     </>
                  )}
@@ -202,22 +198,24 @@ export function Overview() {
                  <CardDescription>نمودار رشد سرمایه‌گذاری شما در ۶ ماه گذشته.</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
-                <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                  <BarChart accessibilityLayer data={chartData}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent hideLabel />}
-                    />
-                    <Bar dataKey="value" fill="var(--color-value)" radius={8} />
-                  </BarChart>
-                </ChartContainer>
+                {loading ? <div className="h-[250px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
+                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                    <BarChart accessibilityLayer data={chartData}>
+                      <CartesianGrid vertical={false} />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                      />
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel />}
+                      />
+                      <Bar dataKey="investment" fill="var(--color-investment)" radius={8} />
+                    </BarChart>
+                  </ChartContainer>
+                )}
               </CardContent>
             </Card>
             <Card>

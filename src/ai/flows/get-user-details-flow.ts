@@ -37,6 +37,11 @@ const TransactionSchema = z.object({
     amount: z.number(),
 });
 
+const ChartDataPointSchema = z.object({
+  month: z.string(),
+  investment: z.number(),
+});
+
 const StatsSchema = z.object({
     totalInvestment: z.number(),
     totalProfit: z.number(),
@@ -48,6 +53,7 @@ const GetUserDetailsOutputSchema = z.object({
   profile: UserProfileSchema,
   transactions: z.array(TransactionSchema),
   stats: StatsSchema,
+  investmentChartData: z.array(ChartDataPointSchema),
 });
 export type GetUserDetailsOutput = z.infer<typeof GetUserDetailsOutputSchema>;
 
@@ -107,11 +113,20 @@ const getUserDetailsFlow = ai.defineFlow(
     // 2. Process investments and calculate stats
     let totalInvestment = 0;
     const lotteryTicketRatio = 10; // $10 for 1 ticket
+    const investmentByMonth: Record<string, number> = {};
 
     const transactionsData = investmentsSnapshot.docs.map(doc => {
         const data = doc.data() as InvestmentDocument;
         if (data.status === 'active' || data.status === 'pending') {
             totalInvestment += data.amount;
+
+            // For chart data
+            const date = data.createdAt.toDate();
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if(!investmentByMonth[monthKey]) {
+                investmentByMonth[monthKey] = 0;
+            }
+            investmentByMonth[monthKey] += data.amount;
         }
         return {
             id: doc.id,
@@ -123,7 +138,21 @@ const getUserDetailsFlow = ai.defineFlow(
         };
     });
 
-    // 3. Assemble final output
+    // 3. Prepare Chart Data
+    const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+    const investmentChartData = Object.entries(investmentByMonth)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-6)
+        .map(([key, value]) => {
+            const monthIndex = parseInt(key.split('-')[1], 10) - 1;
+            return {
+                month: monthNames[monthIndex],
+                investment: value,
+            };
+        });
+
+
+    // 4. Assemble final output
     const profile: z.infer<typeof UserProfileSchema> = {
         uid: userDoc.id,
         firstName: userData.firstName,
@@ -143,7 +172,8 @@ const getUserDetailsFlow = ai.defineFlow(
     return {
       profile,
       transactions: transactionsData,
-      stats: stats
+      stats: stats,
+      investmentChartData,
     };
   }
 );
