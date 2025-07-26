@@ -46,11 +46,11 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const SpeechRecognition = isClient ? window.SpeechRecognition || window.webkitSpeechRecognition : null;
-
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const SpeechRecognition = isClient ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
 
   const toggleOpen = () => {
     if (!isEmbedded) {
@@ -75,13 +75,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
           if(audioRef.current) {
             audioRef.current.src = result.audio;
             audioRef.current.play();
-            audioRef.current.onplay = () => setIsSpeaking(true);
-            audioRef.current.onended = () => {
-                setIsSpeaking(false);
-                if (recognitionRef.current && mode === "voice" && isOpen) {
-                    recognitionRef.current.start();
-                }
-            };
           }
 
       } else {
@@ -120,40 +113,72 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   }, [isOpen, messages.length]);
 
   useEffect(() => {
-    if (mode !== "voice" || !SpeechRecognition || !isOpen) {
-        if (recognitionRef.current) {
-            recognitionRef.current.stop();
-        }
-        return;
+    if (mode !== 'voice' || !isOpen || !SpeechRecognition) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'fa-IR';
-    recognition.interimResults = false;
+    if (!recognitionRef.current) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.lang = 'fa-IR';
+      recognition.interimResults = false;
+      recognitionRef.current = recognition;
+    }
+
+    const recognition = recognitionRef.current;
 
     recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      // Continuous listening loop: restart recognition if it ends, unless the bot is speaking.
+      if (!isSpeaking && mode === 'voice' && isOpen) {
+        try {
+          recognition.start();
+        } catch(e) {
+          // Ignore DOMException: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
+        }
+      }
+    };
     recognition.onerror = (event) => {
-        console.error("Speech recognition error:", event.error);
-        setIsListening(false);
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
     };
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        handleSend(transcript);
+      const transcript = event.results[0][0].transcript;
+      handleSend(transcript);
     };
 
-    recognitionRef.current = recognition;
-    recognition.start();
+    try {
+        recognition.start();
+    } catch(e) {
+        // Ignore if already started.
+    }
 
     return () => {
-        if(recognitionRef.current) {
-            recognitionRef.current.stop();
-            recognitionRef.current = null;
-        }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, isOpen, SpeechRecognition]);
+  }, [mode, isOpen, SpeechRecognition, isSpeaking]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handlePlay = () => setIsSpeaking(true);
+    const handleEnd = () => setIsSpeaking(false);
+
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('ended', handleEnd);
+
+    return () => {
+        audio.removeEventListener('play', handlePlay);
+        audio.removeEventListener('ended', handleEnd);
+    }
+  }, []);
 
   
   const { toast } = useToast();
@@ -367,3 +392,5 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     </>
   );
 }
+
+    
