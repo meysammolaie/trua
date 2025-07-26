@@ -149,7 +149,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVoiceMode, isOpen, SpeechRecognition]); // Rerun when voice mode is toggled or widget opens/closes
+  }, [isVoiceMode, isOpen, SpeechRecognition]);
 
   const toggleVoiceMode = () => {
       if(!SpeechRecognition) {
@@ -193,7 +193,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             </div>
             <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" onClick={toggleVoiceMode} title="حالت مکالمه صوتی" disabled={!isClient}>
-                    <Mic className={cn("h-5 w-5", isVoiceMode && "text-green-400")} />
+                    <Bot className={cn("h-5 w-5", isVoiceMode && "text-green-400")} />
                 </Button>
                 {!isEmbedded && (
                     <Button variant="ghost" size="icon" onClick={toggleOpen}>
@@ -213,7 +213,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                     animate={{ scale: isListening ? [1, 1.2, 1] : 1 }}
                     transition={{ repeat: isListening ? Infinity : 0, duration: 1.5 }}
                 >
-                    <Mic className={cn("w-16 h-16 text-primary drop-shadow-lg", isListening ? "text-green-400" : "text-primary")}/>
+                    <Bot className={cn("w-16 h-16 text-primary drop-shadow-lg", isListening ? "text-green-400" : "text-primary")}/>
                 </motion.div>
                 <p className="mt-2 text-sm text-muted-foreground">{isListening ? "در حال گوش دادن..." : "برای صحبت کردن آماده‌ام"}</p>
             </motion.div>
