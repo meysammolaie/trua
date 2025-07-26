@@ -26,9 +26,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MinusCircle } from "lucide-react";
+import { Loader2, MinusCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { createWithdrawalRequest } from "@/ai/flows/create-withdrawal-request-flow";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const withdrawalSchema = z.object({
   amount: z.coerce.number().positive({ message: "مبلغ باید مثبت باشد." }),
@@ -136,6 +137,15 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
                         </FormItem>
                     )}
                 />
+
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>هشدار مهم</AlertTitle>
+                  <AlertDescription>
+                    لطفاً آدرس کیف پول USDT (شبکه TRC20) را با دقت وارد کنید. مسئولیت آدرس اشتباه بر عهده شماست و ممکن است منجر به از دست رفتن دارایی شما شود.
+                  </AlertDescription>
+                </Alert>
+
                 <DialogFooter>
                     <Button type="submit" disabled={isSubmitting} className="w-full">
                         {isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
