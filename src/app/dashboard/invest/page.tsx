@@ -51,6 +51,10 @@ const fundIcons: Record<FundId, React.ReactNode> = {
     silver: <Medal className="w-5 h-5 ml-2" />,
 };
 
+const fundMinimums: Partial<Record<FundId, number>> = {
+    bitcoin: 0.00001, // Example minimum for BTC
+};
+
 
 export default function InvestPage() {
   const { user } = useAuth();
@@ -111,6 +115,12 @@ export default function InvestPage() {
     const amountInUSD = values.amount * (activeFund.price.usd || 0);
     if (amountInUSD < 1) {
         form.setError("amount", { message: `حداقل سرمایه‌گذاری معادل 1 دلار است.` });
+        return;
+    }
+
+    const fundMinimum = fundMinimums[activeFund.id as FundId];
+    if (fundMinimum && values.amount < fundMinimum) {
+        form.setError("amount", { message: `حداقل مقدار برای سرمایه‌گذاری در این صندوق ${fundMinimum} ${activeFund.unit} است.` });
         return;
     }
 
