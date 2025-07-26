@@ -115,7 +115,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, messages.length, isEmbedded]);
+  }, [isOpen, messages.length]);
 
  useEffect(() => {
     if (!isSpeechSupported || !isVoiceMode) {
