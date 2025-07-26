@@ -20,9 +20,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, MinusCircle, Loader2 } from "lucide-react";
+import { MinusCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserWallet, Asset, Transaction } from "@/ai/flows/get-user-wallet-flow";
+import { WithdrawalDialog } from "@/components/dashboard/withdrawal-dialog";
 
 export default function WalletPage() {
     const { user } = useAuth();
@@ -31,7 +32,7 @@ export default function WalletPage() {
     const [totalBalance, setTotalBalance] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    const fetchWalletData = () => {
         if (user) {
             setLoading(true);
             getUserWallet({ userId: user.uid })
@@ -48,6 +49,10 @@ export default function WalletPage() {
                     setLoading(false);
                 });
         }
+    };
+
+    useEffect(() => {
+        fetchWalletData();
     }, [user]);
 
   return (
@@ -71,14 +76,10 @@ export default function WalletPage() {
             <p className="text-xs text-muted-foreground mt-2">این مقدار بر اساس قیمت‌های لحظه‌ای است.</p>
           </CardContent>
           <CardFooter className="flex gap-2">
-            <Button className="w-full" disabled>
-                <PlusCircle className="ml-2 h-4 w-4" />
-                واریز (بزودی)
-            </Button>
-            <Button variant="outline" className="w-full" disabled>
-                <MinusCircle className="ml-2 h-4 w-4" />
-                برداشت (بزودی)
-            </Button>
+            <WithdrawalDialog 
+                totalBalance={totalBalance}
+                onWithdrawalSuccess={fetchWalletData}
+            />
           </CardFooter>
         </Card>
 

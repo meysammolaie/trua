@@ -14,5 +14,9 @@ import "./flows/update-user-status-flow";
 import "./flows/platform-settings-flow";
 import "./flows/get-fund-details-flow";
 import "./flows/update-investment-status-flow";
+import "./flows/create-withdrawal-request-flow";
+import "./flows/get-withdrawal-requests-flow";
+import "./flows/update-withdrawal-status-flow";
+
 
 import "./tools/get-crypto-price-tool";

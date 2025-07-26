@@ -3,7 +3,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,23 +22,30 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Percent, Globe, AlertTriangle, KeyRound, Loader2 } from "lucide-react";
+import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getPlatformSettings, updatePlatformSettings, PlatformSettings } from "@/ai/flows/platform-settings-flow";
+import { getPlatformSettings, updatePlatformSettings, PlatformSettingsSchema, type PlatformSettings } from "@/ai/flows/platform-settings-flow";
 
-const settingsSchema = z.object({
-  entryFee: z.coerce.number().min(0).max(100),
-  lotteryFee: z.coerce.number().min(0).max(100),
-  platformFee: z.coerce.number().min(0).max(100),
-  exitFee: z.coerce.number().min(0).max(100),
-  maintenanceMode: z.boolean(),
-  // Wallet Addresses
-  goldWalletAddress: z.string().min(1, "آدرس کیف پول طلا الزامی است."),
-  silverWalletAddress: z.string().min(1, "آدرس کیف پول نقره الزامی است."),
-  usdtWalletAddress: z.string().min(1, "آدرس کیف پول USDT الزامی است."),
-  bitcoinWalletAddress: z.string().min(1, "آدرس کیف پول بیت‌کوین الزامی است."),
-});
+
+const settingsSchema = PlatformSettingsSchema;
+
+const dayNames = {
+    saturday: 'شنبه',
+    sunday: 'یکشنبه',
+    monday: 'دوشنبه',
+    tuesday: 'سه‌شنبه',
+    wednesday: 'چهارشنبه',
+    thursday: 'پنج‌شنبه',
+    friday: 'جمعه'
+};
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
@@ -57,6 +63,8 @@ export default function AdminSettingsPage() {
       silverWalletAddress: "",
       usdtWalletAddress: "",
       bitcoinWalletAddress: "",
+      minWithdrawalAmount: 10,
+      withdrawalDay: "saturday",
     },
   });
 
@@ -117,12 +125,12 @@ export default function AdminSettingsPage() {
             <div className="grid gap-6">
                 <Card>
                 <CardHeader>
-                    <CardTitle>مدیریت کارمزدها</CardTitle>
+                    <CardTitle>مدیریت کارمزدها و برداشت</CardTitle>
                     <CardDescription>
-                    درصدهای کارمزد را برای عملیات مختلف در پلتفرم تنظیم کنید.
+                    قوانین مالی پلتفرم مانند کارمزدها و شرایط برداشت را تنظیم کنید.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <FormField
                     control={form.control}
                     name="entryFee"
@@ -151,20 +159,6 @@ export default function AdminSettingsPage() {
                         </FormItem>
                     )}
                     />
-                    <FormField
-                    control={form.control}
-                    name="platformFee"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>کارمزد پلتفرم</FormLabel>
-                        <div className="relative">
-                            <Input type="number" {...field} className="pr-8" />
-                            <Percent className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                         </div>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
                      <FormField
                     control={form.control}
                     name="exitFee"
@@ -179,6 +173,57 @@ export default function AdminSettingsPage() {
                         </FormItem>
                     )}
                     />
+                     <FormField
+                    control={form.control}
+                    name="platformFee"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>کارمزد پلتفرم</FormLabel>
+                        <div className="relative">
+                            <Input type="number" {...field} className="pr-8" />
+                            <Percent className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                         </div>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="minWithdrawalAmount"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>حداقل مبلغ برداشت</FormLabel>
+                            <div className="relative">
+                                <Input type="number" {...field} className="pr-8" />
+                                <DollarSign className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    <FormField
+                        control={form.control}
+                        name="withdrawalDay"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>روز مجاز برداشت</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                             <CalendarDays className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <SelectValue placeholder="یک روز را انتخاب کنید" className="pr-8"/>
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                       {Object.entries(dayNames).map(([value, name]) => (
+                                           <SelectItem key={value} value={value}>{name}</SelectItem>
+                                       ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
                 </CardContent>
                 </Card>
 

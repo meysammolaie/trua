@@ -18,6 +18,7 @@ import {
   Shield,
   DollarSign,
   Ticket,
+  ArrowDownUp,
 } from "lucide-react";
 
 import {
@@ -43,6 +44,7 @@ const navItems = [
   { href: "/admin/dashboard", icon: Home, label: "داشبورد مدیریت" },
   { href: "/admin/users", icon: Users, label: "مدیریت کاربران" },
   { href: "/admin/investments", icon: Package, label: "سرمایه‌گذاری‌ها" },
+  { href: "/admin/withdrawals", icon: ArrowDownUp, label: "درخواست‌های برداشت" },
   { href: "/admin/transactions", icon: Wallet, label: "تراکنش‌ها" },
   { href: "/admin/reports", icon: LineChart, label: "گزارشات مالی" },
   { href: "/admin/lottery", icon: Ticket, label: "مدیریت قرعه‌کشی" },
@@ -91,7 +93,7 @@ export default function AdminLayout({
   }
   
   const NavLink = ({ item }: { item: typeof navItems[0] }) => {
-    const isActive = pathname === item.href;
+    const isActive = pathname.startsWith(item.href);
     return (
         <Link
             href={item.href}

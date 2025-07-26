@@ -57,6 +57,8 @@ const getPlatformSettingsFlow = ai.defineFlow(
             silverWalletAddress: "",
             usdtWalletAddress: "",
             bitcoinWalletAddress: "",
+            minWithdrawalAmount: 10,
+            withdrawalDay: 'saturday',
         };
       }
     } catch (error) {

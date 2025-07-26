@@ -10,5 +10,7 @@ export const PlatformSettingsSchema = z.object({
   silverWalletAddress: z.string(),
   usdtWalletAddress: z.string(),
   bitcoinWalletAddress: z.string(),
+  minWithdrawalAmount: z.coerce.number().min(0).default(10),
+  withdrawalDay: z.enum(['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday']).default('saturday'),
 });
 export type PlatformSettings = z.infer<typeof PlatformSettingsSchema>;
