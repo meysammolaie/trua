@@ -37,7 +37,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2, AlertTriangle, Check, Ban, Undo2 } from "lucide-react";
+import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2, AlertTriangle, Check, Ban, Undo2, Power } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { getAllTransactions, TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
 import { updateInvestmentStatus } from "@/ai/flows/update-investment-status-flow";
@@ -370,6 +370,15 @@ function AdminInvestmentsPageContent() {
                                                         <DropdownMenuItem className="text-blue-600 focus:text-blue-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId!, 'completed')}>
                                                             <Undo2 className="ml-2 h-4 w-4" />
                                                             تکمیل و بازپرداخت سرمایه
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                                {inv.status === 'completed' && (
+                                                    <>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem className="text-orange-500 focus:text-orange-500" onClick={() => handleStatusUpdate(inv.originalInvestmentId!, 'active')}>
+                                                            <Power className="ml-2 h-4 w-4" />
+                                                            فعال‌سازی مجدد
                                                         </DropdownMenuItem>
                                                     </>
                                                 )}

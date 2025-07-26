@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { signInWithEmailAndPassword, signInWithPopup, UserCredential } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, UserCredential, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider, db } from "@/lib/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
@@ -30,12 +30,27 @@ import { VerdantVaultLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Chrome } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const formSchema = z.object({
   email: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." }),
   password: z.string().min(1, { message: "لطفاً رمز عبور خود را وارد کنید." }),
+});
+
+const resetPasswordSchema = z.object({
+    resetEmail: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." })
 });
 
 export default function LoginPage() {
@@ -48,6 +63,13 @@ export default function LoginPage() {
     defaultValues: {
       email: "",
       password: "",
+    },
+  });
+  
+  const resetForm = useForm<z.infer<typeof resetPasswordSchema>>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      resetEmail: "",
     },
   });
 
@@ -118,6 +140,26 @@ export default function LoginPage() {
     }
   };
 
+  const handlePasswordReset = async (values: z.infer<typeof resetPasswordSchema>) => {
+    try {
+        await sendPasswordResetEmail(auth, values.resetEmail);
+        toast({
+            title: "ایمیل ارسال شد",
+            description: "یک ایمیل حاوی لینک بازنشانی رمز عبور برای شما ارسال شد. لطفاً پوشه اسپم را نیز بررسی کنید."
+        })
+        return true; // Indicate success to close dialog
+    } catch (error) {
+         console.error("Password Reset Error:", error);
+         toast({
+            variant: "destructive",
+            title: "خطا",
+            description: "خطایی در ارسال ایمیل بازنشانی رخ داد. مطمئن شوید ایمیل را درست وارد کرده‌اید."
+        })
+        return false;
+    }
+  }
+
+
   if (loading || user) {
      return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
@@ -140,7 +182,7 @@ export default function LoginPage() {
             <VerdantVaultLogo className="h-12 w-12" />
           </Link>
           <CardTitle className="text-2xl font-headline">
-            ورود به حساب کاربری
+            ورود به Trusva
           </CardTitle>
           <CardDescription>
             برای دسترسی به داشبورد خود، ایمیل و رمز عبور خود را وارد کنید.
@@ -175,12 +217,51 @@ export default function LoginPage() {
                     <FormItem className="text-right">
                       <div className="flex items-center">
                         <FormLabel>رمز عبور</FormLabel>
-                        <Link
-                          href="#"
-                          className="mr-auto inline-block text-sm underline"
-                        >
-                          رمز عبور خود را فراموش کرده‌اید؟
-                        </Link>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="link" type="button" className="mr-auto p-0 h-auto text-sm underline">رمز عبور خود را فراموش کرده‌اید؟</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <Form {...resetForm}>
+                                <form onSubmit={resetForm.handleSubmit(handlePasswordReset)}>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>بازیابی رمز عبور</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    ایمیل حساب کاربری خود را وارد کنید تا لینک بازیابی برای شما ارسال شود.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="py-4">
+                                     <FormField
+                                        control={resetForm.control}
+                                        name="resetEmail"
+                                        render={({ field }) => (
+                                            <FormItem className="text-right">
+                                            <FormLabel>ایمیل</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                type="email"
+                                                placeholder="m@example.com"
+                                                dir="ltr"
+                                                {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                        />
+                                </div>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel type="button">انصراف</AlertDialogCancel>
+                                <AlertDialogAction type="submit" disabled={resetForm.formState.isSubmitting}>
+                                     {resetForm.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                                    ارسال
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                                </form>
+                                </Form>
+                            </AlertDialogContent>
+                        </AlertDialog>
+
                       </div>
                       <FormControl>
                         <Input type="password" dir="ltr" {...field} />

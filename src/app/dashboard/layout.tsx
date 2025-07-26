@@ -104,7 +104,7 @@ export default function DashboardLayout({
 
   const getPageTitle = () => {
     const activeItem = navItems.find(item => (item.href === "/dashboard" && pathname === item.href) || (item.href !== "/dashboard" && pathname.startsWith(item.href)));
-    return activeItem?.label || "خزانه سرسبز";
+    return activeItem?.label || "Trusva";
   };
 
 
@@ -116,7 +116,7 @@ export default function DashboardLayout({
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <VerdantVaultLogo className="h-6 w-6" />
-              <span className="">خزانه سرسبز</span>
+              <span className="">Trusva</span>
             </Link>
             <Button variant="ghost" size="icon" className="ml-auto h-8 w-8">
               <Bell className="h-4 w-4" />
@@ -152,7 +152,7 @@ export default function DashboardLayout({
                   className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
                   <VerdantVaultLogo className="h-6 w-6" />
-                  <span >خزانه سرسبز</span>
+                  <span >Trusva</span>
                 </Link>
                 {navItems.map(item => <NavLink key={item.href} item={item} isSheet />)}
               </nav>
