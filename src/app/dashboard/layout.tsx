@@ -44,6 +44,7 @@ const navItems = [
   { href: "/dashboard/invest", icon: Package, label: "سرمایه‌گذاری" },
   { href: "/dashboard/wallet", icon: Wallet, label: "کیف پول" },
   { href: "/dashboard/reports", icon: LineChart, label: "گزارش‌ها" },
+  { href: "/dashboard/referrals", icon: Users, label: "معرفی‌ها" },
   { href: "/dashboard/profile", icon: CircleUser, label: "پروفایل" },
 ];
 
@@ -90,7 +91,7 @@ export default function DashboardLayout({
   }
   
   const NavLink = ({ item }: { item: typeof navItems[0] }) => {
-    const isActive = pathname === item.href;
+    const isActive = pathname.startsWith(item.href);
     return (
         <Link
             href={item.href}
