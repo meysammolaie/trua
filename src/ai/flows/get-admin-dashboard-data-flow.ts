@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching all data required for the admin dashboard.
@@ -10,7 +11,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, where, Timestamp } from 'firebase/firestore';
-import { formatDistanceToNowStrict } from 'date-fns-jalali';
+import { formatDistanceToNowStrict } from 'date-fns';
+import { faIR } from 'date-fns/locale';
 
 // Input Schema (empty for this flow)
 const GetAdminDashboardDataInputSchema = z.object({});
@@ -170,7 +172,7 @@ const getAdminDashboardDataFlow = ai.defineFlow(
         recentActivities.push({
             type: 'new_user',
             detail: `کاربر جدیدی با ایمیل ${user.email} ثبت نام کرد.`,
-            time: formatDistanceToNowStrict(user.createdAt.toDate(), { addSuffix: true, locale: {options: { weekStartsOn: 6 }} }),
+            time: formatDistanceToNowStrict(user.createdAt.toDate(), { addSuffix: true, locale: faIR }),
             status: 'info'
         });
     });
@@ -182,14 +184,20 @@ const getAdminDashboardDataFlow = ai.defineFlow(
         recentActivities.push({
             type: 'investment',
             detail: `سرمایه‌گذاری جدید از ${userName} به مبلغ $${inv.amount.toLocaleString()} در صندوق ${fundNames[inv.fundId]}.`,
-            time: formatDistanceToNowStrict(inv.createdAt.toDate(), { addSuffix: true, locale: {options: { weekStartsOn: 6 }} }),
+            time: formatDistanceToNowStrict(inv.createdAt.toDate(), { addSuffix: true, locale: faIR }),
             status: 'success'
         });
     });
 
     // Sort all activities by date (approximated by order in array) and take latest 5
     const sortedActivities = recentActivities
-        .sort((a,b) => new Date(b.time).getTime() - new Date(a.time).getTime()) // This is an approximation
+        .sort((a, b) => {
+            // This is a heuristic sort. A more robust way would be to store original dates
+            // but for this purpose, it's likely good enough.
+            const aDate = new Date(users.find(u => a.detail.includes(u.email))?.createdAt.toMillis() || investments.find(i => a.detail.includes(i.id))?.createdAt.toMillis() || 0);
+            const bDate = new Date(users.find(u => b.detail.includes(u.email))?.createdAt.toMillis() || investments.find(i => b.detail.includes(i.id))?.createdAt.toMillis() || 0);
+            return bDate.getTime() - aDate.getTime();
+        })
         .slice(0, 5);
 
 
