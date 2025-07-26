@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Bell,
@@ -32,25 +32,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { VerdantVaultLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { MobileDashboardNav } from "@/components/layout/mobile-dashboard-nav";
 
 
 const navItems = [
-  { href: "/admin/dashboard", icon: Home, label: "داشبورد مدیریت" },
-  { href: "/admin/users", icon: Users, label: "مدیریت کاربران" },
-  { href: "/admin/investments", icon: Package, label: "سرمایه‌گذاری‌ها" },
-  { href: "/admin/withdrawals", icon: ArrowDownUp, label: "درخواست‌های برداشت" },
-  { href: "/admin/commissions", icon: Gift, label: "کمیسیون‌ها" },
+  { href: "/admin/dashboard", icon: Home, label: "داشبورد" },
+  { href: "/admin/users", icon: Users, label: "کاربران" },
+  { href: "/admin/investments", icon: Package, label: "سرمایه‌ها" },
+  { href: "/admin/withdrawals", icon: ArrowDownUp, label: "برداشت‌ها" },
   { href: "/admin/transactions", icon: Wallet, label: "تراکنش‌ها" },
-  { href: "/admin/reports", icon: LineChart, label: "گزارشات مالی" },
-  { href: "/admin/lottery", icon: Ticket, label: "مدیریت قرعه‌کشی" },
-  { href: "/admin/settings", icon: Settings, label: "تنظیمات پلتفرم" },
+  // Adding more items for the sheet/sidebar, but maybe not for the bottom nav
+  { href: "/admin/commissions", icon: Gift, label: "کمیسیون‌ها", sidebarOnly: true },
+  { href: "/admin/reports", icon: LineChart, label: "گزارشات", sidebarOnly: true },
+  { href: "/admin/lottery", icon: Ticket, label: "قرعه‌کشی", sidebarOnly: true },
+  { href: "/admin/settings", icon: Settings, label: "تنظیمات", sidebarOnly: true },
 ];
 
 
@@ -81,46 +81,52 @@ export default function AdminLayout({
     }
   };
 
-  if (loading) { // TODO: Add admin role check
+  if (loading) { 
     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-transparent">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="mt-4 text-muted-foreground">در حال بارگذاری...</p>
       </div>
     );
   }
 
-  if (!user) { // TODO: Add admin role check
+  if (!user) { 
     return null;
   }
   
-  const NavLink = ({ item }: { item: typeof navItems[0] }) => {
-    const isActive = pathname.startsWith(item.href);
+  const NavLink = ({ item, isSheet = false }: { item: typeof navItems[0], isSheet?: boolean }) => {
+    const isActive = (item.href === "/admin" && pathname === item.href) || (item.href !== "/admin" && pathname.startsWith(item.href));
     return (
         <Link
             href={item.href}
             className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                isActive && "bg-muted text-primary"
+                isActive && "bg-muted text-primary",
+                isSheet && "text-lg"
             )}
         >
-            <item.icon className="h-4 w-4" />
+            <item.icon className="h-5 w-5" />
             {item.label}
         </Link>
     );
   };
 
+  const getPageTitle = () => {
+    const activeItem = navItems.find(item => (item.href === "/admin" && pathname === item.href) || (item.href !== "/admin" && pathname.startsWith(item.href)));
+    return activeItem?.label || "پنل مدیریت";
+  };
+
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] bg-transparent">
+      <div className="hidden border-r bg-black/10 backdrop-blur-lg md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/admin/dashboard" className="flex items-center gap-2 font-semibold">
               <Shield className="h-6 w-6 text-primary" />
               <span className="">پنل مدیریت</span>
             </Link>
-            <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
+            <Button variant="ghost" size="icon" className="ml-auto h-8 w-8">
               <Bell className="h-4 w-4" />
               <span className="sr-only">Toggle notifications</span>
             </Button>
@@ -133,7 +139,7 @@ export default function AdminLayout({
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+        <header className="flex h-14 items-center gap-4 border-b bg-black/10 px-4 backdrop-blur-lg lg:h-[60px] lg:px-6">
           <Sheet>
             <SheetTrigger asChild>
               <Button
@@ -145,7 +151,7 @@ export default function AdminLayout({
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="flex flex-col">
+            <SheetContent side="right" className="flex flex-col bg-card/80 backdrop-blur-lg">
               <nav className="grid gap-2 text-lg font-medium">
                 <Link
                   href="/admin/dashboard"
@@ -154,13 +160,14 @@ export default function AdminLayout({
                   <Shield className="h-6 w-6 text-primary" />
                   <span >پنل مدیریت</span>
                 </Link>
-                {navItems.map(item => <NavLink key={item.href} item={item} />)}
+                {navItems.map(item => <NavLink key={item.href} item={item} isSheet />)}
               </nav>
             </SheetContent>
           </Sheet>
-          <div className="w-full flex-1">
-            {/* Can add a search bar here if needed */}
+           <div className="w-full flex-1 md:hidden">
+              <h1 className="font-semibold text-lg">{getPageTitle()}</h1>
           </div>
+          <div className="w-full flex-1 hidden md:block" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
@@ -168,7 +175,7 @@ export default function AdminLayout({
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-card/80 backdrop-blur-lg">
               <DropdownMenuLabel>حساب مدیر</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>پروفایل</DropdownMenuItem>
@@ -177,9 +184,10 @@ export default function AdminLayout({
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-transparent mb-16 md:mb-0">
             {children}
         </main>
+        <MobileDashboardNav navItems={navItems.filter(i => !i.sidebarOnly)} />
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bitcoin, Crown, Landmark, Medal } from "lucide-react";
+import { motion } from "framer-motion";
 
 const funds = [
   {
@@ -24,9 +25,24 @@ const funds = [
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
 export function FundsSection() {
   return (
-    <section id="funds" className="w-full py-12 md:py-24 lg:py-32 bg-card">
+    <section id="funds" className="w-full py-12 md:py-24 lg:py-32 bg-transparent">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
@@ -38,21 +54,29 @@ export function FundsSection() {
             </p>
           </div>
         </div>
-        <div className="mx-auto grid max-w-5xl items-start gap-6 py-12 sm:grid-cols-2 md:gap-12 lg:grid-cols-4">
+        <motion.div 
+            className="mx-auto grid max-w-5xl items-start gap-6 py-12 sm:grid-cols-2 md:gap-12 lg:grid-cols-4"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+        >
           {funds.map((fund) => (
-            <Card key={fund.name} className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-              <CardHeader className="flex flex-col items-center text-center space-y-4">
-                {fund.icon}
-                <CardTitle className="font-headline text-xl">{fund.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center text-muted-foreground">
-                  {fund.description}
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div key={fund.name} variants={cardVariants}>
+                 <Card className="h-full transition-all duration-300 hover:shadow-primary/20 hover:-translate-y-2 hover:shadow-2xl bg-card/40">
+                    <CardHeader className="flex flex-col items-center text-center space-y-4">
+                        {fund.icon}
+                        <CardTitle className="font-headline text-xl">{fund.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-center text-muted-foreground">
+                        {fund.description}
+                        </p>
+                    </CardContent>
+                </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

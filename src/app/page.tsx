@@ -9,9 +9,9 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-transparent">
       <Header />
-      <main className="flex-1 pb-16 md:pb-0">
+      <main className="flex-1">
         <HeroSection />
         <FundsSection />
         <HowItWorksSection />
@@ -19,6 +19,7 @@ export default function Home() {
         <FaqSection />
       </main>
       <Footer />
+      {/* This nav is only for the landing page on mobile */}
       <MobileBottomNav />
     </div>
   );

@@ -13,6 +13,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Home, Landmark, Ticket, User, MessageSquareQuote } from "lucide-react";
+import { motion } from "framer-motion";
+
 
 const navLinks = [
   { name: "خانه", href: "/", icon: Home },
@@ -34,16 +36,21 @@ export function MobileBottomNav() {
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <motion.div 
+      initial={{ y: 100 }}
+      animate={{ y: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 border-t bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60"
+    >
       <div className="grid h-full grid-cols-5 mx-auto">
         {navLinks.map((link) => (
           <Link
             key={link.name}
             href={link.href}
-            className="inline-flex flex-col items-center justify-center px-1 text-center font-medium hover:bg-accent/50 text-muted-foreground hover:text-foreground group"
+            className="inline-flex flex-col items-center justify-center px-1 text-center font-medium text-muted-foreground hover:text-primary group"
             prefetch={false}
           >
-            <link.icon className="w-5 h-5 mb-1" />
+            <link.icon className="w-5 h-5 mb-1 transition-transform group-hover:scale-110" />
             <span className="text-xs">{link.name}</span>
           </Link>
         ))}
@@ -51,13 +58,13 @@ export function MobileBottomNav() {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="inline-flex flex-col items-center justify-center px-1 text-center font-medium hover:bg-accent/50 text-muted-foreground hover:text-foreground group"
+              className="inline-flex flex-col items-center justify-center px-1 text-center font-medium text-muted-foreground hover:text-primary group"
             >
-              <User className="w-5 h-5 mb-1" />
+              <User className="w-5 h-5 mb-1 transition-transform group-hover:scale-110" />
               <span className="text-xs">حساب</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-auto rounded-t-lg">
+          <SheetContent side="bottom" className="h-auto rounded-t-lg bg-background/90 backdrop-blur-lg">
             <SheetHeader className="text-center mb-4">
               <SheetTitle className="font-headline text-2xl">به خزانه سرسبز بپیوندید</SheetTitle>
               <SheetDescription>
@@ -73,6 +80,6 @@ export function MobileBottomNav() {
           </SheetContent>
         </Sheet>
       </div>
-    </div>
+    </motion.div>
   );
 }
