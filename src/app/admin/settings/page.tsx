@@ -11,7 +11,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Form,
@@ -25,7 +24,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Globe, AlertTriangle, KeyRound, Percent } from "lucide-react";
+import { Percent, Globe, AlertTriangle, KeyRound, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getPlatformSettings, updatePlatformSettings, PlatformSettings } from "@/ai/flows/platform-settings-flow";
 
 const settingsSchema = z.object({
   entryFee: z.coerce.number().min(0).max(100),
@@ -33,33 +34,77 @@ const settingsSchema = z.object({
   platformFee: z.coerce.number().min(0).max(100),
   exitFee: z.coerce.number().min(0).max(100),
   maintenanceMode: z.boolean(),
-  coinbaseApiKey: z.string().optional(),
-  blockchainNodeUrl: z.string().url().optional().or(z.literal('')),
+  // Wallet Addresses
+  goldWalletAddress: z.string().min(1, "آدرس کیف پول طلا الزامی است."),
+  silverWalletAddress: z.string().min(1, "آدرس کیف پول نقره الزامی است."),
+  usdtWalletAddress: z.string().min(1, "آدرس کیف پول USDT الزامی است."),
+  bitcoinWalletAddress: z.string().min(1, "آدرس کیف پول بیت‌کوین الزامی است."),
 });
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
-    // مقادیر پیش‌فرض برای نمایش
     defaultValues: {
       entryFee: 3,
       lotteryFee: 2,
       platformFee: 1,
       exitFee: 2,
       maintenanceMode: false,
-      coinbaseApiKey: "********", 
-      blockchainNodeUrl: "https://mainnet.infura.io/v3/...",
+      goldWalletAddress: "",
+      silverWalletAddress: "",
+      usdtWalletAddress: "",
+      bitcoinWalletAddress: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof settingsSchema>) {
-    console.log(values);
-    toast({
-      title: "تنظیمات ذخیره شد",
-      description: "تنظیمات جدید پلتفرم با موفقیت اعمال شد.",
-    });
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        setLoading(true);
+        const settings = await getPlatformSettings();
+        if (settings) {
+          form.reset(settings);
+        }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "خطا در بارگذاری تنظیمات",
+          description: "مشکلی در دریافت تنظیمات فعلی پلتفرم رخ داد.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSettings();
+  }, [form, toast]);
+
+
+  async function onSubmit(values: z.infer<typeof settingsSchema>) {
+    try {
+        await updatePlatformSettings(values);
+        toast({
+            title: "تنظیمات ذخیره شد",
+            description: "تنظیمات جدید پلتفرم با موفقیت اعمال شد.",
+        });
+    } catch (error) {
+         toast({
+            variant: "destructive",
+            title: "خطا در ذخیره تنظیمات",
+            description: "مشکلی در ذخیره تنظیمات جدید رخ داد.",
+        });
+    }
+  }
+
+  if (loading) {
+    return (
+        <div className="flex justify-center items-center h-full">
+            <Loader2 className="w-8 h-8 animate-spin" />
+            <p className="mr-4">در حال بارگذاری تنظیمات...</p>
+        </div>
+    )
   }
 
   return (
@@ -70,7 +115,6 @@ export default function AdminSettingsPage() {
        <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid gap-6">
-                {/* Fee Management Card */}
                 <Card>
                 <CardHeader>
                     <CardTitle>مدیریت کارمزدها</CardTitle>
@@ -138,78 +182,99 @@ export default function AdminSettingsPage() {
                 </CardContent>
                 </Card>
 
-                {/* System Status & API Card */}
-                <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>وضعیت سیستم</CardTitle>
-                             <CardDescription>
-                                تنظیمات کلی و وضعیت عملیاتی پلتفرم.
-                             </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <FormField
-                                control={form.control}
-                                name="maintenanceMode"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="text-base">حالت تعمیر و نگهداری</FormLabel>
-                                            <FormDescription>
-                                                با فعال‌سازی این گزینه، سایت برای کاربران غیرقابل دسترس خواهد شد.
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>مدیریت کیف پول‌ها</CardTitle>
+                        <CardDescription>آدرس‌های کیف پول برای واریز کاربران را تنظیم کنید.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid md:grid-cols-2 gap-6">
+                         <FormField
+                            control={form.control}
+                            name="usdtWalletAddress"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>آدرس کیف پول تتر (USDT)</FormLabel>
+                                <FormControl>
+                                    <Input {...field} dir="ltr" />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="bitcoinWalletAddress"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>آدرس کیف پول بیت‌کوین (BTC)</FormLabel>
+                                <FormControl>
+                                    <Input {...field} dir="ltr" />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="goldWalletAddress"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>آدرس کیف پول طلا (مثلاً PAXG)</FormLabel>
+                                <FormControl>
+                                    <Input {...field} dir="ltr" />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="silverWalletAddress"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>آدرس کیف پول نقره (مثلاً KAG)</FormLabel>
+                                <FormControl>
+                                    <Input {...field} dir="ltr" />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
 
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>APIها و یکپارچه‌سازی</CardTitle>
-                             <CardDescription>
-                                کلیدهای API و اتصالات سرویس‌های خارجی را مدیریت کنید.
-                             </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="coinbaseApiKey"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>کلید API کوین‌بیس</FormLabel>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>وضعیت سیستم</CardTitle>
+                        <CardDescription>تنظیمات کلی و وضعیت عملیاتی پلتفرم.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <FormField
+                            control={form.control}
+                            name="maintenanceMode"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">حالت تعمیر و نگهداری</FormLabel>
+                                        <FormDescription>
+                                            با فعال‌سازی این گزینه، سایت برای کاربران غیرقابل دسترس خواهد شد.
+                                        </FormDescription>
+                                    </div>
                                     <FormControl>
-                                        <Input type="password" {...field} />
+                                        <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        />
                                     </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="blockchainNodeUrl"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>آدرس نود بلاکچین</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+                
                  <div className="flex justify-end">
                     <Button type="submit" disabled={form.formState.isSubmitting}>
+                         {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                          {form.formState.isSubmitting ? "در حال ذخیره..." : "ذخیره تغییرات"}
                     </Button>
                 </div>
@@ -219,4 +284,3 @@ export default function AdminSettingsPage() {
     </>
   );
 }
-

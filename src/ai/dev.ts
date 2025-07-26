@@ -11,3 +11,5 @@ import "./flows/get-admin-dashboard-data-flow";
 import "./flows/get-all-transactions-flow";
 import "./flows/get-lottery-data-flow";
 import "./flows/update-user-status-flow";
+import "./flows/platform-settings-flow";
+
