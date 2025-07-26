@@ -30,14 +30,11 @@ interface ChatWidgetProps {
   isEmbedded?: boolean;
 }
 
-type ChatMode = "text" | "voice";
-
 export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(isEmbedded);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [chatMode, setChatMode] = useState<ChatMode>("text");
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -61,18 +58,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     }
   };
 
-  const handleModeChange = (mode: ChatMode) => {
-    if (mode === 'voice' && !isSpeechSupported) {
-        toast({
-            variant: "destructive",
-            title: "مرورگر پشتیبانی نمی‌شود",
-            description: "قابلیت تشخیص گفتار در مرورگر شما پشتیبانی نمی‌شود.",
-        });
-        return;
-    }
-    setChatMode(mode);
-  }
-
   const handleSend = async (messageText: string) => {
     if (messageText.trim() === "" || isLoading) return;
 
@@ -82,19 +67,13 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     setIsLoading(true);
 
     try {
-      if (chatMode === "voice") {
-        const result = await voiceChat({ message: messageText });
-        const botMessage: Message = { sender: "bot", text: result.text };
-        setMessages((prev) => [...prev, botMessage]);
+      const result = await voiceChat({ message: messageText });
+      const botMessage: Message = { sender: "bot", text: result.text };
+      setMessages((prev) => [...prev, botMessage]);
 
-        if (audioRef.current && result.audio) {
-          audioRef.current.src = result.audio;
-          audioRef.current.play();
-        }
-      } else {
-        const result = await chat({ message: messageText });
-        const botMessage: Message = { sender: "bot", text: result.response };
-        setMessages((prev) => [...prev, botMessage]);
+      if (audioRef.current && result.audio) {
+        audioRef.current.src = result.audio;
+        audioRef.current.play();
       }
     } catch (error) {
       console.error("Chat error:", error);
@@ -105,6 +84,23 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleMicClick = () => {
+    if (!isSpeechSupported) {
+       toast({
+            variant: "destructive",
+            title: "مرورگر پشتیبانی نمی‌شود",
+            description: "قابلیت تشخیص گفتار در مرورگر شما پشتیبانی نمی‌شود.",
+        });
+        return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      recognitionRef.current?.start();
     }
   };
 
@@ -125,7 +121,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         setMessages([
           {
             sender: "bot",
-            text: "سلام! من دستیار هوشمند Trusva هستم. چطور می‌توانم به شما کمک کنم؟",
+            text: "سلام! من دستیار هوشمند Trusva هستم. برای شروع گفتگو، روی آیکون ربات کلیک کنید.",
           },
         ]);
       }, 500);
@@ -134,80 +130,46 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   }, [isOpen, messages.length]);
 
   useEffect(() => {
-    if (chatMode !== 'voice' || !isOpen || !isSpeechSupported) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      return;
-    }
+    if (!isSpeechSupported || !isOpen) return;
 
     if (!recognitionRef.current) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false; // <<< THIS IS THE FIX
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'fa-IR'; // Set language to Persian
       recognitionRef.current = recognition;
-    }
 
-    const recognition = recognitionRef.current;
-    
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    
-    recognition.onerror = (event) => {
-      if (event.error === 'no-speech' || event.error === 'aborted') {
-          return;
-      }
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
-    };
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      
+      recognition.onerror = (event) => {
+          if (event.error === 'no-speech' || event.error === 'aborted') {
+              return;
+          }
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+      };
 
-    recognition.onresult = (event) => {
-      let finalTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+      recognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript.trim();
+        if(transcript) {
+          handleSend(transcript);
         }
-      }
-      if(finalTranscript.trim()) {
-        handleSend(finalTranscript);
-      }
-    };
-    
-    // Start listening if not already speaking
-    if (!isSpeaking) {
-      try {
-        recognition.start();
-      } catch(e) {
-        // Ignore if already started
-      }
+      };
     }
 
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
+      recognitionRef.current?.abort();
     };
-  }, [chatMode, isOpen, isSpeechSupported, isSpeaking]);
+  }, [isSpeechSupported, isOpen]);
 
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handlePlay = () => {
-        setIsSpeaking(true);
-        if (recognitionRef.current) {
-            recognitionRef.current.stop();
-        }
-    }
-    const handleEnd = () => {
-        setIsSpeaking(false);
-         if (chatMode === 'voice' && isOpen) {
-             try {
-                recognitionRef.current?.start();
-             } catch(e) {/* ignore */}
-         }
-    }
+    const handlePlay = () => setIsSpeaking(true);
+    const handleEnd = () => setIsSpeaking(false);
 
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('ended', handleEnd);
@@ -218,7 +180,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
       audio.removeEventListener('ended', handleEnd);
       audio.removeEventListener('pause', handleEnd);
     };
-  }, [audioRef, chatMode, isOpen]);
+  }, [audioRef]);
 
 
   const ChatWindow = (
@@ -240,19 +202,15 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
           </Avatar>
           <div>
             <CardTitle>دستیار Trusva</CardTitle>
-            <div className="flex items-center gap-1">
+             <div className="flex items-center gap-1">
               <div
                 className={cn(
                   "h-2 w-2 rounded-full",
-                  isSpeaking ? "bg-red-500" : (isListening ? "bg-green-500 animate-pulse" : "bg-muted-foreground")
+                   isSpeaking ? "bg-red-500" : (isListening ? "bg-green-500 animate-pulse" : "bg-muted-foreground")
                 )}
               />
               <CardDescription>
-                {isSpeaking
-                  ? "در حال صحبت..."
-                  : isListening
-                  ? "در حال گوش دادن..."
-                  : "آنلاین"}
+                 {isSpeaking ? "در حال صحبت..." : isListening ? "در حال گوش دادن..." : "آنلاین"}
               </CardDescription>
             </div>
           </div>
@@ -264,105 +222,34 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         )}
       </CardHeader>
       
-      <div className="px-4 pb-2">
-         <div className="p-1 bg-muted rounded-lg flex items-center">
-            <motion.div className="absolute h-8 bg-background rounded-md" 
-             style={{ width: 'calc(50% - 4px)' }}
-             animate={{ x: chatMode === 'text' ? 2 : 'calc(100% + 2px)' }}
-             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            />
-            <Button variant="ghost" className="flex-1 relative z-10 h-8 text-xs" onClick={() => handleModeChange('text')}>متنی</Button>
-            <Button variant="ghost" className="flex-1 relative z-10 h-8 text-xs" onClick={() => handleModeChange('voice')}>گفتگوی زنده صوتی</Button>
-         </div>
-      </div>
-      
       <CardContent className="flex-1 p-0 overflow-hidden">
-        {chatMode === 'text' ? (
-             <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
-                <div className="space-y-4">
-                {messages.map((message, index) => (
-                    <div
-                    key={index}
-                    className={`flex gap-2 ${
-                        message.sender === "user"
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                    >
-                        {message.sender === 'bot' && <Bot className="w-5 h-5 text-primary flex-shrink-0" />}
-                    <div
-                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                        message.sender === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        }`}
-                    >
-                        {message.text}
-                    </div>
-                        {message.sender === 'user' && <User className="w-5 h-5 text-muted-foreground flex-shrink-0" />}
-                    </div>
-                ))}
-                    {isLoading && (
-                    <div className="flex justify-start gap-2">
-                            <Bot className="w-5 h-5 text-primary flex-shrink-0" />
-                            <div className="bg-muted rounded-lg px-3 py-2">
-                            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                            </div>
-                    </div>
-                )}
-                </div>
-            </ScrollArea>
-        ) : (
-            <div className="h-full flex flex-col items-center justify-center gap-4 p-6">
-                 <motion.div
-                    animate={{
-                        scale: isListening ? 1.1 : 1,
-                        boxShadow: isListening ? '0 0 20px hsl(var(--primary))' : '0 0 0px hsl(var(--primary))',
-                        y: isSpeaking ? [-2, 2, -2] : 0,
-                    }}
-                    transition={{
-                         y: { repeat: Infinity, duration: 0.3, ease: 'easeInOut' },
-                         default: { type: 'spring', stiffness: 300, damping: 20 }
-                    }}
-                    className="w-48 h-48 rounded-full bg-card"
-                >
-                    <Avatar className="w-full h-full">
-                        <AvatarImage src="https://placehold.co/192x192/17192A/FBBF24" alt="AI Assistant" data-ai-hint="robot friendly"/>
-                        <AvatarFallback>AI</AvatarFallback>
-                    </Avatar>
-                </motion.div>
-                <p className="text-muted-foreground text-center">
-                    {isSpeaking ? "..." : (isListening ? "شنیده می‌شود..." : "برای شروع، صحبت کنید.")}
-                </p>
-                <div className="text-xs text-muted-foreground text-center mt-4">
-                  آخرین پیام شما: {messages.filter(m=>m.sender==='user').slice(-1)[0]?.text || "..."}
-                </div>
-            </div>
-        )}
-      </CardContent>
-
-      {chatMode === 'text' && (
-        <CardFooter>
-            <form
-                className="flex w-full items-center space-x-2"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSend(input);
+        <div className="h-full flex flex-col items-center justify-center gap-4 p-6">
+            <motion.div
+                animate={{
+                    scale: isListening ? 1.1 : 1,
+                    boxShadow: isListening ? '0 0 20px hsl(var(--primary))' : '0 0 0px hsl(var(--primary))',
+                    y: isSpeaking ? [-2, 2, -2] : 0,
                 }}
+                transition={{
+                    y: { repeat: Infinity, duration: 0.3, ease: 'easeInOut' },
+                    default: { type: 'spring', stiffness: 300, damping: 20 }
+                }}
+                className="w-48 h-48 rounded-full bg-card cursor-pointer"
+                onClick={handleMicClick}
             >
-                <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="پیام خود را تایپ کنید..."
-                disabled={isLoading}
-                className="flex-1"
-                />
-                <Button type="submit" size="icon" disabled={isLoading}>
-                <Send className="h-4 w-4" />
-                </Button>
-            </form>
-        </CardFooter>
-      )}
+                <Avatar className="w-full h-full">
+                    <AvatarImage src="https://placehold.co/192x192/17192A/FBBF24" alt="AI Assistant" data-ai-hint="robot friendly"/>
+                    <AvatarFallback>AI</AvatarFallback>
+                </Avatar>
+            </motion.div>
+            <p className="text-muted-foreground text-center">
+                 {isSpeaking ? "..." : (isListening ? "شنیده می‌شود..." : "برای صحبت کردن، روی من ضربه بزنید.")}
+            </p>
+             <div className="text-xs text-muted-foreground text-center mt-4 h-4">
+               {isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto"/> : `آخرین پیام: ${messages.filter(m=>m.sender==='user').slice(-1)[0]?.text || "..."}` }
+            </div>
+        </div>
+      </CardContent>
     </Card>
   );
 
@@ -462,4 +349,3 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     </>
   );
 }
-
