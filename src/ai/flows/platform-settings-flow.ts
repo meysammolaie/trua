@@ -16,7 +16,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 const SETTINGS_DOC_ID = 'main_settings';
 const SETTINGS_COLLECTION = 'platform_settings';
 
-const PlatformSettingsSchema = z.object({
+export const PlatformSettingsSchema = z.object({
   entryFee: z.coerce.number().min(0).max(100),
   lotteryFee: z.coerce.number().min(0).max(100),
   platformFee: z.coerce.number().min(0).max(100),
