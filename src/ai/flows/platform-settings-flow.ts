@@ -12,22 +12,11 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { PlatformSettingsSchema, type PlatformSettings } from '@/ai/schemas';
 
 const SETTINGS_DOC_ID = 'main_settings';
 const SETTINGS_COLLECTION = 'platform_settings';
 
-export const PlatformSettingsSchema = z.object({
-  entryFee: z.coerce.number().min(0).max(100),
-  lotteryFee: z.coerce.number().min(0).max(100),
-  platformFee: z.coerce.number().min(0).max(100),
-  exitFee: z.coerce.number().min(0).max(100),
-  maintenanceMode: z.boolean(),
-  goldWalletAddress: z.string(),
-  silverWalletAddress: z.string(),
-  usdtWalletAddress: z.string(),
-  bitcoinWalletAddress: z.string(),
-});
-export type PlatformSettings = z.infer<typeof PlatformSettingsSchema>;
 
 const UpdatePlatformSettingsOutputSchema = z.object({
   success: z.boolean(),
