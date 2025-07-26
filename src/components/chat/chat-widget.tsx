@@ -11,7 +11,6 @@ import {
   CardFooter,
   CardDescription,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, User, Send, X, Loader2, AudioLines } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -19,6 +18,7 @@ import { voiceChat } from "@/ai/flows/voice-chat-flow";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 
 interface Message {
   sender: "user" | "bot";
@@ -76,7 +76,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         audioRef.current.play();
       } else {
         if (isVoiceMode) {
-            // If we are in voice mode but get no audio, exit voice mode.
              setTimeout(() => setIsVoiceMode(false), 500);
         }
       }
@@ -119,26 +118,27 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   }, [isOpen, messages.length, isEmbedded]);
 
  useEffect(() => {
-    if (!isSpeechSupported || !isVoiceMode) {
-        recognitionRef.current?.abort();
+    if (!isSpeechSupported) {
         return;
     }
 
     if (!recognitionRef.current) {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
-        recognition.interimResults = false; 
+        recognition.interimResults = true; 
         recognition.lang = 'fa-IR';
         recognitionRef.current = recognition;
 
         recognition.onstart = () => setIsListening(true);
         recognition.onend = () => {
             setIsListening(false);
-            // Don't automatically restart. User has to tap again.
+            if (isVoiceMode && !isSpeaking) {
+                recognition.start();
+            }
         };
 
         recognition.onerror = (event) => {
-             if (event.error === 'no-speech' || event.error === 'aborted') {
+            if (event.error === 'no-speech' || event.error === 'aborted') {
                 return;
             }
             console.error('Speech recognition error:', event.error);
@@ -146,9 +146,15 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         };
 
         recognition.onresult = (event) => {
-            const transcript = event.results[event.results.length - 1][0].transcript.trim();
-            if (transcript) {
-                handleSend(transcript);
+            const transcript = Array.from(event.results)
+                .map(result => result[0])
+                .map(result => result.transcript)
+                .join('');
+            
+            if (event.results[event.results.length - 1].isFinal) {
+                if(transcript.trim()) {
+                    handleSend(transcript);
+                }
             }
         };
     }
@@ -156,7 +162,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     return () => {
         recognitionRef.current?.abort();
     };
-}, [isSpeechSupported, isVoiceMode]);
+}, [isSpeechSupported, isVoiceMode, isSpeaking]);
 
 
   useEffect(() => {
@@ -169,8 +175,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     };
     const handleEnd = () => {
         setIsSpeaking(false);
-        // After speaking, go back to text chat, ready for next interaction
-        setTimeout(() => setIsVoiceMode(false), 500);
     };
 
     audio.addEventListener('play', handlePlay);
@@ -281,7 +285,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                         disabled={isLoading}
                     />
                      <Button type="submit" disabled={isLoading || input.trim() === ""}>
-                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        <Send className="h-4 w-4" />
                      </Button>
                 </form>
             </div>
@@ -294,7 +298,10 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 p-6"
              >
-                 <button onClick={() => setIsVoiceMode(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+                 <button onClick={() => {
+                     setIsVoiceMode(false);
+                     recognitionRef.current?.stop();
+                 }} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
                     <X className="w-6 h-6"/>
                  </button>
                  <motion.div
@@ -308,12 +315,11 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                         default: { type: 'spring', stiffness: 300, damping: 20 }
                     }}
                     className="w-24 h-24 rounded-full bg-card flex items-center justify-center cursor-pointer text-primary"
-                    onClick={() => recognitionRef.current?.start()}
                 >
                     <Bot className="w-12 h-12"/>
                 </motion.div>
                  <p className="text-muted-foreground text-center min-h-[20px] font-semibold">
-                    {isLoading ? "در حال پردازش..." : isSpeaking ? "..." : (isListening ? "در حال شنیدن..." : "برای صحبت کردن، روی من ضربه بزنید")}
+                    {isLoading ? "در حال پردازش..." : isSpeaking ? "..." : (isListening ? "در حال شنیدن..." : "در حال اتصال...")}
                 </p>
                 <div className="text-xs text-muted-foreground text-center mt-4 h-4">
                    `آخرین پیام: ${messages.filter(m=>m.sender==='user').slice(-1)[0]?.text || "..."}` 
