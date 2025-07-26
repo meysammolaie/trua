@@ -56,13 +56,21 @@ const getUserReferralsFlow = ai.defineFlow(
     }
     const referralCode = userSnap.data().referralCode || '';
 
-    // 2. Fetch all commissions where this user is the referrer
+    // 2. Fetch all commissions where this user is the referrer (without server-side ordering)
     const commissionsRef = collection(db, 'commissions');
-    const q = query(commissionsRef, where('referrerId', '==', userId), orderBy('createdAt', 'desc'));
+    const q = query(commissionsRef, where('referrerId', '==', userId));
     const commissionsSnapshot = await getDocs(q);
     
+    // Manually sort the results in code
+    const sortedDocs = commissionsSnapshot.docs.sort((a, b) => {
+        const dateA = (a.data().createdAt as Timestamp).toMillis();
+        const dateB = (b.data().createdAt as Timestamp).toMillis();
+        return dateB - dateA; // Sort descending
+    });
+
+
     // 3. Get a list of all referred user IDs to fetch their details
-    const referredUserIds = commissionsSnapshot.docs.map(doc => doc.data().referredUserId);
+    const referredUserIds = sortedDocs.map(doc => doc.data().referredUserId);
     
     const usersMap = new Map<string, {fullName: string}>();
     if (referredUserIds.length > 0) {
@@ -80,7 +88,7 @@ const getUserReferralsFlow = ai.defineFlow(
     let totalCommissionEarned = 0;
     const referredUsersSet = new Set<string>();
 
-    const referrals: ReferralDetail[] = commissionsSnapshot.docs.map(doc => {
+    const referrals: ReferralDetail[] = sortedDocs.map(doc => {
       const commissionData = doc.data();
       const commissionAmount = commissionData.commissionAmount || 0;
 

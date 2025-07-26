@@ -67,16 +67,22 @@ const getLoginHistoryFlow = ai.defineFlow(
   },
   async ({ userId }) => {
     const historyRef = collection(db, 'login_history');
-    const q = query(
-        historyRef, 
-        where('userId', '==', userId), 
-        orderBy('timestamp', 'desc'),
-        limit(5)
-    );
+    // Query only by userId, which doesn't require a composite index
+    const q = query(historyRef, where('userId', '==', userId));
 
     const snapshot = await getDocs(q);
+
+    // Sort the documents in code
+    const sortedDocs = snapshot.docs.sort((a, b) => {
+        const dateA = (a.data().timestamp as Timestamp).toMillis();
+        const dateB = (b.data().timestamp as Timestamp).toMillis();
+        return dateB - dateA; // Sort descending
+    });
     
-    const history = snapshot.docs.map(doc => {
+    // Take the last 5 after sorting
+    const latestDocs = sortedDocs.slice(0, 5);
+    
+    const history = latestDocs.map(doc => {
         const data = doc.data();
         const parsedUA = parseUserAgent(data.userAgent || '');
 
