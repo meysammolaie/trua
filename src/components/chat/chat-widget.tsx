@@ -11,6 +11,7 @@ import {
   CardFooter,
   CardDescription,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, User, Send, X, Loader2, Mic } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
