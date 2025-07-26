@@ -41,11 +41,11 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { getUserTransactions, GetUserTransactionsOutput } from "@/ai/flows/get-user-transactions-flow";
+import { GetUserDetailsOutput, getUserDetails } from "@/ai/flows/get-user-details-flow";
 
 
-type Transaction = GetUserTransactionsOutput["transactions"][0];
-type Stats = GetUserTransactionsOutput["stats"];
+type Transaction = GetUserDetailsOutput["transactions"][0];
+type Stats = GetUserDetailsOutput["stats"];
 
 const chartData = [
   { month: "فروردین", value: 1860.5 },
@@ -101,7 +101,7 @@ export function Overview() {
     useEffect(() => {
         if (user) {
             setLoading(true);
-            getUserTransactions({ userId: user.uid })
+            getUserDetails({ userId: user.uid })
                 .then(response => {
                     setTransactions(response.transactions.slice(0, 5));
                     setStats(response.stats);
@@ -166,7 +166,7 @@ export function Overview() {
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">$0.00</div>
                         <p className="text-xs text-muted-foreground">
                         آماده برای سرمایه‌گذاری (بزودی)
                         </p>
@@ -320,4 +320,3 @@ export function Overview() {
     </>
   );
 }
-
