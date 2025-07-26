@@ -6,6 +6,7 @@ import { HowItWorksSection } from "@/components/landing/how-it-works-section";
 import { LotterySection } from "@/components/landing/lottery-section";
 import { FaqSection } from "@/components/landing/faq-section";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { FutureVisionSection } from "@/components/landing/future-vision-section";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
         <FundsSection />
         <HowItWorksSection />
         <LotterySection />
+        <FutureVisionSection />
         <FaqSection />
       </main>
       <Footer />

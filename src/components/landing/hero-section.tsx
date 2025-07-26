@@ -4,6 +4,7 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export function HeroSection() {
   return (
@@ -21,7 +22,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            به خزانه سرسبز خوش آمدید
+            این بار، اجازه دهید هوش مصنوعی برای شما درآمد کسب کند
           </motion.h1>
           <motion.p 
             className="max-w-[600px] text-muted-foreground md:text-xl"
@@ -29,7 +30,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            عصری جدید در سرمایه‌گذاری بین‌المللی. با تنها ۱ دلار شروع کنید و شاهد رشد دارایی‌های خود از طریق صندوق‌های شفاف، امن و سودآور ما باشید.
+            به اولین پلتفرم درآمدزای مبتنی بر هوش مصنوعی خوش آمدید. ما با شفافیت کامل، امنیت بی‌نظیر و سودآوری پایدار، تعریف جدیدی از سرمایه‌گذاری ارائه می‌دهیم.
           </motion.p>
           <motion.div 
             className="flex flex-col gap-2 min-[400px]:flex-row"
@@ -38,10 +39,10 @@ export function HeroSection() {
             transition={{ delay: 0.4, duration: 0.5 }}
           >
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
-              <a href="#funds">کاوش در صندوق‌ها</a>
+              <Link href="/signup">همین حالا شروع کنید</Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <a href="#how-it-works">بیشتر بدانید</a>
+              <Link href="#how-it-works">شفافیت در عمل</Link>
             </Button>
           </motion.div>
         </div>
@@ -55,8 +56,8 @@ export function HeroSection() {
                 src="https://placehold.co/600x400.png"
                 width={600}
                 height={400}
-                alt="رشد مالی"
-                data-ai-hint="finance growth"
+                alt="رشد مالی با هوش مصنوعی"
+                data-ai-hint="digital finance growth"
                 className="overflow-hidden rounded-xl object-cover"
             />
         </motion.div>
