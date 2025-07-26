@@ -1,9 +1,9 @@
 
 'use server';
 /**
- * @fileOverview A flow for fetching all users from Firestore.
+ * @fileOverview A flow for fetching all users from Firestore along with their aggregated data.
  *
- * - getAllUsers - Fetches all registered users.
+ * - getAllUsers - Fetches all registered users and calculates their total investment.
  * - GetAllUsersOutput - The return type for the getAllUsers function.
  */
 
@@ -21,9 +21,8 @@ const UserSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   createdAt: z.string(), // Sending as string for client
-  // In a real app, you might have more fields like totalInvestment, status, etc.
-  totalInvestment: z.number().default(0),
-  status: z.string().default("فعال"),
+  totalInvestment: z.number(),
+  status: z.string(),
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -42,6 +41,13 @@ type UserDocument = {
   createdAt: Timestamp;
 };
 
+// Firestore data structure for an investment
+type InvestmentDocument = {
+  userId: string;
+  amount: number;
+  status: 'pending' | 'active' | 'completed';
+};
+
 export async function getAllUsers(input: GetAllUsersInput = {}): Promise<GetAllUsersOutput> {
   return await getAllUsersFlow(input);
 }
@@ -52,21 +58,38 @@ const getAllUsersFlow = ai.defineFlow(
     inputSchema: GetAllUsersInputSchema,
     outputSchema: GetAllUsersOutputSchema,
   },
-  async (input) => {
+  async () => {
     
+    // 1. Fetch all users and investments in parallel
     const usersCollection = collection(db, "users");
-    const q = query(usersCollection, orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
+    const investmentsCollection = collection(db, "investments");
+
+    const [usersSnapshot, investmentsSnapshot] = await Promise.all([
+        getDocs(query(usersCollection, orderBy("createdAt", "desc"))),
+        getDocs(getDocs(investmentsCollection))
+    ]);
+
+    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserDocument));
+    const investments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDocument);
     
-    const usersData = querySnapshot.docs.map(doc => {
-        const data = doc.data() as UserDocument;
+    // 2. Calculate total investment for each user
+    const investmentsByUser = new Map<string, number>();
+    investments.forEach(inv => {
+        if (inv.status === 'active' || inv.status === 'pending') {
+            const currentTotal = investmentsByUser.get(inv.userId) || 0;
+            investmentsByUser.set(inv.userId, currentTotal + inv.amount);
+        }
+    });
+
+    // 3. Map users to the final output schema
+    const usersData = users.map(user => {
         return {
-            uid: data.uid,
-            email: data.email,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            createdAt: data.createdAt.toDate().toLocaleDateString('fa-IR'),
-            totalInvestment: 0, // This would be calculated in a real scenario
+            uid: user.uid,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            createdAt: user.createdAt.toDate().toLocaleDateString('fa-IR'),
+            totalInvestment: investmentsByUser.get(user.uid) || 0,
             status: "فعال", // This could also come from the user document
         };
     });

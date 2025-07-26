@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -27,28 +27,58 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuTrigger,
+    DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
-import { Search, MoreHorizontal, FileDown, Loader2 } from "lucide-react";
+import { Search, MoreHorizontal, FileDown, Loader2, UserX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAllUsers, User } from "@/ai/flows/get-all-users-flow";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminUsersPage() {
-    const [users, setUsers] = useState<User[]>([]);
+    const [allUsers, setAllUsers] = useState<User[]>([]);
+    const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
+    const { toast } = useToast();
 
     useEffect(() => {
+        setLoading(true);
         getAllUsers()
             .then(response => {
-                setUsers(response.users);
+                setAllUsers(response.users);
+                setFilteredUsers(response.users);
             })
             .catch(error => {
                 console.error("Failed to fetch users:", error);
-                // TODO: Add toast notification for error
+                toast({
+                    variant: "destructive",
+                    title: "خطا در واکشی کاربران",
+                    description: "مشکلی در ارتباط با سرور رخ داد."
+                })
             })
             .finally(() => {
                 setLoading(false);
             });
-    }, []);
+    }, [toast]);
+
+    useEffect(() => {
+        const lowercasedFilter = searchTerm.toLowerCase();
+        const filteredData = allUsers.filter(item => {
+            return (
+                item.firstName.toLowerCase().includes(lowercasedFilter) ||
+                item.lastName.toLowerCase().includes(lowercasedFilter) ||
+                item.email.toLowerCase().includes(lowercasedFilter)
+            );
+        });
+        setFilteredUsers(filteredData);
+    }, [searchTerm, allUsers]);
+
+    const handleAction = (action: string, userName: string) => {
+        toast({
+            title: `عملیات ${action}`,
+            description: `قابلیت "${action}" برای کاربر ${userName} بزودی پیاده‌سازی خواهد شد.`,
+        });
+    };
 
   return (
     <>
@@ -71,6 +101,8 @@ export default function AdminUsersPage() {
                                 type="search"
                                 placeholder="جستجوی کاربر..."
                                 className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <Button variant="outline">
@@ -103,20 +135,19 @@ export default function AdminUsersPage() {
                                     </div>
                                 </TableCell>
                             </TableRow>
-                        ) : users.length === 0 ? (
+                        ) : filteredUsers.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center py-10">
-                                    هیچ کاربری یافت نشد.
+                                    هیچ کاربری با این مشخصات یافت نشد.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            users.map((user) => (
+                            filteredUsers.map((user) => (
                                 <TableRow key={user.uid}>
                                     <TableCell>
                                         <div className="flex items-center gap-4">
                                             <Avatar className="hidden h-9 w-9 sm:flex">
-                                                {/* In a real app, user.avatarUrl would be a field in the document */}
-                                                <AvatarImage src={`/avatars/${(parseInt(user.uid, 36) % 5) + 1}.png`} alt="Avatar" />
+                                                <AvatarImage src={`https://i.pravatar.cc/40?u=${user.uid}`} alt="Avatar" />
                                                 <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
                                             </Avatar>
                                             <div className="grid gap-1">
@@ -144,9 +175,13 @@ export default function AdminUsersPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                                                <DropdownMenuItem>مشاهده جزئیات</DropdownMenuItem>
-                                                <DropdownMenuItem>ویرایش</DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-600">مسدود کردن</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleAction('مشاهده جزئیات', `${user.firstName} ${user.lastName}`)}>مشاهده جزئیات</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleAction('ویرایش کاربر', `${user.firstName} ${user.lastName}`)}>ویرایش</DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem className="text-red-500" onClick={() => handleAction('مسدود کردن', `${user.firstName} ${user.lastName}`)}>
+                                                    <UserX className="ml-2 h-4 w-4" />
+                                                    مسدود کردن
+                                                </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
@@ -158,7 +193,7 @@ export default function AdminUsersPage() {
             </CardContent>
              <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                    نمایش <strong>{users.length}</strong> کاربر
+                    نمایش <strong>{filteredUsers.length}</strong> از <strong>{allUsers.length}</strong> کاربر
                 </div>
                  {/* Pagination can be added here */}
             </CardFooter>
