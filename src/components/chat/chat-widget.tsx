@@ -109,7 +109,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         setMessages([
           {
             sender: "bot",
-            text: "سلام! من دستیار هوشمند Trusva هستم. برای شروع گفتگو، پیام خود را بنویسید یا روی آیکون گفتگوی زنده ضربه بزنید.",
+            text: "سلام! من هوش مصنوعی Trusva هستم. من می‌توانم به سوالات شما در مورد نحوه محاسبه سود، کارمزدها، صندوق‌ها و امنیت پلتفرم پاسخ دهم. چگونه می‌توانم شما را راهنمایی کنم؟",
           },
         ]);
       }, 500);
@@ -218,7 +218,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             <AvatarFallback>AI</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle>دستیار Trusva</CardTitle>
+            <CardTitle>هوش مصنوعی Trusva</CardTitle>
              <div className="flex items-center gap-1">
               <div className={cn("h-2 w-2 rounded-full transition-colors bg-green-500")}/>
               <CardDescription>آنلاین</CardDescription>
@@ -358,14 +358,14 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed bottom-4 left-4 z-50"
+            className="fixed bottom-4 right-4 z-50"
           >
             {ChatWindow}
           </motion.div>
         )}
       </AnimatePresence>
       <button
-        className="fixed bottom-4 left-4 z-50 cursor-pointer group"
+        className="fixed bottom-4 right-4 z-50 cursor-pointer group"
         onClick={toggleOpen}
         aria-label="Toggle chat widget"
       >
