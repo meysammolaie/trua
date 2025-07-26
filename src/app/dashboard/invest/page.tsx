@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -36,7 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { submitInvestment } from "@/ai/flows/investment-flow";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { getPlatformSettings, PlatformSettings } from "@/ai/flows/platform-settings-flow";
+import { getFundDetails, FundDetails } from "@/ai/flows/get-fund-details-flow";
 
 const investmentSchema = z.object({
   amount: z.coerce.number().positive({ message: "مقدار باید مثبت باشد." }),
@@ -45,27 +44,27 @@ const investmentSchema = z.object({
 
 type FundId = "usdt" | "bitcoin" | "gold" | "silver";
 
-type Fund = {
-  id: FundId;
-  name: string;
-  icon: React.ReactNode;
-  unit: string;
-  walletAddress: string;
+const fundIcons: Record<FundId, React.ReactNode> = {
+    usdt: <DollarSign className="w-5 h-5 ml-2" />,
+    bitcoin: <Bitcoin className="w-5 h-5 ml-2" />,
+    gold: <Crown className="w-5 h-5 ml-2" />,
+    silver: <Medal className="w-5 h-5 ml-2" />,
 };
+
 
 export default function InvestPage() {
   const { user } = useAuth();
-  const [settings, setSettings] = useState<PlatformSettings | null>(null);
+  const [fundDetails, setFundDetails] = useState<FundDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeFundId, setActiveFundId] = useState<FundId>("usdt");
   const { toast } = useToast();
 
   useEffect(() => {
-    async function fetchSettings() {
+    async function fetchDetails() {
       try {
         setLoading(true);
-        const platformSettings = await getPlatformSettings();
-        setSettings(platformSettings);
+        const details = await getFundDetails();
+        setFundDetails(details);
       } catch (error) {
         toast({
           variant: "destructive",
@@ -76,17 +75,10 @@ export default function InvestPage() {
         setLoading(false);
       }
     }
-    fetchSettings();
+    fetchDetails();
   }, [toast]);
 
-  const funds: Fund[] = [
-    { id: "usdt", name: "صندوق تتر", icon: <DollarSign className="w-5 h-5 ml-2" />, unit: "USDT", walletAddress: settings?.usdtWalletAddress || '' },
-    { id: "bitcoin", name: "صندوق بیت‌کوین", icon: <Bitcoin className="w-5 h-5 ml-2" />, unit: "BTC", walletAddress: settings?.bitcoinWalletAddress || '' },
-    { id: "gold", name: "صندوق طلا", icon: <Crown className="w-5 h-5 ml-2" />, unit: "PAXG", walletAddress: settings?.goldWalletAddress || '' },
-    { id: "silver", name: "صندوق نقره", icon: <Medal className="w-5 h-5 ml-2" />, unit: "KAG", walletAddress: settings?.silverWalletAddress || '' },
-  ];
-
-  const activeFund = funds.find(f => f.id === activeFundId)!;
+  const activeFund = fundDetails?.funds.find(f => f.id === activeFundId);
 
   const form = useForm<z.infer<typeof investmentSchema>>({
     resolver: zodResolver(investmentSchema),
@@ -97,14 +89,15 @@ export default function InvestPage() {
   });
   
   const watchedAmount = form.watch("amount", 1);
-  const entryFee = watchedAmount * (settings?.entryFee || 0) / 100;
-  const lotteryFee = watchedAmount * (settings?.lotteryFee || 0) / 100;
-  const platformFee = watchedAmount * (settings?.platformFee || 0) / 100;
+  const entryFee = watchedAmount * (fundDetails?.settings?.entryFee || 0) / 100;
+  const lotteryFee = watchedAmount * (fundDetails?.settings?.lotteryFee || 0) / 100;
+  const platformFee = watchedAmount * (fundDetails?.settings?.platformFee || 0) / 100;
   const totalFee = entryFee + lotteryFee + platformFee;
   const netInvestment = watchedAmount - totalFee;
+  const netInvestmentUSD = netInvestment * (activeFund?.price.usd || 0);
 
   async function onSubmit(values: z.infer<typeof investmentSchema>) {
-    if (!user) {
+    if (!user || !activeFund) {
       toast({
         variant: "destructive",
         title: "خطا",
@@ -144,7 +137,7 @@ export default function InvestPage() {
   }
 
   const handleCopyToClipboard = () => {
-    if (!activeFund.walletAddress) return;
+    if (!activeFund?.walletAddress) return;
     navigator.clipboard.writeText(activeFund.walletAddress);
     toast({
       title: "کپی شد!",
@@ -160,6 +153,10 @@ export default function InvestPage() {
       </div>
     );
   }
+  
+  if (!fundDetails) {
+    return <div className="text-center">اطلاعات صندوق‌ها یافت نشد.</div>
+  }
 
   return (
     <>
@@ -174,110 +171,124 @@ export default function InvestPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={activeFund.id} className="w-full" onValueChange={(value) => setActiveFundId(value as FundId)}>
+          <Tabs defaultValue={activeFundId} className="w-full" onValueChange={(value) => setActiveFundId(value as FundId)}>
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
-              {funds.map((fund) => (
-                <TabsTrigger key={fund.id} value={fund.id} className="py-2">
-                   {fund.icon} {fund.name}
+              {fundDetails.funds.map((fund) => (
+                <TabsTrigger key={fund.id} value={fund.id} className="py-2 flex flex-col sm:flex-row items-center gap-2">
+                   {fundIcons[fund.id as FundId]} 
+                   <div className="flex flex-col items-center sm:items-start">
+                    <span>{fund.name}</span>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      ${fund.price.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                   </div>
                 </TabsTrigger>
               ))}
             </TabsList>
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-6">
-                <TabsContent value={activeFund.id} className="m-0">
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {/* Column 1: Investment Details */}
-                    <div className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="amount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>مقدار سرمایه‌گذاری ({activeFund.unit})</FormLabel>
-                            <FormControl>
-                              <Input type="number" step="any" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              حداقل مقدار: ۱ {activeFund.unit}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div>
-                        <Label>آدرس کیف پول پلتفرم ({activeFund.unit})</Label>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Input readOnly value={activeFund.walletAddress} className="text-left" dir="ltr" />
-                          <Button type="button" variant="outline" size="icon" onClick={handleCopyToClipboard} disabled={!activeFund.walletAddress}>
-                            <Copy className="h-4 w-4" />
+            {activeFund && (
+                 <Form {...form}>
+                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-6">
+                   <TabsContent value={activeFund.id} className="m-0">
+                     <div className="grid md:grid-cols-2 gap-8">
+                       {/* Column 1: Investment Details */}
+                       <div className="space-y-6">
+                         <FormField
+                           control={form.control}
+                           name="amount"
+                           render={({ field }) => (
+                             <FormItem>
+                               <FormLabel>مقدار سرمایه‌گذاری ({activeFund.unit})</FormLabel>
+                               <FormControl>
+                                 <Input type="number" step="any" {...field} />
+                               </FormControl>
+                               <FormDescription>
+                                 حداقل مقدار: ۱ {activeFund.unit}
+                               </FormDescription>
+                               <FormMessage />
+                             </FormItem>
+                           )}
+                         />
+   
+                         <div>
+                           <Label>آدرس کیف پول پلتفرم ({activeFund.unit})</Label>
+                           <div className="flex items-center gap-2 mt-2">
+                             <Input readOnly value={activeFund.walletAddress} className="text-left" dir="ltr" />
+                             <Button type="button" variant="outline" size="icon" onClick={handleCopyToClipboard} disabled={!activeFund.walletAddress}>
+                               <Copy className="h-4 w-4" />
+                             </Button>
+                           </div>
+                           <p className="text-xs text-muted-foreground mt-2">
+                             مقدار ({activeFund.unit}) را به این آدرس واریز کرده و سپس شناسه تراکنش را در فرم زیر وارد کنید.
+                           </p>
+                         </div>
+   
+                          <FormField
+                           control={form.control}
+                           name="transactionHash"
+                           render={({ field }) => (
+                             <FormItem>
+                               <FormLabel>شناسه تراکنش (TxID)</FormLabel>
+                               <FormControl>
+                                 <Input placeholder="0x..." {...field} className="text-left" dir="ltr" />
+                               </FormControl>
+                                <FormDescription>
+                                 شناسه تراکنش را پس از واریز در اینجا وارد کنید.
+                               </FormDescription>
+                               <FormMessage />
+                             </FormItem>
+                           )}
+                         />
+                       </div>
+   
+                       {/* Column 2: Fee Summary */}
+                       <div className="space-y-4">
+                          <Card className="bg-muted/50">
+                             <CardHeader>
+                               <CardTitle className="text-lg">خلاصه مالی</CardTitle>
+                             </CardHeader>
+                             <CardContent className="space-y-4 text-sm">
+                               <div className="flex justify-between items-center">
+                                 <span className="text-muted-foreground">مبلغ سرمایه‌گذاری:</span>
+                                 <span className="font-mono font-semibold">{watchedAmount.toFixed(4)} {activeFund.unit}</span>
+                               </div>
+                               <div className="flex justify-between items-center">
+                                 <span className="text-muted-foreground">کارمزد ورود ({fundDetails.settings?.entryFee}%):</span>
+                                 <span className={cn("font-mono font-semibold", watchedAmount > 0 && "text-red-500")}>-{entryFee.toFixed(4)} {activeFund.unit}</span>
+                               </div>
+                                <div className="flex justify-between items-center">
+                                 <span className="text-muted-foreground">کارمزد قرعه‌کشی ({fundDetails.settings?.lotteryFee}%):</span>
+                                 <span className={cn("font-mono font-semibold", watchedAmount > 0 && "text-red-500")}>-{lotteryFee.toFixed(4)} {activeFund.unit}</span>
+                               </div>
+                                <div className="flex justify-between items-center">
+                                 <span className="text-muted-foreground">کارمزد پلتفرم ({fundDetails.settings?.platformFee}%):</span>
+                                 <span className={cn("font-mono font-semibold", watchedAmount > 0 && "text-red-500")}>-{platformFee.toFixed(4)} {activeFund.unit}</span>
+                               </div>
+                               <hr />
+                                <div className="flex justify-between items-center text-base">
+                                 <span className="font-bold">سرمایه خالص شما:</span>
+                                 <div className="flex flex-col items-end">
+                                    <span className={cn("font-mono font-bold", netInvestment >= 0 ? "text-green-500" : "text-red-500")}>
+                                        {netInvestment.toFixed(4)} {activeFund.unit}
+                                    </span>
+                                     <span className="text-xs text-muted-foreground font-mono">
+                                        ~${netInvestmentUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                 </div>
+                               </div>
+                             </CardContent>
+                          </Card>
+                          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || !activeFund.walletAddress}>
+                            {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                            {form.formState.isSubmitting ? "در حال ثبت..." : "ثبت سرمایه‌گذاری"}
                           </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          مقدار ({activeFund.unit}) را به این آدرس واریز کرده و سپس شناسه تراکنش را در فرم زیر وارد کنید.
-                        </p>
-                      </div>
-
-                       <FormField
-                        control={form.control}
-                        name="transactionHash"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>شناسه تراکنش (TxID)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="0x..." {...field} className="text-left" dir="ltr" />
-                            </FormControl>
-                             <FormDescription>
-                              شناسه تراکنش را پس از واریز در اینجا وارد کنید.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Column 2: Fee Summary */}
-                    <div className="space-y-4">
-                       <Card className="bg-muted/50">
-                          <CardHeader>
-                            <CardTitle className="text-lg">خلاصه مالی ({activeFund.unit})</CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-4 text-sm">
-                            <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground">مبلغ سرمایه‌گذاری:</span>
-                              <span className="font-mono font-semibold">{watchedAmount.toFixed(4)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground">کارمزد ورود ({settings?.entryFee}%):</span>
-                              <span className={cn("font-mono font-semibold", watchedAmount > 0 && "text-red-500")}>-{entryFee.toFixed(4)}</span>
-                            </div>
-                             <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground">کارمزد قرعه‌کشی ({settings?.lotteryFee}%):</span>
-                              <span className={cn("font-mono font-semibold", watchedAmount > 0 && "text-red-500")}>-{lotteryFee.toFixed(4)}</span>
-                            </div>
-                             <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground">کارمزد پلتفرم ({settings?.platformFee}%):</span>
-                              <span className={cn("font-mono font-semibold", watchedAmount > 0 && "text-red-500")}>-{platformFee.toFixed(4)}</span>
-                            </div>
-                            <hr />
-                             <div className="flex justify-between items-center text-base">
-                              <span className="font-bold">سرمایه خالص شما:</span>
-                              <span className={cn("font-mono font-bold", netInvestment >= 0 ? "text-green-500" : "text-red-500")}>
-                                {netInvestment.toFixed(4)}
-                              </span>
-                            </div>
-                          </CardContent>
-                       </Card>
-                       <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || !activeFund.walletAddress}>
-                         {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                         {form.formState.isSubmitting ? "در حال ثبت..." : "ثبت سرمایه‌گذاری"}
-                       </Button>
-                    </div>
-                  </div>
-                </TabsContent>
-              </form>
-            </Form>
+                       </div>
+                     </div>
+                   </TabsContent>
+                 </form>
+               </Form>
+            )}
+           
 
           </Tabs>
         </CardContent>

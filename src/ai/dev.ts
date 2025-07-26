@@ -12,4 +12,7 @@ import "./flows/get-all-transactions-flow";
 import "./flows/get-lottery-data-flow";
 import "./flows/update-user-status-flow";
 import "./flows/platform-settings-flow";
+import "./flows/get-fund-details-flow";
+
+import "./tools/get-crypto-price-tool";
 
