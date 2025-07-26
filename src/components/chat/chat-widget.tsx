@@ -83,7 +83,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
       console.error("Chat error:", error);
       const errorMessage: Message = {
         sender: "bot",
-        text: "متاسفانه مشکلی در ارتباط با دستیار هوشمند پیش آمده. لطفاً دوباره تلاش کنید.",
+        text: "متاسفانه مشکلی در ارتباط با هوش مصنوعی پیش آمده. لطفاً دوباره تلاش کنید.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -104,7 +104,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen && messages.length === 0 && !isEmbedded) {
+    if (isOpen && messages.length === 0) {
       const timer = setTimeout(() => {
         setMessages([
           {
