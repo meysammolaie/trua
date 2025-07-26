@@ -31,10 +31,10 @@ import {
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Download, ListFilter, Search, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { getUserTransactions, GetUserTransactionsOutput } from "@/ai/flows/get-user-transactions-flow";
+import { GetUserDetailsOutput, getUserDetails } from "@/ai/flows/get-user-details-flow";
 
-type Transaction = GetUserTransactionsOutput["transactions"][0];
-type Stats = GetUserTransactionsOutput["stats"];
+type Transaction = GetUserDetailsOutput["transactions"][0];
+type Stats = GetUserDetailsOutput["stats"];
 
 
 export default function ReportsPage() {
@@ -46,7 +46,7 @@ export default function ReportsPage() {
     React.useEffect(() => {
         if (user) {
             setLoading(true);
-            getUserTransactions({ userId: user.uid })
+            getUserDetails({ userId: user.uid })
                 .then(response => {
                     setTransactions(response.transactions);
                     setStats(response.stats);
@@ -82,7 +82,7 @@ export default function ReportsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>موجودی کیف پول</CardDescription>
-            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.walletBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">$0.00</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
