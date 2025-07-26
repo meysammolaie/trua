@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { signInWithEmailAndPassword, signInWithPopup, UserCredential, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider, db } from "@/lib/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -52,6 +52,19 @@ const formSchema = z.object({
 const resetPasswordSchema = z.object({
     resetEmail: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." })
 });
+
+const logLoginHistory = async (userId: string) => {
+  try {
+      await addDoc(collection(db, "login_history"), {
+          userId,
+          timestamp: serverTimestamp(),
+          userAgent: navigator.userAgent,
+      });
+  } catch (error) {
+      console.error("Error logging login history:", error);
+  }
+};
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -101,7 +114,8 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      await logLoginHistory(userCredential.user.uid);
       toast({
         title: "ورود موفق",
         description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
@@ -126,6 +140,7 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
       await createUserDocument(userCredential);
+      await logLoginHistory(userCredential.user.uid);
       toast({
         title: "ورود موفق",
         description: "شما با موفقیت از طریق گوگل وارد شدید.",

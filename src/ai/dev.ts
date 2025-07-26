@@ -21,6 +21,7 @@ import "./flows/update-withdrawal-status-flow";
 import "./flows/get-commissions-flow";
 import "./flows/get-user-referrals-flow";
 import "./flows/distribute-profits-flow";
+import "./flows/get-login-history-flow";
 
 
 import "./tools/get-crypto-price-tool";

@@ -41,6 +41,7 @@ import { db, auth } from "@/lib/firebase";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
 import { Loader2, Copy } from "lucide-react";
+import { getLoginHistory, LoginHistoryRecord } from "@/ai/flows/get-login-history-flow";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
@@ -57,18 +58,13 @@ const passwordFormSchema = z.object({
   path: ["confirmPassword"],
 });
 
-const loginHistory = [
-    { device: "دسکتاپ - ویندوز", ip: "192.168.1.10", date: "۱۴۰۳/۰۴/۱۰ - ۱۸:۳۰" },
-    { device: "موبایل - آیفون", ip: "185.45.21.112", date: "۱۴۰۳/۰۴/۰۹ - ۱۲:۱۵" },
-    { device: "تبلت - آیپد", ip: "192.168.1.10", date: "۱۴۰۳/۰۴/۰۸ - ۰۹:۰۰" },
-];
-
 
 export default function ProfilePage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [is2faEnabled, setIs2faEnabled] = useState(false);
   const [referralCode, setReferralCode] = useState("");
+  const [loginHistory, setLoginHistory] = useState<LoginHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
@@ -90,12 +86,17 @@ export default function ProfilePage() {
   });
   
   useEffect(() => {
-    if (user) {
-        setIsLoading(true);
-        profileForm.setValue("email", user.email || "");
+    async function loadInitialData() {
+        if (user) {
+            setIsLoading(true);
+            profileForm.setValue("email", user.email || "");
 
-        const userRef = doc(db, "users", user.uid);
-        getDoc(userRef).then(userSnap => {
+            const userRef = doc(db, "users", user.uid);
+            const userSnapPromise = getDoc(userRef);
+            const historyPromise = getLoginHistory({ userId: user.uid });
+
+            const [userSnap, historyResponse] = await Promise.all([userSnapPromise, historyPromise]);
+
             if (userSnap.exists()) {
                 const userData = userSnap.data();
                 profileForm.reset({
@@ -106,8 +107,15 @@ export default function ProfilePage() {
                 setIs2faEnabled(userData.is2faEnabled || false);
                 setReferralCode(userData.referralCode || "");
             }
-        }).finally(() => setIsLoading(false));
+
+            if (historyResponse) {
+                setLoginHistory(historyResponse.history);
+            }
+            
+            setIsLoading(false);
+        }
     }
+    loadInitialData();
   }, [user, profileForm]);
 
 
@@ -371,7 +379,7 @@ export default function ProfilePage() {
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
              <CardDescription>
-                تاریخچه ورودهای اخیر به حساب شما (قابلیت نمایشی)
+                تاریخچه ورودهای اخیر به حساب شما
             </CardDescription>
           </CardFooter>
            <CardContent>
@@ -379,15 +387,13 @@ export default function ProfilePage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead>دستگاه</TableHead>
-                        <TableHead>آدرس IP</TableHead>
                         <TableHead>تاریخ</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {loginHistory.map((login, index) => (
-                        <TableRow key={index}>
+                    {loginHistory.map((login) => (
+                        <TableRow key={login.id}>
                             <TableCell>{login.device}</TableCell>
-                            <TableCell className="font-mono text-left" dir="ltr">{login.ip}</TableCell>
                             <TableCell>{login.date}</TableCell>
                         </TableRow>
                     ))}
@@ -399,5 +405,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
