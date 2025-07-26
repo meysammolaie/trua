@@ -36,13 +36,12 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
-  
-  const [activeMode, setActiveMode] = useState<'voice' | 'text'>('text');
 
   useEffect(() => {
     setIsClient(true);
@@ -75,6 +74,11 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
       if (audioRef.current && result.audio) {
         audioRef.current.src = result.audio;
         audioRef.current.play();
+      } else {
+        // If there is no audio, it means we should exit voice mode if active
+        if (isVoiceMode) {
+             setTimeout(() => setIsVoiceMode(false), 500);
+        }
       }
     } catch (error) {
       console.error("Chat error:", error);
@@ -106,7 +110,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         setMessages([
           {
             sender: "bot",
-            text: "سلام! من دستیار هوشمند Trusva هستم. برای شروع گفتگو، پیام خود را بنویسید یا به حالت گفتگوی صوتی بروید.",
+            text: "سلام! من دستیار هوشمند Trusva هستم. برای شروع گفتگو، پیام خود را بنویسید یا روی آیکون میکروفون ضربه بزنید.",
           },
         ]);
       }, 500);
@@ -115,7 +119,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   }, [isOpen, messages.length, isEmbedded]);
 
  useEffect(() => {
-    if (!isSpeechSupported || !isOpen || activeMode !== 'voice') {
+    if (!isSpeechSupported || !isVoiceMode) {
         recognitionRef.current?.abort();
         return;
     }
@@ -130,13 +134,11 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         recognition.onstart = () => setIsListening(true);
         recognition.onend = () => {
             setIsListening(false);
-            if (!isSpeaking && activeMode === 'voice') {
-                 setTimeout(() => recognitionRef.current?.start(), 100);
-            }
+            // Don't automatically restart. User has to tap again.
         };
 
         recognition.onerror = (event) => {
-            if (event.error === 'no-speech' || event.error === 'aborted') {
+             if (event.error === 'no-speech' || event.error === 'aborted') {
                 return;
             }
             console.error('Speech recognition error:', event.error);
@@ -151,14 +153,13 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         };
     }
     
-    if (!isListening && !isSpeaking) {
-        recognitionRef.current.start();
-    }
+    // Start listening when entering voice mode
+    recognitionRef.current.start();
 
     return () => {
         recognitionRef.current?.abort();
     };
-}, [isSpeechSupported, isOpen, activeMode, isSpeaking]);
+}, [isSpeechSupported, isVoiceMode]);
 
 
   useEffect(() => {
@@ -167,13 +168,12 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
 
     const handlePlay = () => {
         setIsSpeaking(true);
-        recognitionRef.current?.abort();
+        recognitionRef.current?.stop();
     };
     const handleEnd = () => {
         setIsSpeaking(false);
-        if(isOpen && activeMode === 'voice') {
-            recognitionRef.current?.start();
-        }
+        // After speaking, go back to text chat, ready for next interaction
+        setTimeout(() => setIsVoiceMode(false), 500);
     };
 
     audio.addEventListener('play', handlePlay);
@@ -185,7 +185,16 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
       audio.removeEventListener('ended', handleEnd);
       audio.removeEventListener('pause', handleEnd);
     };
-  }, [audioRef, isOpen, activeMode]);
+  }, [audioRef]);
+
+  const toggleVoiceMode = () => {
+      if (isVoiceMode) {
+          setIsVoiceMode(false);
+          recognitionRef.current?.abort();
+      } else {
+          setIsVoiceMode(true);
+      }
+  }
 
 
   const ChatWindow = (
@@ -208,15 +217,8 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
           <div>
             <CardTitle>دستیار Trusva</CardTitle>
              <div className="flex items-center gap-1">
-              <div
-                className={cn(
-                  "h-2 w-2 rounded-full transition-colors",
-                   isSpeaking ? "bg-red-500 animate-pulse" : (isListening && activeMode === 'voice' ? "bg-green-500 animate-pulse" : "bg-muted-foreground")
-                )}
-              />
-              <CardDescription>
-                 {isSpeaking ? "در حال صحبت..." : (isListening && activeMode === 'voice' ? "در حال گوش دادن..." : "آنلاین")}
-              </CardDescription>
+              <div className={cn("h-2 w-2 rounded-full transition-colors bg-green-500")}/>
+              <CardDescription>آنلاین</CardDescription>
             </div>
           </div>
         </div>
@@ -227,133 +229,103 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         )}
       </CardHeader>
       
-       <div className="px-4 pb-2">
-         <div className="relative flex items-center justify-center p-1 bg-muted rounded-full">
-            <motion.div
-                layoutId="activeModeHighlight"
-                className="absolute h-full w-1/2 bg-background rounded-full shadow-sm"
-                animate={{ x: activeMode === 'text' ? '-50%' : '50%' }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            />
-             <Button
-                variant="ghost"
-                className="w-1/2 z-10 rounded-full"
-                onClick={() => setActiveMode('text')}
-            >
-                چت متنی
-            </Button>
-            <Button
-                variant="ghost"
-                className="w-1/2 z-10 rounded-full"
-                onClick={() => setActiveMode('voice')}
-            >
-                گفتگوی زنده صوتی
-            </Button>
-        </div>
-       </div>
-
-      <CardContent className="flex-1 overflow-hidden relative">
-        <AnimatePresence mode="wait">
-            {activeMode === 'text' && (
-                 <motion.div
-                    key="text-mode"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="h-full flex flex-col"
-                 >
-                    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-                        <div className="flex flex-col gap-4">
-                        {messages.map((message, index) => (
-                            <div
-                            key={index}
-                            className={cn(
-                                "flex items-start gap-3",
-                                message.sender === "user" ? "justify-end" : "justify-start"
-                            )}
-                            >
-                            {message.sender === "bot" && (
-                                <Avatar className="w-8 h-8">
-                                <AvatarImage src="https://placehold.co/32x32/17192A/FBBF24" alt="Bot" data-ai-hint="robot assistant" />
-                                <AvatarFallback>AI</AvatarFallback>
-                                </Avatar>
-                            )}
-                            <div
-                                className={cn(
-                                "max-w-[75%] rounded-lg p-3 text-sm",
-                                message.sender === "user"
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-muted"
-                                )}
-                            >
-                                {message.text}
-                            </div>
-                            {message.sender === "user" && (
-                                <Avatar className="w-8 h-8">
-                                <AvatarImage src="https://placehold.co/32x32" alt="User" data-ai-hint="person user"/>
-                                <AvatarFallback><User /></AvatarFallback>
-                                </Avatar>
-                            )}
-                            </div>
-                        ))}
-                        </div>
-                    </ScrollArea>
-
-                    <div className="p-4 border-t">
-                        <form onSubmit={(e) => { e.preventDefault(); handleSend(input); }} className="flex items-center gap-2">
-                        <Input
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder="پیام خود را تایپ کنید..."
-                            disabled={isLoading}
-                        />
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                            <Send className="h-4 w-4" />
-                            )}
-                        </Button>
-                        </form>
-                    </div>
-                </motion.div>
-            )}
-
-            {activeMode === 'voice' && (
-                 <motion.div
-                    key="voice-mode"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
-                    className="h-full flex flex-col items-center justify-center gap-4 p-6"
-                 >
-                    <motion.div
-                        animate={{
-                            scale: isListening ? 1.05 : 1,
-                            boxShadow: isListening ? '0 0 25px hsl(var(--primary))' : '0 0 0px hsl(var(--primary))',
-                            height: isSpeaking ? ['192px', '180px', '192px'] : '192px',
-                        }}
-                        transition={{
-                            height: { repeat: Infinity, duration: 0.4, ease: 'easeInOut' },
-                            default: { type: 'spring', stiffness: 300, damping: 20 }
-                        }}
-                        className="w-48 h-48 rounded-full bg-card"
+      <CardContent className="flex-1 overflow-hidden p-0 relative">
+        <div className="h-full flex flex-col">
+            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+                <div className="flex flex-col gap-4">
+                {messages.map((message, index) => (
+                    <div
+                    key={index}
+                    className={cn(
+                        "flex items-start gap-3",
+                        message.sender === "user" ? "justify-end" : "justify-start"
+                    )}
                     >
-                        <Avatar className="w-full h-full">
-                            <AvatarImage src="https://placehold.co/192x192/17192A/FBBF24" alt="AI Assistant" data-ai-hint="robot friendly"/>
-                            <AvatarFallback>AI</AvatarFallback>
+                    {message.sender === "bot" && (
+                        <Avatar className="w-8 h-8">
+                        <AvatarImage src="https://placehold.co/32x32/17192A/FBBF24" alt="Bot" data-ai-hint="robot assistant" />
+                        <AvatarFallback>AI</AvatarFallback>
                         </Avatar>
-                    </motion.div>
-                    <p className="text-muted-foreground text-center min-h-[20px]">
-                        {isSpeaking ? "..." : (isListening ? "در حال شنیدن..." : "من آماده‌ام!")}
-                    </p>
-                    <div className="text-xs text-muted-foreground text-center mt-4 h-4">
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto"/> : `آخرین پیام: ${messages.filter(m=>m.sender==='user').slice(-1)[0]?.text || "..."}` }
+                    )}
+                    <div
+                        className={cn(
+                        "max-w-[75%] rounded-lg p-3 text-sm",
+                        message.sender === "user"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        )}
+                    >
+                        {message.text}
                     </div>
+                    {message.sender === "user" && (
+                        <Avatar className="w-8 h-8">
+                        <AvatarImage src="https://placehold.co/32x32" alt="User" data-ai-hint="person user"/>
+                        <AvatarFallback><User /></AvatarFallback>
+                        </Avatar>
+                    )}
+                    </div>
+                ))}
+                </div>
+            </ScrollArea>
+
+            <div className="p-4 border-t">
+                <form onSubmit={(e) => { e.preventDefault(); handleSend(input); }} className="flex items-center gap-2">
+                <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="پیام خود را تایپ کنید..."
+                    disabled={isLoading}
+                />
+                {input ? (
+                     <Button type="submit" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                     </Button>
+                ) : (
+                    <Button type="button" variant="ghost" size="icon" onClick={toggleVoiceMode} disabled={isLoading || !isSpeechSupported}>
+                        <Mic className="h-4 w-4" />
+                    </Button>
+                )}
+               
+                </form>
+            </div>
+        </div>
+         <AnimatePresence>
+          {isVoiceMode && (
+             <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 p-6"
+             >
+                 <button onClick={toggleVoiceMode} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+                    <X className="w-6 h-6"/>
+                 </button>
+                 <motion.div
+                    animate={{
+                        scale: isListening ? 1.05 : 1,
+                        boxShadow: isListening ? '0 0 25px hsl(var(--primary))' : '0 0 0px hsl(var(--primary))',
+                        height: isSpeaking ? ['192px', '180px', '192px'] : '192px',
+                    }}
+                    transition={{
+                        height: { repeat: Infinity, duration: 0.4, ease: 'easeInOut' },
+                        default: { type: 'spring', stiffness: 300, damping: 20 }
+                    }}
+                    className="w-48 h-48 rounded-full bg-card cursor-pointer"
+                    onClick={() => recognitionRef.current?.start()}
+                >
+                    <Avatar className="w-full h-full">
+                        <AvatarImage src="https://placehold.co/192x192/17192A/FBBF24" alt="AI Assistant" data-ai-hint="robot friendly"/>
+                        <AvatarFallback>AI</AvatarFallback>
+                    </Avatar>
                 </motion.div>
-            )}
+                 <p className="text-muted-foreground text-center min-h-[20px] font-semibold">
+                    {isLoading ? "در حال پردازش..." : isSpeaking ? "..." : (isListening ? "در حال شنیدن..." : "برای صحبت کردن، روی من ضربه بزنید")}
+                </p>
+                <div className="text-xs text-muted-foreground text-center mt-4 h-4">
+                   `آخرین پیام: ${messages.filter(m=>m.sender==='user').slice(-1)[0]?.text || "..."}` 
+                </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </CardContent>
     </Card>
@@ -455,3 +427,4 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     </>
   );
 }
+
