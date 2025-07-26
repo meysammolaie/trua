@@ -18,8 +18,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import { chat } from "@/ai/flows/chat-flow";
 import { voiceChat } from "@/ai/flows/voice-chat-flow";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+
 
 interface Message {
   sender: "user" | "bot";
@@ -35,7 +37,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [activeTab, setActiveTab] = useState("text");
   const [isListening, setIsListening] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -54,7 +56,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     }
   };
   
-  const handleSend = async (messageText: string) => {
+  const handleSend = async (messageText: string, mode: "text" | "voice") => {
     if (messageText.trim() === "" || isLoading) return;
 
     const userMessage: Message = { sender: "user", text: messageText };
@@ -63,7 +65,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     setIsLoading(true);
 
     try {
-      if (isVoiceMode) {
+      if (mode === "voice") {
           const result = await voiceChat({ message: messageText });
           const botMessage: Message = { sender: "bot", text: result.text };
           setMessages((prev) => [...prev, botMessage]);
@@ -72,7 +74,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             audioRef.current.src = result.audio;
             audioRef.current.play();
             audioRef.current.onended = () => {
-                if (recognitionRef.current && isVoiceMode && isOpen) {
+                if (recognitionRef.current && activeTab === "voice" && isOpen) {
                     recognitionRef.current.start();
                 }
             };
@@ -114,7 +116,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   }, [isOpen, messages.length]);
 
   useEffect(() => {
-    if (!isVoiceMode || !SpeechRecognition) {
+    if (activeTab !== "voice" || !SpeechRecognition || !isOpen) {
         if (recognitionRef.current) {
             recognitionRef.current.stop();
         }
@@ -134,7 +136,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     };
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        handleSend(transcript);
+        handleSend(transcript, "voice");
     };
 
     recognitionRef.current = recognition;
@@ -147,19 +149,8 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVoiceMode, isOpen, SpeechRecognition]);
+  }, [activeTab, isOpen, SpeechRecognition]);
 
-  const toggleVoiceMode = () => {
-      if(!SpeechRecognition) {
-          toast({
-            variant: "destructive",
-            title: "ویژگی در دسترس نیست",
-            description: "مرورگر شما از قابلیت تشخیص گفتار پشتیبانی نمی‌کند.",
-          })
-          return;
-      }
-      setIsVoiceMode(!isVoiceMode);
-  }
   
   const { toast } = useToast();
 
@@ -167,115 +158,100 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
      <Card className={cn(
         "w-[380px] h-[600px] flex flex-col shadow-2xl transition-all duration-300", 
         isEmbedded && "w-full h-full shadow-none",
-        isVoiceMode && "bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900"
         )}>
         <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
-                 <div className="relative">
-                    <Avatar>
-                        <AvatarImage src="https://placehold.co/40x40/17192A/FBBF24" alt="AI Assistant" data-ai-hint="robot assistant"/>
-                        <AvatarFallback>AI</AvatarFallback>
-                    </Avatar>
-                    <AnimatePresence>
-                    {isVoiceMode && (
-                        <motion.span 
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                            className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card"
-                        />
-                    )}
-                    </AnimatePresence>
-                 </div>
+                 <Avatar>
+                    <AvatarImage src="https://placehold.co/40x40/17192A/FBBF24" alt="AI Assistant" data-ai-hint="robot assistant"/>
+                    <AvatarFallback>AI</AvatarFallback>
+                </Avatar>
                  <div>
                     <CardTitle>دستیار Trusva</CardTitle>
                     <CardDescription>پشتیبان هوشمند شما</CardDescription>
                 </div>
             </div>
-            <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={toggleVoiceMode} title="حالت مکالمه صوتی" disabled={!isClient}>
-                    <Bot className={cn("h-5 w-5", isVoiceMode && "text-green-400")} />
+            {!isEmbedded && (
+                <Button variant="ghost" size="icon" onClick={toggleOpen}>
+                    <X className="h-4 w-4" />
                 </Button>
-                {!isEmbedded && (
-                    <Button variant="ghost" size="icon" onClick={toggleOpen}>
-                        <X className="h-4 w-4" />
-                    </Button>
-                )}
-            </div>
+            )}
         </CardHeader>
-
-        {isVoiceMode && (
-            <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center p-4 text-center border-b"
-            >
-                <motion.div 
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="text">چت متنی</TabsTrigger>
+                <TabsTrigger value="voice">گفتگوی صوتی</TabsTrigger>
+            </TabsList>
+            <TabsContent value="text" className="flex flex-col flex-1 m-0">
+                 <CardContent className="flex-1 p-0 overflow-hidden">
+                    <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
+                        <div className="space-y-4">
+                        {messages.map((message, index) => (
+                            <div
+                            key={index}
+                            className={`flex gap-2 ${
+                                message.sender === "user"
+                                ? "justify-end"
+                                : "justify-start"
+                            }`}
+                            >
+                                {message.sender === 'bot' && <Bot className="w-5 h-5 text-primary flex-shrink-0" />}
+                            <div
+                                className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                                message.sender === "user"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted"
+                                }`}
+                            >
+                                {message.text}
+                            </div>
+                                {message.sender === 'user' && <User className="w-5 h-5 text-muted-foreground flex-shrink-0" />}
+                            </div>
+                        ))}
+                            {isLoading && (
+                            <div className="flex justify-start gap-2">
+                                    <Bot className="w-5 h-5 text-primary flex-shrink-0" />
+                                    <div className="bg-muted rounded-lg px-3 py-2">
+                                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                                    </div>
+                            </div>
+                        )}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
+                <CardFooter>
+                    <form
+                        className="flex w-full items-center space-x-2"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSend(input, "text");
+                        }}
+                    >
+                        <Input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="پیام خود را تایپ کنید..."
+                        disabled={isLoading}
+                        className="flex-1"
+                        />
+                        <Button type="submit" size="icon" disabled={isLoading}>
+                        <Send className="h-4 w-4" />
+                        </Button>
+                    </form>
+                </CardFooter>
+            </TabsContent>
+            <TabsContent value="voice" className="flex flex-col flex-1 items-center justify-center m-0">
+                 <motion.div 
                     animate={{ scale: isListening ? [1, 1.2, 1] : 1 }}
                     transition={{ repeat: isListening ? Infinity : 0, duration: 1.5 }}
                 >
-                    <Bot className={cn("w-16 h-16 drop-shadow-lg", isListening ? "text-green-400" : "text-primary")}/>
+                    <Bot className={cn("w-24 h-24 drop-shadow-lg", isListening ? "text-green-400" : "text-primary")}/>
                 </motion.div>
-                <p className="mt-2 text-sm text-muted-foreground">{isListening ? "در حال گوش دادن..." : "برای صحبت کردن آماده‌ام"}</p>
-            </motion.div>
-        )}
-
-        <CardContent className="flex-1 p-0 overflow-hidden">
-        <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
-            <div className="space-y-4">
-            {messages.map((message, index) => (
-                <div
-                key={index}
-                className={`flex gap-2 ${
-                    message.sender === "user"
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
-                >
-                    {message.sender === 'bot' && <Bot className="w-5 h-5 text-primary flex-shrink-0" />}
-                <div
-                    className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                    message.sender === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}
-                >
-                    {message.text}
-                </div>
-                    {message.sender === 'user' && <User className="w-5 h-5 text-muted-foreground flex-shrink-0" />}
-                </div>
-            ))}
-                {isLoading && (
-                <div className="flex justify-start gap-2">
-                        <Bot className="w-5 h-5 text-primary flex-shrink-0" />
-                        <div className="bg-muted rounded-lg px-3 py-2">
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                        </div>
-                </div>
-            )}
-            </div>
-        </ScrollArea>
-        </CardContent>
-        <CardFooter>
-        <form
-            className="flex w-full items-center space-x-2"
-            onSubmit={(e) => {
-                e.preventDefault();
-                handleSend(input);
-            }}
-        >
-            <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="پیام خود را تایپ کنید..."
-            disabled={isLoading || isVoiceMode}
-            className="flex-1"
-            />
-            <Button type="submit" size="icon" disabled={isLoading || isVoiceMode}>
-            <Send className="h-4 w-4" />
-            </Button>
-        </form>
-        </CardFooter>
+                <p className="mt-4 text-lg font-semibold">{isListening ? "در حال گوش دادن..." : "من آماده‌ام!"}</p>
+                <p className="mt-1 text-sm text-muted-foreground">برای صحبت کردن آماده‌ام</p>
+                 {isLoading && messages.length > 0 && <p className="mt-4 text-sm text-yellow-400">در حال پردازش...</p>}
+            </TabsContent>
+        </Tabs>
     </Card>
   )
 
@@ -355,15 +331,4 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
       </div>
     </>
   );
-}
-
-// Separate useToast hook to avoid dependency cycle in chat-widget
-function useToast() {
-  // This is a placeholder. The real hook is in @/hooks/use-toast.ts
-  // This is just to satisfy the type-checker in this isolated context.
-  return {
-    toast: (options: { variant?: 'destructive'; title: string; description: string; }) => {
-      console.log('Toast:', options.title, options.description);
-    },
-  };
 }
