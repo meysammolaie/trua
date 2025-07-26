@@ -20,12 +20,12 @@ const TransactionWithUserSchema = z.object({
   userId: z.string(),
   userFullName: z.string(),
   userEmail: z.string(),
-  fundId: z.string(),
+  fundId: z.string().optional(),
   amount: z.number(),
   type: z.string(),
   status: z.enum(['pending', 'active', 'completed', 'failed', 'rejected']).optional(),
   createdAt: z.string(),
-  originalInvestmentId: z.string(),
+  originalInvestmentId: z.string().optional(),
 });
 export type TransactionWithUser = z.infer<typeof TransactionWithUserSchema>;
 
@@ -58,6 +58,14 @@ type UserDocument = {
   lastName: string;
 };
 
+type TransactionDocument = {
+    id: string;
+    userId: string;
+    type: 'profit_payout';
+    amount: number;
+    createdAt: Timestamp;
+}
+
 type InvestmentDocument = {
   id: string;
   userId: string;
@@ -83,19 +91,23 @@ const getAllTransactionsFlow = ai.defineFlow(
     outputSchema: GetAllTransactionsOutputSchema,
   },
   async () => {
-    // 1. Fetch all users and investments in parallel
+    // 1. Fetch all users, investments, and transactions in parallel
     const usersCollection = collection(db, "users");
     const investmentsCollection = collection(db, "investments");
+    const transactionsCollection = collection(db, "transactions");
 
-    const [usersSnapshot, investmentsSnapshot] = await Promise.all([
+    const [usersSnapshot, investmentsSnapshot, profitPayoutsSnapshot] = await Promise.all([
       getDocs(query(usersCollection)),
-      getDocs(query(investmentsCollection, orderBy("createdAt", "desc")))
+      getDocs(query(investmentsCollection, orderBy("createdAt", "desc"))),
+      getDocs(query(transactionsCollection, where("type", "==", "profit_payout"), orderBy("createdAt", "desc")))
     ]);
 
     const usersData = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...(doc.data() as UserDocument) }));
     const usersMap = new Map(usersData.map(user => [user.uid, user]));
     
     const investments = investmentsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as InvestmentDocument) }));
+    const profitPayouts = profitPayoutsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as TransactionDocument) }));
+
 
     // 2. Generate a comprehensive transaction list from investments
     const allTransactions: TransactionWithUser[] = [];
@@ -186,6 +198,24 @@ const getAllTransactionsFlow = ai.defineFlow(
         });
     });
 
+    // Add profit payouts to the list
+    profitPayouts.forEach(payout => {
+        const user = usersMap.get(payout.userId);
+        const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'کاربر نامشخص';
+        const userEmail = user ? user.email : 'ایمیل نامشخص';
+        
+        allTransactions.push({
+            id: payout.id,
+            userId: payout.userId,
+            userFullName,
+            userEmail,
+            amount: payout.amount,
+            type: 'profit_payout',
+            status: 'completed',
+            createdAt: payout.createdAt.toDate().toLocaleDateString('fa-IR'),
+        });
+    });
+
     // 3. Prepare chart data
     const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     const revenueChartData = Object.entries(revenueByMonth)
@@ -199,10 +229,18 @@ const getAllTransactionsFlow = ai.defineFlow(
             };
         });
 
-    // Sort all generated transactions by date descending (approximation by investment date)
+    // Sort all generated transactions by date descending (approximation)
     const sortedTransactions = allTransactions.sort((a, b) => {
-      const dateA = new Date(investments.find(inv => inv.id === a.originalInvestmentId)!.createdAt.toMillis());
-      const dateB = new Date(investments.find(inv => inv.id === b.originalInvestmentId)!.createdAt.toMillis());
+      const getMillis = (id?: string) => {
+        if (!id) return new Date().getTime(); // Should not happen for investments
+        const investment = investments.find(inv => inv.id === id);
+        if (investment) return investment.createdAt.toMillis();
+        const payout = profitPayouts.find(p => p.id === id);
+        if (payout) return payout.createdAt.toMillis();
+        return 0;
+      }
+      const dateA = new Date(getMillis(a.originalInvestmentId || a.id));
+      const dateB = new Date(getMillis(b.originalInvestmentId || b.id));
       return dateB.getTime() - dateA.getTime();
     });
 

@@ -27,9 +27,12 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, Line, LineChart as RechartsLineChart } from "recharts";
 import { DateRangePicker } from "@/components/date-range-picker";
-import { FileDown, DollarSign, Users, Ticket, TrendingUp, Loader2 } from "lucide-react";
+import { FileDown, DollarSign, Users, Ticket, TrendingUp, Loader2, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getAllTransactions, TransactionWithUser, AllTransactionsStats } from "@/ai/flows/get-all-transactions-flow";
+import { useToast } from "@/hooks/use-toast";
+import { distributeProfits } from "@/ai/flows/distribute-profits-flow";
+
 
 const revenueChartConfig = {
   revenue: {
@@ -46,27 +49,58 @@ const profitChartConfig = {
 } satisfies ChartConfig;
 
 export default function AdminReportsPage() {
+    const { toast } = useToast();
     const [loading, setLoading] = useState(true);
+    const [isDistributing, setIsDistributing] = useState(false);
     const [transactions, setTransactions] = useState<TransactionWithUser[]>([]);
     const [stats, setStats] = useState<AllTransactionsStats | null>(null);
 
+     const fetchData = async () => {
+        try {
+            setLoading(true);
+            const data = await getAllTransactions();
+            const financialEvents = data.transactions.filter(t => ['fee_entry', 'fee_lottery', 'fee_platform', 'profit_payout', 'lottery_win', 'withdrawal_fee'].includes(t.type));
+            setTransactions(financialEvents.slice(0, 5));
+            setStats(data.stats);
+        } catch (error) {
+            console.error("Failed to fetch transaction data:", error);
+            toast({
+                variant: "destructive",
+                title: "خطای واکشی",
+                description: "مشکلی در دریافت اطلاعات گزارشات مالی رخ داد."
+            })
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const data = await getAllTransactions();
-                // We only want financial events (fees, profits, etc.) not structural ones like investment
-                const financialEvents = data.transactions.filter(t => ['fee_entry', 'fee_lottery', 'fee_platform', 'profit_payout', 'lottery_win', 'withdrawal_fee'].includes(t.type));
-                setTransactions(financialEvents.slice(0, 5)); // Show 5 most recent
-                setStats(data.stats);
-            } catch (error) {
-                console.error("Failed to fetch transaction data:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
     }, []);
+
+    const handleDistributeProfits = async () => {
+        setIsDistributing(true);
+        try {
+            const result = await distributeProfits();
+            if (result.success) {
+                toast({
+                    title: "عملیات موفق",
+                    description: result.message,
+                });
+                await fetchData(); // Refresh data after distribution
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "خطا در توزیع سود",
+                description: error instanceof Error ? error.message : "یک خطای ناشناخته رخ داد."
+            });
+        } finally {
+            setIsDistributing(false);
+        }
+    }
 
     const typeNames: Record<string, string> = {
         fee_entry: "کارمزد ورود",
@@ -152,7 +186,35 @@ export default function AdminReportsPage() {
         </Card>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:gap-8">
+       <div className="grid gap-4 md:grid-cols-2 lg:gap-8">
+        <Card>
+            <CardHeader>
+                <CardTitle>توزیع سود روزانه</CardTitle>
+                <CardDescription>
+                    با اجرای این عملیات، سود انباشته شده از کارمزدها بین سرمایه‌گذاران فعال توزیع می‌شود.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Button className="w-full" onClick={handleDistributeProfits} disabled={isDistributing || loading}>
+                    {isDistributing ? (
+                        <>
+                            <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                            در حال توزیع سود...
+                        </>
+                    ) : (
+                        <>
+                             <PlayCircle className="h-4 w-4 ml-2" />
+                            اجرای توزیع سود
+                        </>
+                    )}
+                 </Button>
+            </CardContent>
+             <CardFooter>
+                <p className="text-xs text-muted-foreground">
+                    این عملیات باید به صورت روزانه اجرا شود. در آینده می‌توان آن را به صورت خودکار زمان‌بندی کرد.
+                </p>
+             </CardFooter>
+        </Card>
         <Card>
             <CardHeader>
                 <CardTitle>نمودار درآمد کارمزدها (نمایشی)</CardTitle>
@@ -176,40 +238,6 @@ export default function AdminReportsPage() {
                     />
                     <Bar dataKey="revenue" fill="var(--color-revenue)" radius={8} />
                   </BarChart>
-                </ChartContainer>
-                }
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader>
-                <CardTitle>نمودار سود پرداخت شده (نمایشی)</CardTitle>
-                <CardDescription>نمایش روند پرداخت سود ماهانه به کاربران.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 {loading ? <div className="h-[250px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : 
-                 <ChartContainer config={profitChartConfig} className="h-[250px] w-full">
-                    <RechartsLineChart
-                        accessibilityLayer
-                        data={[]} // Placeholder for profit data
-                        margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
-                        >
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                            dataKey="date"
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                        />
-                         <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line
-                            dataKey="profit"
-                            type="monotone"
-                            stroke="var(--color-profit)"
-                            strokeWidth={2}
-                            dot={false}
-                        />
-                    </RechartsLineChart>
                 </ChartContainer>
                 }
             </CardContent>
