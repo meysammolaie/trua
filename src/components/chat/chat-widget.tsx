@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, User, Send, X, Loader2, Mic } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { chat } from "@/ai/flows/chat-flow";
+import { voiceChat } from "@/ai/flows/voice-chat-flow";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -27,40 +28,59 @@ interface ChatWidgetProps {
     isEmbedded?: boolean;
 }
 
+// Check for SpeechRecognition API
+const SpeechRecognition =
+  (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition));
+
 export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(isEmbedded);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const toggleOpen = () => {
     if (!isEmbedded) {
         setIsOpen(!isOpen);
     }
   };
+  
+  const handleSend = async (messageText: string) => {
+    if (messageText.trim() === "" || isLoading) return;
 
-  const handleSend = async () => {
-    if (input.trim() === "" || isLoading) return;
-
-    const userMessage: Message = { sender: "user", text: input };
+    const userMessage: Message = { sender: "user", text: messageText };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      // In the future, we could have a dedicated voiceChatFlow
-      const flowToCall = isVoiceMode ? chat : chat;
-      const result = await flowToCall({ message: input });
-      const botMessage: Message = { sender: "bot", text: result.response };
-      setMessages((prev) => [...prev, botMessage]);
-
-      // Placeholder for TTS (Text-to-Speech)
       if (isVoiceMode) {
-        console.log("Would play audio for:", result.response);
+          const result = await voiceChat({ message: messageText });
+          const botMessage: Message = { sender: "bot", text: result.text };
+          setMessages((prev) => [...prev, botMessage]);
+          
+          if(audioRef.current) {
+            audioRef.current.src = result.audio;
+            audioRef.current.play();
+            // Start listening again after bot finishes talking
+            audioRef.current.onended = () => {
+                if (recognitionRef.current && isVoiceMode && isOpen) {
+                    recognitionRef.current.start();
+                }
+            };
+          }
+
+      } else {
+        const result = await chat({ message: messageText });
+        const botMessage: Message = { sender: "bot", text: result.response };
+        setMessages((prev) => [...prev, botMessage]);
       }
     } catch (error) {
+      console.error("Chat error:", error);
       const errorMessage: Message = {
         sender: "bot",
         text: "متاسفانه مشکلی در ارتباط با دستیار هوشمند پیش آمده. لطفاً دوباره تلاش کنید.",
@@ -89,12 +109,44 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     }
   }, [isOpen]);
 
+  // Effect for handling voice recognition logic
+  useEffect(() => {
+    if (!isVoiceMode || !SpeechRecognition) {
+        recognitionRef.current?.stop();
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'fa-IR';
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        setIsListening(false);
+    };
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        handleSend(transcript);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+
+    return () => {
+        recognition.stop();
+        recognitionRef.current = null;
+    };
+  }, [isVoiceMode, isOpen]); // Rerun when voice mode is toggled or widget opens/closes
+
   const toggleVoiceMode = () => {
-      setIsVoiceMode(!isVoiceMode);
-      // Placeholder for TTS welcome message
-      if (!isVoiceMode) {
-          console.log("Voice mode activated. Would play welcome message.");
+      if(!SpeechRecognition) {
+          alert("مرورگر شما از قابلیت تشخیص گفتار پشتیبانی نمی‌کند.");
+          return;
       }
+      setIsVoiceMode(!isVoiceMode);
   }
 
   const ChatWindow = (
@@ -124,7 +176,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                 </div>
             </div>
             <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={toggleVoiceMode} title="حالت مکالمه صوتی">
+                <Button variant="ghost" size="icon" onClick={toggleVoiceMode} title="حالت مکالمه صوتی" disabled={!SpeechRecognition}>
                     <Mic className={cn("h-5 w-5", isVoiceMode && "text-green-400")} />
                 </Button>
                 {!isEmbedded && (
@@ -142,13 +194,12 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                 className="flex flex-col items-center justify-center p-4 text-center border-b"
             >
                 <motion.div 
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    animate={{ scale: isListening ? [1, 1.2, 1] : 1 }}
+                    transition={{ repeat: isListening ? Infinity : 0, duration: 1.5 }}
                 >
-                    <Mic className="w-16 h-16 text-primary drop-shadow-lg"/>
+                    <Mic className={cn("w-16 h-16 text-primary drop-shadow-lg", isListening ? "text-green-400" : "text-primary")}/>
                 </motion.div>
-                <p className="mt-2 text-sm text-muted-foreground">در حال گوش دادن...</p>
-                <p className="text-xs text-muted-foreground/50">(قابلیت مکالمه صوتی در دست توسعه است)</p>
+                <p className="mt-2 text-sm text-muted-foreground">{isListening ? "در حال گوش دادن..." : "برای صحبت کلیک کنید (بزودی)"}</p>
             </motion.div>
         )}
 
@@ -192,8 +243,8 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         <form
             className="flex w-full items-center space-x-2"
             onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
+                e.preventDefault();
+                handleSend(input);
             }}
         >
             <Input
@@ -212,11 +263,17 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   )
 
   if (isEmbedded) {
-    return ChatWindow;
+    return (
+        <>
+            {ChatWindow}
+            <audio ref={audioRef} hidden />
+        </>
+    );
   }
 
   return (
     <>
+      <audio ref={audioRef} hidden />
       <AnimatePresence>
         {isOpen && (
           <motion.div
