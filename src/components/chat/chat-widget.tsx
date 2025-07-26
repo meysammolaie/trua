@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, Send, X, Loader2, Mic } from "lucide-react";
+import { Bot, User, Send, X, Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { chat } from "@/ai/flows/chat-flow";
 import { voiceChat } from "@/ai/flows/voice-chat-flow";
@@ -40,6 +40,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<ChatMode>('text');
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -74,7 +75,9 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
           if(audioRef.current) {
             audioRef.current.src = result.audio;
             audioRef.current.play();
+            audioRef.current.onplay = () => setIsSpeaking(true);
             audioRef.current.onended = () => {
+                setIsSpeaking(false);
                 if (recognitionRef.current && mode === "voice" && isOpen) {
                     recognitionRef.current.start();
                 }
@@ -198,7 +201,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
                                 />
                              )}
-                            <span className="relative z-10">{item === 'text' ? 'چت متنی' : 'گفتگوی صوتی'}</span>
+                            <span className="relative z-10">{item === 'text' ? 'چت متنی' : 'گفتگوی زنده صوتی'}</span>
                         </Button>
                     ))}
                 </AnimatePresence>
@@ -267,12 +270,19 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
          ) : (
              <div className="flex flex-col flex-1 items-center justify-center m-0">
                  <motion.div 
-                    animate={{ scale: isListening ? [1, 1.2, 1] : 1 }}
-                    transition={{ repeat: isListening ? Infinity : 0, duration: 1.5 }}
+                    animate={
+                        isListening ? { scale: [1, 1.1, 1] } : 
+                        isSpeaking ? { scaleY: [1, 1.1, 1], y: [0, -5, 0] } : 
+                        { scale: 1 }
+                    }
+                    transition={{ 
+                        repeat: isListening || isSpeaking ? Infinity : 0, 
+                        duration: isListening ? 1.5 : 0.6
+                    }}
                 >
                     <Bot className={cn("w-24 h-24 drop-shadow-lg", isListening ? "text-green-400" : "text-primary")}/>
                 </motion.div>
-                <p className="mt-4 text-lg font-semibold">{isListening ? "در حال گوش دادن..." : "من آماده‌ام!"}</p>
+                <p className="mt-4 text-lg font-semibold">{isListening ? "در حال گوش دادن..." : isSpeaking ? "در حال صحبت کردن..." : "من آماده‌ام!"}</p>
                 <p className="mt-1 text-sm text-muted-foreground">برای صحبت کردن آماده‌ام</p>
                  {isLoading && messages.length > 0 && <p className="mt-4 text-sm text-yellow-400">در حال پردازش...</p>}
             </div>
@@ -357,4 +367,3 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     </>
   );
 }
-
