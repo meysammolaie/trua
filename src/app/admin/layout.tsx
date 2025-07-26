@@ -19,6 +19,7 @@ import {
   DollarSign,
   Ticket,
   ArrowDownUp,
+  Gift,
 } from "lucide-react";
 
 import {
@@ -45,6 +46,7 @@ const navItems = [
   { href: "/admin/users", icon: Users, label: "مدیریت کاربران" },
   { href: "/admin/investments", icon: Package, label: "سرمایه‌گذاری‌ها" },
   { href: "/admin/withdrawals", icon: ArrowDownUp, label: "درخواست‌های برداشت" },
+  { href: "/admin/commissions", icon: Gift, label: "کمیسیون‌ها" },
   { href: "/admin/transactions", icon: Wallet, label: "تراکنش‌ها" },
   { href: "/admin/reports", icon: LineChart, label: "گزارشات مالی" },
   { href: "/admin/lottery", icon: Ticket, label: "مدیریت قرعه‌کشی" },

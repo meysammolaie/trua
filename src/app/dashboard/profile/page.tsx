@@ -38,7 +38,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy } from "lucide-react";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
@@ -66,6 +66,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [is2faEnabled, setIs2faEnabled] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
@@ -101,6 +102,7 @@ export default function ProfilePage() {
                     email: user.email || "",
                 });
                 setIs2faEnabled(userData.is2faEnabled || false);
+                setReferralCode(userData.referralCode || "");
             }
         }).finally(() => setIsLoading(false));
     }
@@ -154,6 +156,14 @@ export default function ProfilePage() {
           description: "خطایی در تغییر وضعیت احراز هویت دو مرحله‌ای رخ داد.",
         });
     }
+  }
+
+  const copyReferralCode = () => {
+    navigator.clipboard.writeText(referralCode);
+    toast({
+        title: "کپی شد!",
+        description: "کد معرف شما در کلیپ‌بورد کپی شد."
+    })
   }
   
   if (isLoading) {
@@ -225,6 +235,20 @@ export default function ProfilePage() {
                     </FormItem>
                   )}
                 />
+                 {referralCode && (
+                    <FormItem>
+                        <FormLabel>کد معرف شما</FormLabel>
+                        <div className="flex items-center gap-2">
+                             <Input readOnly value={referralCode} dir="ltr" />
+                             <Button type="button" variant="outline" size="icon" onClick={copyReferralCode}>
+                               <Copy className="h-4 w-4" />
+                             </Button>
+                        </div>
+                        <FormDescription>
+                           این کد را با دوستان خود به اشتراک بگذارید تا از مزایای معرفی بهره‌مند شوید.
+                        </FormDescription>
+                    </FormItem>
+                 )}
               </CardContent>
               <CardFooter className="border-t px-6 py-4">
                 <Button type="submit" disabled={profileForm.formState.isSubmitting}>
@@ -347,5 +371,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

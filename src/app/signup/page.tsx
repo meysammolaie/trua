@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { createUserWithEmailAndPassword, signInWithPopup, UserCredential } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithPopup, UserCredential, updateProfile } from "firebase/auth";
 import { auth, db, googleProvider } from "@/lib/firebase";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp, query, where, getDocs, collection } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,6 +38,7 @@ const formSchema = z.object({
   lastName: z.string().min(2, { message: "نام خانوادگی باید حداقل ۲ حرف داشته باشد." }),
   email: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." }),
   password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر داشته باشد." }),
+  referralCode: z.string().optional(),
 });
 
 export default function SignupPage() {
@@ -48,10 +49,11 @@ export default function SignupPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: "Admin",
-      lastName: "User",
-      email: "admin@example.com",
-      password: "password123",
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      referralCode: "",
     },
   });
 
@@ -65,20 +67,41 @@ export default function SignupPage() {
     }
   }, [user, router]);
   
-  const createUserDocument = async (userCred: UserCredential, firstName?: string, lastName?: string) => {
+  const createUserDocument = async (userCred: UserCredential, values: z.infer<typeof formSchema>) => {
     const userRef = doc(db, "users", userCred.user.uid);
     const userSnap = await getDoc(userRef);
+
     if (!userSnap.exists()) {
-        const { email, uid } = userCred.user;
-        const nameParts = userCred.user.displayName?.split(" ") || [];
-        await setDoc(userRef, {
-            uid,
-            email,
-            firstName: firstName || nameParts[0] || "",
-            lastName: lastName || nameParts.slice(1).join(" ") || "",
-            createdAt: serverTimestamp(),
-            status: "active", // Set default status
-        });
+      const { email, uid } = userCred.user;
+      
+      let referredBy = null;
+      if (values.referralCode) {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("referralCode", "==", values.referralCode));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const referrerDoc = querySnapshot.docs[0];
+            referredBy = referrerDoc.id; // Store referrer's UID
+            toast({ title: "معرف شما تایید شد", description: `شما توسط ${referrerDoc.data().firstName} معرفی شده‌اید.`});
+        } else {
+            toast({ variant: 'destructive', title: "کد معرف نامعتبر", description: "کد معرف وارد شده صحیح نمی‌باشد."});
+        }
+      }
+
+      await setDoc(userRef, {
+        uid,
+        email,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        createdAt: serverTimestamp(),
+        status: "active",
+        referralCode: uid.substring(0, 8), // Generate a unique referral code
+        referredBy: referredBy, // Can be null
+      });
+
+      await updateProfile(userCred.user, {
+        displayName: `${values.firstName} ${values.lastName}`
+      });
     }
   };
 
@@ -86,7 +109,7 @@ export default function SignupPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      await createUserDocument(userCredential, values.firstName, values.lastName);
+      await createUserDocument(userCredential, values);
       toast({
         title: "ثبت نام موفق",
         description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
@@ -108,9 +131,21 @@ export default function SignupPage() {
   }
   
   const handleGoogleSignIn = async () => {
+    // This flow needs adjustment to allow for referral code entry.
+    // For simplicity, Google Sign-In won't support referrals for now.
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
-      await createUserDocument(userCredential);
+      const { displayName } = userCredential.user;
+      const nameParts = displayName?.split(" ") || ["", ""];
+
+      // Since we can't ask for a referral code in the Google popup, we'll create the doc without it.
+      await createUserDocument(userCredential, {
+        firstName: nameParts[0],
+        lastName: nameParts.slice(1).join(" "),
+        email: userCredential.user.email || "",
+        password: "", // Not applicable
+      });
+
       toast({
         title: "ورود موفق",
         description: "شما با موفقیت از طریق گوگل وارد شدید.",
@@ -210,6 +245,19 @@ export default function SignupPage() {
                       <FormLabel>رمز عبور</FormLabel>
                       <FormControl>
                         <Input type="password" dir="ltr" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="referralCode"
+                  render={({ field }) => (
+                    <FormItem className="text-right">
+                      <FormLabel>کد معرف (اختیاری)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="کد معرف خود را وارد کنید" dir="ltr" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

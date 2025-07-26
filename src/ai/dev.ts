@@ -17,6 +17,7 @@ import "./flows/update-investment-status-flow";
 import "./flows/create-withdrawal-request-flow";
 import "./flows/get-withdrawal-requests-flow";
 import "./flows/update-withdrawal-status-flow";
+import "./flows/get-commissions-flow";
 
 
 import "./tools/get-crypto-price-tool";

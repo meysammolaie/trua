@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from 'next/navigation'
 import {
   Card,
   CardContent,
@@ -57,8 +58,9 @@ const statusNames: Record<string, string> = {
     rejected: "رد شده",
 };
 
-export default function AdminInvestmentsPage() {
+function AdminInvestmentsPageContent() {
     const { toast } = useToast();
+    const searchParams = useSearchParams();
     const [allInvestments, setAllInvestments] = useState<TransactionWithUser[]>([]);
     const [filteredInvestments, setFilteredInvestments] = useState<TransactionWithUser[]>([]);
     const [stats, setStats] = useState({ totalAmount: 0, pendingCount: 0, averageAmount: 0 });
@@ -68,6 +70,13 @@ export default function AdminInvestmentsPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [fundFilter, setFundFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
+
+    useEffect(() => {
+        const searchFromUrl = searchParams.get('search');
+        if (searchFromUrl) {
+            setSearchTerm(searchFromUrl);
+        }
+    }, [searchParams]);
 
     const fetchInvestments = useCallback(() => {
         setLoading(true);
@@ -346,11 +355,11 @@ export default function AdminInvestmentsPage() {
                                                 {inv.status === 'pending' && (
                                                     <>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="text-green-600" onClick={() => handleStatusUpdate(inv.id, 'active')}>
+                                                        <DropdownMenuItem className="text-green-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId, 'active')}>
                                                             <Check className="ml-2 h-4 w-4" />
                                                             تایید سرمایه‌گذاری
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-red-600" onClick={() => handleStatusUpdate(inv.id, 'rejected')}>
+                                                        <DropdownMenuItem className="text-red-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId, 'rejected')}>
                                                             <Ban className="ml-2 h-4 w-4" />
                                                             رد سرمایه‌گذاری
                                                         </DropdownMenuItem>
@@ -373,4 +382,14 @@ export default function AdminInvestmentsPage() {
        </Card>
     </>
   );
+}
+
+// This is a wrapper component because hooks like useSearchParams can only be used in client components
+// that are children of a <Suspense> boundary.
+export default function AdminInvestmentsPage() {
+    return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <AdminInvestmentsPageContent />
+        </React.Suspense>
+    )
 }

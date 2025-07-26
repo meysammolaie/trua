@@ -11,7 +11,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { getPlatformSettings } from './platform-settings-flow';
 
 // Input Schema
 const UpdateInvestmentStatusInputSchema = z.object({
@@ -42,8 +43,39 @@ const updateInvestmentStatusFlow = ai.defineFlow(
   async ({ investmentId, newStatus }) => {
     try {
       const investmentRef = doc(db, 'investments', investmentId);
-      await updateDoc(investmentRef, {
-        status: newStatus,
+      
+      await runTransaction(db, async (transaction) => {
+        const investmentDoc = await transaction.get(investmentRef);
+        if (!investmentDoc.exists()) {
+          throw new Error(`Investment with ID ${investmentId} not found.`);
+        }
+        
+        // Update investment status
+        transaction.update(investmentRef, { status: newStatus });
+        
+        // If activating, handle referral commission
+        if (newStatus === 'active') {
+          const investmentData = investmentDoc.data();
+          const userRef = doc(db, 'users', investmentData.userId);
+          const userDoc = await transaction.get(userRef);
+
+          if (userDoc.exists() && userDoc.data().referredBy) {
+            const referrerId = userDoc.data().referredBy;
+            const settings = await getPlatformSettings();
+            
+            const commissionAmount = investmentData.amount * (settings.entryFee * 2/3 / 100); // 2% of investment
+
+            const commissionRef = collection(db, 'commissions');
+            transaction.set(doc(commissionRef), {
+              referrerId: referrerId,
+              referredUserId: investmentData.userId,
+              investmentId: investmentId,
+              investmentAmount: investmentData.amount,
+              commissionAmount: commissionAmount,
+              createdAt: serverTimestamp(),
+            });
+          }
+        }
       });
 
       console.log(`Investment ${investmentId} status updated to ${newStatus}.`);
