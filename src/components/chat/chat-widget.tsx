@@ -13,11 +13,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, Send, X, Loader2, Mic } from "lucide-react";
+import { Bot, User, Send, X, Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { chat } from "@/ai/flows/chat-flow";
 import { voiceChat } from "@/ai/flows/voice-chat-flow";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 interface Message {
   sender: "user" | "bot";
@@ -40,11 +42,9 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Check for SpeechRecognition API only on the client
   const SpeechRecognition = isClient ? window.SpeechRecognition || window.webkitSpeechRecognition : null;
 
   useEffect(() => {
-    // This effect runs only on the client, after the component has mounted.
     setIsClient(true);
   }, []);
 
@@ -71,7 +71,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
           if(audioRef.current) {
             audioRef.current.src = result.audio;
             audioRef.current.play();
-            // Start listening again after bot finishes talking
             audioRef.current.onended = () => {
                 if (recognitionRef.current && isVoiceMode && isOpen) {
                     recognitionRef.current.start();
@@ -114,7 +113,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     }
   }, [isOpen, messages.length]);
 
-  // Effect for handling voice recognition logic
   useEffect(() => {
     if (!isVoiceMode || !SpeechRecognition) {
         if (recognitionRef.current) {
@@ -174,7 +172,10 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
                  <div className="relative">
-                    <Bot className="w-8 h-8 text-primary" />
+                    <Avatar>
+                        <AvatarImage src="https://placehold.co/40x40/17192A/FBBF24" alt="AI Assistant" data-ai-hint="robot assistant"/>
+                        <AvatarFallback>AI</AvatarFallback>
+                    </Avatar>
                     <AnimatePresence>
                     {isVoiceMode && (
                         <motion.span 
@@ -213,7 +214,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                     animate={{ scale: isListening ? [1, 1.2, 1] : 1 }}
                     transition={{ repeat: isListening ? Infinity : 0, duration: 1.5 }}
                 >
-                    <Bot className={cn("w-16 h-16 text-primary drop-shadow-lg", isListening ? "text-green-400" : "text-primary")}/>
+                    <Bot className={cn("w-16 h-16 drop-shadow-lg", isListening ? "text-green-400" : "text-primary")}/>
                 </motion.div>
                 <p className="mt-2 text-sm text-muted-foreground">{isListening ? "در حال گوش دادن..." : "برای صحبت کردن آماده‌ام"}</p>
             </motion.div>
@@ -303,35 +304,55 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
           </motion.div>
         )}
       </AnimatePresence>
-      <Button
-        size="icon"
-        className="fixed bottom-4 left-4 z-50 rounded-full w-16 h-16 shadow-2xl"
+      <div
+        className="fixed bottom-4 left-4 z-50 cursor-pointer group"
         onClick={toggleOpen}
       >
         <AnimatePresence>
-          {isOpen ? (
-            <motion.div
-              key="close"
-              initial={{ rotate: -90, scale: 0 }}
-              animate={{ rotate: 0, scale: 1 }}
-              exit={{ rotate: 90, scale: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <X className="h-8 w-8" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="bot"
-              initial={{ rotate: 90, scale: 0 }}
-              animate={{ rotate: 0, scale: 1 }}
-              exit={{ rotate: -90, scale: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Bot className="h-8 w-8" />
-            </motion.div>
-          )}
+            {!isOpen && (
+                 <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 50 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className="flex flex-col items-center gap-2"
+                >
+                    <motion.div
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ repeat: Infinity, duration: 2.5 }}
+                    >
+                        <Avatar className="w-20 h-20 border-4 border-primary/50 shadow-2xl">
+                           <AvatarImage src="https://placehold.co/80x80/17192A/FBBF24" alt="AI Assistant" data-ai-hint="robot assistant"/>
+                            <AvatarFallback>AI</AvatarFallback>
+                        </Avatar>
+                    </motion.div>
+                    <div className="bg-card/80 backdrop-blur-md text-card-foreground px-3 py-1 rounded-full text-xs shadow-lg">
+                        روی من ضربه بزن تا گفتگو کنیم
+                    </div>
+                </motion.div>
+            )}
         </AnimatePresence>
-      </Button>
+
+        <AnimatePresence>
+            {isOpen && (
+                <Button
+                    size="icon"
+                    className="rounded-full w-16 h-16 shadow-2xl"
+                    onClick={(e) => { e.stopPropagation(); toggleOpen(); }}
+                >
+                    <motion.div
+                        key="close"
+                        initial={{ rotate: -90, scale: 0 }}
+                        animate={{ rotate: 0, scale: 1 }}
+                        exit={{ rotate: 90, scale: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <X className="h-8 w-8" />
+                    </motion.div>
+                </Button>
+            )}
+        </AnimatePresence>
+      </div>
     </>
   );
 }
