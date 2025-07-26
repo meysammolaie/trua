@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 
 // Input Schema
@@ -65,14 +65,23 @@ const updateInvestmentStatusFlow = ai.defineFlow(
             
             const commissionAmount = investmentData.amount * (settings.entryFee * 2/3 / 100); // 2% of investment
 
-            const commissionRef = collection(db, 'commissions');
-            transaction.set(doc(commissionRef), {
+            const commissionData = {
               referrerId: referrerId,
               referredUserId: investmentData.userId,
               investmentId: investmentId,
               investmentAmount: investmentData.amount,
               commissionAmount: commissionAmount,
               createdAt: serverTimestamp(),
+            };
+            
+            // 1. Create the commission document
+            const commissionRef = doc(collection(db, 'commissions'));
+            transaction.set(commissionRef, commissionData);
+
+            // 2. Add commission amount to referrer's wallet balance
+            const referrerUserRef = doc(db, 'users', referrerId);
+            transaction.update(referrerUserRef, {
+                walletBalance: increment(commissionAmount)
             });
           }
         }
