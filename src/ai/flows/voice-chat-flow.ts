@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A voice-enabled chat flow for user support.
@@ -70,7 +71,7 @@ const voiceChatFlow = ai.defineFlow(
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Alloy' }, // A pleasant, professional voice
+            prebuiltVoiceConfig: { voiceName: 'Algenib' }, // A pleasant, professional voice
           },
         },
       },
