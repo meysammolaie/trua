@@ -25,37 +25,17 @@ import {
   Pie,
   Cell,
   Tooltip,
+  Legend,
 } from "recharts";
 import { DollarSign, Users, Package, Activity, TrendingUp, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { User, getAllUsers } from "@/ai/flows/get-all-users-flow";
-
-type Investment = {
-  id: string;
-  userId: string;
-  fundId: string;
-  amount: number;
-  transactionHash: string;
-  status: 'pending' | 'active' | 'completed';
-  createdAt: Timestamp;
-};
+import { getAdminDashboardData, AdminDashboardData } from "@/ai/flows/get-admin-dashboard-data-flow";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
 };
-
-const userGrowthData = [
-  { month: "فروردین", users: 150 },
-  { month: "اردیبهشت", users: 220 },
-  { month: "خرداد", users: 310 },
-  { month: "تیر", users: 450 },
-  { month: "مرداد", users: 400 },
-  { month: "شهریور", users: 520 },
-];
 
 const userGrowthChartConfig = {
   users: {
@@ -64,64 +44,31 @@ const userGrowthChartConfig = {
   },
 } satisfies ChartConfig;
 
-const investmentByFundData = [
-  { name: "طلا", value: 450000, color: "hsl(var(--chart-1))" },
-  { name: "نقره", value: 250000, color: "hsl(var(--chart-2))" },
-  { name: "دلار", value: 300000, color: "hsl(var(--chart-3))" },
-  { name: "بیت‌کوین", value: 750000, color: "hsl(var(--chart-4))" },
-];
-
-const recentActivities = [
-    { type: "new_user", detail: "کاربر جدیدی با ایمیل h.karimi@example.com ثبت نام کرد.", time: "۲ دقیقه پیش", status: "info" },
-    { type: "investment", detail: "سرمایه‌گذاری جدید به مبلغ $2,500 در صندوق بیت‌کوین.", time: "۱۵ دقیقه پیش", status: "success" },
-    { type: "withdrawal", detail: "درخواست برداشت به مبلغ $300 از طرف علی رضایی.", time: "۱ ساعت پیش", status: "warning" },
-    { type: "lottery_win", detail: "مریم حسینی برنده قرعه کشی ماهانه با جایزه $5,000 شد.", time: "دیروز", status: "info" },
-    { type: "failed_tx", detail: "تراکنش واریز کاربر reza.mohammadi ناموفق بود.", time: "۲ روز پیش", status: "error" },
-];
-
-
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalTVL: 0,
-    totalUsers: 0,
-    activeInvestments: 0,
-    monthlyRevenue: 15320.50, // This can be calculated later
-  });
+  const [data, setData] = useState<AdminDashboardData | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch Users
-        const usersResponse = await getAllUsers();
-        const totalUsers = usersResponse.users.length;
-        
-        // Fetch Investments
-        const investmentsCollection = collection(db, "investments");
-        const investmentsSnapshot = await getDocs(investmentsCollection);
-        const investmentsData = investmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Investment[];
-
-        const totalTVL = investmentsData
-            .filter(inv => inv.status === 'active' || inv.status === 'pending')
-            .reduce((sum, inv) => sum + inv.amount, 0);
-            
-        const activeInvestments = investmentsData.filter(inv => inv.status === 'active' || inv.status === 'pending').length;
-
-        setStats(prev => ({
-            ...prev,
-            totalUsers,
-            totalTVL,
-            activeInvestments,
-        }));
-
+        setLoading(true);
+        const dashboardData = await getAdminDashboardData();
+        setData(dashboardData);
       } catch (error) {
         console.error("Failed to fetch admin dashboard data:", error);
+        // TODO: Add toast notification for error
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  const investmentByFundData = data?.investmentByFundData.map((item, index) => ({
+      ...item,
+      color: `hsl(var(--chart-${index + 1}))`
+  })) || [];
+
 
   return (
     <>
@@ -138,9 +85,9 @@ export default function AdminDashboardPage() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats.totalTVL.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div className="text-2xl font-bold font-mono">${data?.stats.totalTVL.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <p className="text-xs text-muted-foreground">
-                        +۰٪ در ماه گذشته
+                        مجموع سرمایه‌گذاری‌های فعال
                         </p>
                     </>
                 )}
@@ -156,9 +103,9 @@ export default function AdminDashboardPage() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <>
-                        <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
+                        <div className="text-2xl font-bold">{data?.stats.totalUsers.toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">
-                        +۰ کاربر جدید در این ماه
+                        کاربر ثبت‌شده در کل
                         </p>
                     </>
                 )}
@@ -174,9 +121,9 @@ export default function AdminDashboardPage() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <>
-                        <div className="text-2xl font-bold">{stats.activeInvestments.toLocaleString()}</div>
+                        <div className="text-2xl font-bold">{data?.stats.activeInvestments.toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">
-                        +۰ در ماه گذشته
+                        تعداد سرمایه‌گذاری‌های در انتظار و فعال
                         </p>
                     </>
                 )}
@@ -192,9 +139,9 @@ export default function AdminDashboardPage() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats.monthlyRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div className="text-2xl font-bold font-mono">${data?.stats.monthlyRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <p className="text-xs text-muted-foreground">
-                        محاسبه بزودی
+                        درآمد از کارمزدها در ۳۰ روز گذشته
                         </p>
                     </>
                 )}
@@ -213,24 +160,25 @@ export default function AdminDashboardPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={userGrowthChartConfig} className="h-[300px] w-full">
-                            <BarChart accessibilityLayer data={userGrowthData}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis
-                                dataKey="month"
-                                tickLine={false}
-                                tickMargin={10}
-                                axisLine={false}
-                                tickFormatter={(value) => value.slice(0, 3)}
-                                />
-                                <YAxis />
-                                <Tooltip
-                                cursor={false}
-                                content={<ChartTooltipContent hideLabel />}
-                                />
-                                <Bar dataKey="users" fill="var(--color-users)" radius={8} />
-                            </BarChart>
-                        </ChartContainer>
+                        {loading ? <div className="h-[300px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
+                            <ChartContainer config={userGrowthChartConfig} className="h-[300px] w-full">
+                                <BarChart accessibilityLayer data={data?.userGrowthData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                    dataKey="month"
+                                    tickLine={false}
+                                    tickMargin={10}
+                                    axisLine={false}
+                                    />
+                                    <YAxis allowDecimals={false}/>
+                                    <Tooltip
+                                    cursor={false}
+                                    content={<ChartTooltipContent hideLabel />}
+                                    />
+                                    <Bar dataKey="users" fill="var(--color-users)" radius={8} />
+                                </BarChart>
+                            </ChartContainer>
+                        )}
                     </CardContent>
                 </Card>
             </motion.div>
@@ -240,20 +188,23 @@ export default function AdminDashboardPage() {
                     <CardHeader>
                         <CardTitle>تفکیک سرمایه‌گذاری</CardTitle>
                         <CardDescription>
-                            توزیع سرمایه در صندوق‌های مختلف.
+                            توزیع سرمایه فعال در صندوق‌های مختلف.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={{}} className="h-[300px] w-full">
-                            <PieChart>
-                                <Tooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                                <Pie data={investmentByFundData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
-                                    {investmentByFundData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                            </PieChart>
-                        </ChartContainer>
+                         {loading ? <div className="h-[300px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
+                            <ChartContainer config={{}} className="h-[300px] w-full">
+                                <PieChart>
+                                    <Tooltip formatter={(value, name) => [`$${Number(value).toLocaleString()}`, name]} />
+                                    <Legend />
+                                    <Pie data={investmentByFundData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}>
+                                        {investmentByFundData.map((entry) => (
+                                            <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
+                            </ChartContainer>
+                         )}
                     </CardContent>
                 </Card>
             </motion.div>
@@ -268,29 +219,28 @@ export default function AdminDashboardPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {recentActivities.map((activity, index) => (
-                        <div key={index} className="flex items-start gap-4">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                                <Activity className="h-4 w-4 text-muted-foreground" />
+                     {loading ? <div className="h-[150px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : 
+                     data?.recentActivities.length === 0 ? <p className="text-muted-foreground text-center">فعالیتی برای نمایش وجود ندارد.</p> :
+                     (
+                        data?.recentActivities.map((activity, index) => (
+                            <div key={index} className="flex items-start gap-4">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                                    <Activity className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm">{activity.detail}</p>
+                                    <time className="text-xs text-muted-foreground">{activity.time}</time>
+                                </div>
+                                <Badge variant={activity.status === 'success' ? 'secondary' : 'outline'}>
+                                    {activity.type === 'new_user' && 'کاربر جدید'}
+                                    {activity.type === 'investment' && 'سرمایه‌گذاری'}
+                                </Badge>
                             </div>
-                            <div className="flex-1">
-                                <p className="text-sm">{activity.detail}</p>
-                                <time className="text-xs text-muted-foreground">{activity.time}</time>
-                            </div>
-                            <Badge variant={activity.status === 'success' ? 'secondary' : activity.status === 'error' ? 'destructive' : 'outline'}>
-                                {activity.type === 'new_user' && 'کاربر جدید'}
-                                {activity.type === 'investment' && 'سرمایه‌گذاری'}
-                                {activity.type === 'withdrawal' && 'برداشت'}
-                                {activity.type === 'lottery_win' && 'قرعه‌کشی'}
-                                {activity.type === 'failed_tx' && 'ناموفق'}
-                            </Badge>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </CardContent>
             </Card>
         </motion.div>
     </>
   );
 }
-
-    
