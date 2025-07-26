@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Rocket, Sparkles, Gift } from "lucide-react";
+import { Rocket, Sparkles, Gift, Users } from "lucide-react";
 import Link from "next/link";
 
 const visionPoints = [
@@ -10,10 +9,10 @@ const visionPoints = [
         title: "توسعه بی‌پایان",
         description: "ما متعهد به رشد دائمی هستیم. به زودی صندوق‌ها و مدل‌های درآمدزایی جدیدی مانند استیکینگ و وام‌دهی به پلتفرم اضافه خواهند شد."
     },
-    {
-        icon: <Sparkles className="w-8 h-8 mb-4 text-primary"/>,
-        title: "هوش مصنوعی پیشرفته‌تر",
-        description: "تیم ما به طور مداوم در حال بهبود الگوریتم‌های هوش مصنوعی برای بهینه‌سازی سود و افزایش امنیت سرمایه‌های شماست."
+     {
+        icon: <Users className="w-8 h-8 mb-4 text-primary"/>,
+        title: "درآمد از معرفی دوستان",
+        description: "هرچه تعداد بیشتری از دوستانتان را معرفی کنید، سود بیشتری از سرمایه‌گذاری آن‌ها به صورت مستقیم به کیف پول شما واریز می‌شود."
     },
     {
         icon: <Gift className="w-8 h-8 mb-4 text-primary"/>,
@@ -32,7 +31,7 @@ export function FutureVisionSection() {
               آینده‌ای که با هم می‌سازیم
             </h2>
             <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed">
-              خزانه سرسبز یک پروژه تمام‌شده نیست، بلکه یک اکوسیستم در حال تکامل است. ما برای آینده برنامه‌های بزرگی داریم.
+              Trusva یک پروژه تمام‌شده نیست، بلکه یک اکوسیستم در حال تکامل است. ما برای آینده برنامه‌های بزرگی داریم.
             </p>
           </div>
           <div className="grid gap-8 pt-8 sm:grid-cols-1 md:grid-cols-3">

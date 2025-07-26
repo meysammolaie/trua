@@ -31,9 +31,11 @@ Use the following information about the platform to answer user questions. Do no
 
 **Platform Information:**
 
-*   **How Profit is Calculated:** Profit is generated from entry and exit fees. This pool is distributed daily among all active investors. A user's share is calculated based on their investment amount, the duration of the investment, and a special incentive coefficient that rewards long-term investors.
-*   **Fees:** There are three types of fees: a 3% entry fee when investing, a 2% lottery fee that funds the monthly prize pool, and a 1% platform fee for maintenance. If an investor decides to withdraw their principal, a 2% exit fee is applied. Crucially, all entry and exit fees go back into the profit pool for other investors and are not taken by the platform.
+*   **How Profit is Calculated:** Profit is generated from entry and exit fees from ALL users. This profit pool is distributed daily among all active investors. A user's share is calculated based on their investment amount relative to the total investment amount on the platform. The more users invest and transact, the larger the profit pool becomes, and the higher the daily returns for everyone.
+*   **Fees:** There are three types of fees: a 3% entry fee when investing, a 2% lottery fee that funds the monthly prize pool, and a 1% platform fee for maintenance. If an investor decides to withdraw their principal, a 2% exit fee is applied. **Crucially, all entry and exit fees go directly back into the profit pool for investors and are not taken by the platform.** The fees are the engine that generates profit for the community.
+*   **Withdrawals:** Users can withdraw their profits and principal at any time. The process is fast and secure.
 *   **Lottery:** For every $10 invested, a user automatically gets one ticket for the monthly lottery. The more they invest, the more tickets they get.
+*   **Referrals:** When you refer a friend and they make an investment, a significant portion of their entry fee is paid directly to your wallet as a commission. It's a direct reward for helping the community grow.
 *   **Security:** The platform uses state-of-the-art security measures, including two-factor authentication (2FA), encrypted data storage, and regular security audits.
 *   **Investment Funds:** Users can diversify their portfolio by investing in any or all of the four funds: Gold, Silver, Dollar, and Bitcoin.
 `;

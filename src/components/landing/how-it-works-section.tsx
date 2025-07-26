@@ -20,7 +20,7 @@ const steps = [
   },
   {
     title: "۴. برداشت امن و سریع",
-    description: "در روز مشخص هفته، به راحتی موجودی کیف پول خود را برداشت کنید.",
+    description: "هر زمان که اراده کنید، سود و اصل سرمایه خود را به راحتی برداشت نمایید.",
     icon: <Wallet className="w-10 h-10 text-primary" />,
   },
 ];
@@ -56,8 +56,8 @@ export function HowItWorksSection() {
                 <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl mt-4">
                     سرمایه شما چگونه کار می‌کند؟
                 </h2>
-                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed">
-                    بیایید یک سناریوی واقعی سرمایه‌گذاری ۱۰۰۰ دلاری را با هم مرور کنیم. در Trusva، کارمزدها به جیب پلتفرم نمی‌رود، بلکه به استخر سود عمومی بازگشته و بین خود سرمایه‌گذاران توزیع می‌شود.
+                <p className="mx-auto max-w-[800px] text-muted-foreground md:text-xl/relaxed">
+                    در Trusva، کارمزدها به جیب پلتفرم نمی‌رود، بلکه به عنوان سوخت موتور سودآوری، به استخر سود عمومی بازگشته و بین خود سرمایه‌گذاران توزیع می‌شود. هرچه تعداد سرمایه‌گذاران و تراکنش‌ها بیشتر شود، این استخر بزرگتر شده و سود روزانه همه افزایش می‌یابد.
                 </p>
             </div>
 
@@ -90,17 +90,17 @@ export function HowItWorksSection() {
                                 <PiggyBank className="w-6 h-6 text-primary"/>
                             </div>
                             <div>
-                                <CardTitle>۲. سودآوری روزانه</CardTitle>
+                                <CardTitle>۲. پتانسیل سودآوری</CardTitle>
                                 <CardDescription>افزایش موجودی کیف پول</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-2 text-sm">
-                        <p className="text-muted-foreground">فرض کنید پلتفرم در یک روز ۱.۵٪ سود توزیع کند (این عدد صرفا یک مثال است):</p>
+                        <p className="text-muted-foreground">فرض کنید سود توزیعی روزانه پلتفرم ۱.۵٪ باشد (این عدد صرفا مثال است):</p>
                         <div className="flex justify-between"><span>سود روز اول (۱.۵٪ از ۹۴۰):</span> <span className="font-mono font-bold text-green-400">$۱۴.۱۰</span></div>
-                        <div className="flex justify-between"><span>سود روز دوم:</span> <span className="font-mono font-bold text-green-400">$۱۴.۱۲</span></div>
-                        <div className="flex justify-between"><span>موجودی کیف پول (پس از ۲ روز):</span> <span className="font-mono font-bold">$۲۸.۲۲</span></div>
-                        <p className="text-muted-foreground pt-2">سود به صورت روزانه به کیف پول شما اضافه شده و قابل برداشت است.</p>
+                        <div className="flex justify-between"><span>سود روزانه با ۵۰۰۰ کاربر:</span> <span className="font-mono font-bold text-green-400">~$۷۰.۵۰</span></div>
+                        <div className="flex justify-between"><span>سود روزانه با ۲۰۰۰۰ کاربر:</span> <span className="font-mono font-bold text-green-400">~$۲۸۲.۰۰</span></div>
+                        <p className="text-muted-foreground pt-2">سود به صورت روزانه به کیف پول شما اضافه شده و هر لحظه قابل برداشت است.</p>
                     </CardContent>
                 </Card>
                  <Card className="flex flex-col">
@@ -111,17 +111,17 @@ export function HowItWorksSection() {
                             </div>
                             <div>
                                 <CardTitle>۳. بازپرداخت سرمایه</CardTitle>
-                                <CardDescription>تکمیل و برداشت اصل پول</CardDescription>
+                                <CardDescription>نقدشوندگی در هر زمان</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-2 text-sm">
-                        <p className="text-muted-foreground">هنگامی که تصمیم به خروج از سرمایه‌گذاری می‌گیرید:</p>
+                        <p className="text-muted-foreground">هر زمان که تصمیم به خروج از سرمایه‌گذاری بگیرید:</p>
                         <div className="flex justify-between"><span>اصل سرمایه:</span> <span className="font-mono font-bold">$۹۴۰.۰۰</span></div>
                         <div className="flex justify-between text-red-400"><span>کارمزد خروج (۲٪):</span> <span className="font-mono">-$۱۸.۸۰</span></div>
                         <hr className="border-dashed my-2"/>
                         <div className="flex justify-between font-bold text-lg"><span>مبلغ بازگشتی به کیف پول:</span> <span className="font-mono text-green-400">$۹۲۱.۲۰</span></div>
-                        <p className="text-muted-foreground pt-2">این مبلغ به کیف پول شما اضافه شده و در روز مجاز قابل برداشت است.</p>
+                        <p className="text-muted-foreground pt-2">این مبلغ بلافاصله به کیف پول شما اضافه شده و قابل برداشت است.</p>
                     </CardContent>
                 </Card>
             </div>

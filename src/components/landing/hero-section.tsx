@@ -1,10 +1,10 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { ChatWidget } from "../chat/chat-widget";
 
 export function HeroSection() {
   return (
@@ -30,7 +30,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            به اولین پلتفرم درآمدزای مبتنی بر هوش مصنوعی خوش آمدید. ما با شفافیت کامل، امنیت بی‌نظیر و سودآوری پایدار، تعریف جدیدی از سرمایه‌گذاری ارائه می‌دهیم.
+            به Trusva خوش آمدید. اولین پلتفرم درآمدزای مبتنی بر هوش مصنوعی که با شفافیت کامل، امنیت بی‌نظیر و نقدشوندگی آنی، تعریف جدیدی از سرمایه‌گذاری ارائه می‌دهد.
           </motion.p>
           <motion.div 
             className="flex flex-col gap-2 min-[400px]:flex-row"
@@ -52,14 +52,7 @@ export function HeroSection() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
         >
-            <Image
-                src="https://placehold.co/600x400.png"
-                width={600}
-                height={400}
-                alt="رشد مالی با هوش مصنوعی"
-                data-ai-hint="digital finance growth"
-                className="overflow-hidden rounded-xl object-cover"
-            />
+            <ChatWidget isEmbedded={true} />
         </motion.div>
       </div>
     </motion.section>
