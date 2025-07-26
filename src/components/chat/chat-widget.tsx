@@ -65,7 +65,7 @@ export function ChatWidget() {
   useEffect(() => {
     if (isOpen && messages.length === 0) {
         const timer = setTimeout(() => {
-            setMessages([{ sender: 'bot', text: 'سلام! من دستیار هوشمند خزانه سرسبز هستم. چطور می‌توانم به شما کمک کنم؟' }]);
+            setMessages([{ sender: 'bot', text: 'سلام! من دستیار هوشمند Trusva هستم. چطور می‌توانم به شما کمک کنم؟' }]);
         }, 500);
         return () => clearTimeout(timer);
     }

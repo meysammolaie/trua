@@ -18,7 +18,7 @@ export function Footer() {
             <Link href="#" className="flex items-center gap-2" prefetch={false}>
               <VerdantVaultLogo className="h-8 w-8" />
               <span className="font-headline text-xl font-semibold">
-                خزانه سرسبز
+                Trusva
               </span>
             </Link>
             <p className="text-sm text-muted-foreground">
@@ -53,7 +53,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t border-white/10 pt-8 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} خزانه سرسبز. تمام حقوق محفوظ است.
+          © {new Date().getFullYear()} Trusva. تمام حقوق محفوظ است.
         </div>
       </div>
     </footer>

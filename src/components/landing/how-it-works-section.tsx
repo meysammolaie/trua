@@ -57,7 +57,7 @@ export function HowItWorksSection() {
                     سرمایه شما چگونه کار می‌کند؟
                 </h2>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed">
-                    بیایید یک سناریوی واقعی سرمایه‌گذاری ۱۰۰۰ دلاری را با هم مرور کنیم تا با تمام جزئیات آشنا شوید.
+                    بیایید یک سناریوی واقعی سرمایه‌گذاری ۱۰۰۰ دلاری را با هم مرور کنیم. در Trusva، کارمزدها به جیب پلتفرم نمی‌رود، بلکه به استخر سود عمومی بازگشته و بین خود سرمایه‌گذاران توزیع می‌شود.
                 </p>
             </div>
 
@@ -96,10 +96,10 @@ export function HowItWorksSection() {
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-2 text-sm">
-                        <p className="text-muted-foreground">فرض کنید پلتفرم در یک روز ۰.۵٪ سود توزیع کند (این عدد صرفا یک مثال است):</p>
-                        <div className="flex justify-between"><span>سود روز اول:</span> <span className="font-mono font-bold text-green-400">$۴.۷۰</span></div>
-                        <div className="flex justify-between"><span>سود روز دوم:</span> <span className="font-mono font-bold text-green-400">$۴.۷۲</span></div>
-                        <div className="flex justify-between"><span>موجودی کیف پول (پس از ۲ روز):</span> <span className="font-mono font-bold">$۹.۴۲</span></div>
+                        <p className="text-muted-foreground">فرض کنید پلتفرم در یک روز ۱.۵٪ سود توزیع کند (این عدد صرفا یک مثال است):</p>
+                        <div className="flex justify-between"><span>سود روز اول (۱.۵٪ از ۹۴۰):</span> <span className="font-mono font-bold text-green-400">$۱۴.۱۰</span></div>
+                        <div className="flex justify-between"><span>سود روز دوم:</span> <span className="font-mono font-bold text-green-400">$۱۴.۱۲</span></div>
+                        <div className="flex justify-between"><span>موجودی کیف پول (پس از ۲ روز):</span> <span className="font-mono font-bold">$۲۸.۲۲</span></div>
                         <p className="text-muted-foreground pt-2">سود به صورت روزانه به کیف پول شما اضافه شده و قابل برداشت است.</p>
                     </CardContent>
                 </Card>
