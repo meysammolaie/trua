@@ -12,12 +12,13 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getCryptoPrice } from '../tools/get-crypto-price-tool';
 
 
 const InvestmentInputSchema = z.object({
   userId: z.string().describe('The ID of the user making the investment.'),
   fundId: z.string().describe('The ID of the fund being invested in (e.g., "gold", "bitcoin").'),
-  amount: z.number().describe('The amount of the investment in USD.'),
+  amount: z.number().describe('The amount of the investment in the fund\'s native unit (e.g., 0.5 BTC).'),
   transactionHash: z.string().describe('The transaction hash (TxID) of the deposit.'),
 });
 export type InvestmentInput = z.infer<typeof InvestmentInputSchema>;
@@ -45,13 +46,19 @@ const investmentFlow = ai.defineFlow(
     console.log('Received investment submission for user:', input.userId);
     
     try {
-      // Here you could add a step to automatically verify the transaction hash with a blockchain service.
-      // For now, we assume it's valid and set the status to 'pending' for admin approval.
+      // 1. Get the current price of the asset to store the USD value
+      const priceData = await getCryptoPrice({ cryptoId: input.fundId });
+      const unitPrice = priceData.usd;
+      const amountUSD = input.amount * unitPrice;
+
+      // 2. Add investment to Firestore
       const investmentsCollection = collection(db, 'investments');
       const docRef = await addDoc(investmentsCollection, {
         userId: input.userId,
         fundId: input.fundId,
-        amount: input.amount,
+        amount: input.amount, // amount in native unit (e.g., BTC)
+        amountUSD: amountUSD, // amount in USD at time of investment
+        unitPrice: unitPrice, // price per unit at time of investment
         transactionHash: input.transactionHash,
         status: 'pending', // Statuses: 'pending', 'active', 'completed', 'rejected'
         createdAt: serverTimestamp(),

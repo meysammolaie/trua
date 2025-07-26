@@ -83,12 +83,12 @@ export default function InvestPage() {
   const form = useForm<z.infer<typeof investmentSchema>>({
     resolver: zodResolver(investmentSchema),
     defaultValues: {
-      amount: 1,
+      amount: 0,
       transactionHash: "",
     },
   });
   
-  const watchedAmount = form.watch("amount", 1);
+  const watchedAmount = form.watch("amount", 0);
   const numericAmount = parseFloat(String(watchedAmount)) || 0;
   
   const entryFee = numericAmount * (fundDetails?.settings?.entryFee || 0) / 100;
@@ -107,8 +107,10 @@ export default function InvestPage() {
       });
       return;
     }
-    if (values.amount < 1) {
-        form.setError("amount", { message: `حداقل سرمایه‌گذاری ۱ ${activeFund.unit} است.` });
+
+    const amountInUSD = values.amount * (activeFund.price.usd || 0);
+    if (amountInUSD < 1) {
+        form.setError("amount", { message: `حداقل سرمایه‌گذاری معادل 1 دلار است.` });
         return;
     }
 
@@ -125,7 +127,7 @@ export default function InvestPage() {
           title: "درخواست شما ثبت شد",
           description: result.message,
         });
-        form.reset({ amount: 1, transactionHash: "" });
+        form.reset({ amount: 0, transactionHash: "" });
       } else {
         throw new Error(result.message);
       }
@@ -202,10 +204,10 @@ export default function InvestPage() {
                              <FormItem>
                                <FormLabel>مقدار سرمایه‌گذاری ({activeFund.unit})</FormLabel>
                                <FormControl>
-                                 <Input type="number" step="any" {...field} />
+                                 <Input type="number" step="any" {...field} placeholder="0.00" />
                                </FormControl>
                                <FormDescription>
-                                 حداقل مقدار: ۱ {activeFund.unit}
+                                 حداقل مقدار سرمایه‌گذاری معادل ۱ دلار آمریکا می‌باشد.
                                </FormDescription>
                                <FormMessage />
                              </FormItem>
