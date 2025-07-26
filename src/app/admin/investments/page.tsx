@@ -48,7 +48,6 @@ import React from "react";
 const fundNames: Record<string, string> = {
     gold: "طلا",
     silver: "نقره",
-    dollar: "دلار",
     usdt: "تتر",
     bitcoin: "بیت‌کوین"
 };
