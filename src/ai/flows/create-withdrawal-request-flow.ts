@@ -7,7 +7,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 
 const CreateWithdrawalRequestInputSchema = z.object({
@@ -52,16 +52,23 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 3. Check user balance
-    const investmentsCollection = collection(db, "investments");
-    const q = query(investmentsCollection, where("userId", "==", userId), where("status", "==", "active"));
-    const querySnapshot = await getDocs(q);
-    const totalBalance = querySnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
+    // 3. Check user balance from their wallet
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
 
-    if (amount > totalBalance) {
+    if (!userSnap.exists()) {
+        return { success: false, message: "کاربر یافت نشد." };
+    }
+    const userBalance = userSnap.data().walletBalance || 0;
+    
+    const exitFee = amount * (settings.exitFee / 100);
+    const netAmount = amount - exitFee;
+
+
+    if (amount > userBalance) {
         return {
             success: false,
-            message: "مبلغ درخواستی از موجودی شما بیشتر است.",
+            message: "مبلغ درخواستی از موجودی کیف پول شما بیشتر است.",
         };
     }
 
@@ -73,8 +80,8 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             walletAddress,
             status: 'pending', // pending, approved, rejected, completed
             createdAt: serverTimestamp(),
-            fee: amount * (settings.exitFee / 100),
-            netAmount: amount - (amount * (settings.exitFee / 100)),
+            fee: exitFee,
+            netAmount: netAmount,
         });
 
         return {

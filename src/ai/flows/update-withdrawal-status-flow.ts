@@ -1,13 +1,13 @@
 
 'use server';
 /**
- * @fileOverview A flow for updating a withdrawal request's status.
+ * @fileOverview A flow for updating a withdrawal request's status, including deducting from balance.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, runTransaction, increment } from 'firebase/firestore';
 
 // Input Schema
 const UpdateWithdrawalStatusInputSchema = z.object({
@@ -34,19 +34,49 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
   async ({ withdrawalId, newStatus }) => {
     try {
       const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
-      
-      // TODO: In a real app, when status is 'approved', you should also:
-      // 1. Deduct the amount from the user's investment/balance.
-      // 2. Potentially trigger a real transaction to the user's wallet address.
-      // For now, we just update the status.
 
-      await updateDoc(withdrawalRef, { status: newStatus });
+      await runTransaction(db, async (transaction) => {
+        const withdrawalDoc = await transaction.get(withdrawalRef);
+        if (!withdrawalDoc.exists()) {
+          throw new Error(`درخواست برداشت با شناسه ${withdrawalId} یافت نشد.`);
+        }
+
+        const withdrawalData = withdrawalDoc.data();
+        const userId = withdrawalData.userId;
+        const amountToDeduct = withdrawalData.amount; // The gross amount requested by user
+
+        // If approving, we must check balance and deduct from the user's wallet.
+        if (newStatus === 'approved') {
+          const userRef = doc(db, 'users', userId);
+          const userDoc = await transaction.get(userRef);
+          if (!userDoc.exists()) {
+            throw new Error(`کاربر با شناسه ${userId} یافت نشد.`);
+          }
+          
+          const currentUserBalance = userDoc.data().walletBalance || 0;
+          if (currentUserBalance < amountToDeduct) {
+            throw new Error(`موجودی کیف پول کاربر (${currentUserBalance.toLocaleString()}$) برای برداشت مبلغ (${amountToDeduct.toLocaleString()}$) کافی نیست.`);
+          }
+
+          // 1. Deduct the amount from the user's walletBalance
+          transaction.update(userRef, {
+            walletBalance: increment(-amountToDeduct)
+          });
+
+          // 2. Update the withdrawal status to 'approved'
+          transaction.update(withdrawalRef, { status: newStatus });
+          
+        } else { // If 'rejected'
+          // Just update the status, no balance change.
+          transaction.update(withdrawalRef, { status: newStatus });
+        }
+      });
 
       console.log(`Withdrawal ${withdrawalId} status updated to ${newStatus}.`);
 
       const message = newStatus === 'approved' 
-        ? `درخواست برداشت با شناسه ${withdrawalId} با موفقیت تایید شد.`
-        : `درخواست برداشت با شناسه ${withdrawalId} با موفقیت رد شد.`;
+        ? `درخواست برداشت با موفقیت تایید و مبلغ از کیف پول کاربر کسر شد.`
+        : `درخواست برداشت با موفقیت رد شد.`;
 
       return { success: true, message: message };
 
