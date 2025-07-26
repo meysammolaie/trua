@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -29,9 +30,10 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
-import { Search, MoreHorizontal, FileDown, Loader2, UserX } from "lucide-react";
+import { Search, MoreHorizontal, FileDown, Loader2, UserX, UserCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAllUsers, User } from "@/ai/flows/get-all-users-flow";
+import { updateUserStatus } from "@/ai/flows/update-user-status-flow";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminUsersPage() {
@@ -41,7 +43,7 @@ export default function AdminUsersPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const { toast } = useToast();
 
-    useEffect(() => {
+    const fetchUsers = useCallback(() => {
         setLoading(true);
         getAllUsers()
             .then(response => {
@@ -62,6 +64,10 @@ export default function AdminUsersPage() {
     }, [toast]);
 
     useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
+
+    useEffect(() => {
         const lowercasedFilter = searchTerm.toLowerCase();
         const filteredData = allUsers.filter(item => {
             return (
@@ -73,11 +79,27 @@ export default function AdminUsersPage() {
         setFilteredUsers(filteredData);
     }, [searchTerm, allUsers]);
 
-    const handleAction = (action: string, userName: string) => {
-        toast({
-            title: `عملیات ${action}`,
-            description: `قابلیت "${action}" برای کاربر ${userName} بزودی پیاده‌سازی خواهد شد.`,
-        });
+    const handleToggleStatus = async (user: User) => {
+        const newStatus = user.status === 'active' ? 'blocked' : 'active';
+        const actionText = newStatus === 'active' ? 'فعال' : 'مسدود';
+        try {
+            const result = await updateUserStatus({ userId: user.uid, newStatus: newStatus });
+            if (result.success) {
+                toast({
+                    title: `کاربر ${actionText} شد`,
+                    description: result.message,
+                });
+                fetchUsers(); // Refresh the user list
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: `خطا در ${actionText} کردن کاربر`,
+                description: error instanceof Error ? error.message : "یک خطای ناشناخته رخ داد.",
+            });
+        }
     };
 
   return (
@@ -161,8 +183,8 @@ export default function AdminUsersPage() {
                                         ${user.totalInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={user.status === 'فعال' ? 'secondary' : user.status === 'مسدود شده' ? 'destructive' : 'outline'}>
-                                            {user.status}
+                                        <Badge variant={user.status === 'active' ? 'secondary' : 'destructive'}>
+                                            {user.status === 'active' ? 'فعال' : 'مسدود شده'}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
@@ -175,13 +197,23 @@ export default function AdminUsersPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => handleAction('مشاهده جزئیات', `${user.firstName} ${user.lastName}`)}>مشاهده جزئیات</DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleAction('ویرایش کاربر', `${user.firstName} ${user.lastName}`)}>ویرایش</DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem className="text-red-500" onClick={() => handleAction('مسدود کردن', `${user.firstName} ${user.lastName}`)}>
-                                                    <UserX className="ml-2 h-4 w-4" />
-                                                    مسدود کردن
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/admin/users/${user.uid}`}>مشاهده جزئیات</Link>
                                                 </DropdownMenuItem>
+                                                <DropdownMenuItem disabled>ویرایش کاربر</DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                {user.status === 'active' ? (
+                                                     <DropdownMenuItem className="text-red-500" onClick={() => handleToggleStatus(user)}>
+                                                        <UserX className="ml-2 h-4 w-4" />
+                                                        مسدود کردن
+                                                    </DropdownMenuItem>
+                                                ) : (
+                                                     <DropdownMenuItem className="text-green-500" onClick={() => handleToggleStatus(user)}>
+                                                        <UserCheck className="ml-2 h-4 w-4" />
+                                                        فعال کردن
+                                                    </DropdownMenuItem>
+                                                )}
+                                               
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>

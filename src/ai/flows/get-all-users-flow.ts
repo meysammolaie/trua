@@ -22,7 +22,7 @@ const UserSchema = z.object({
   lastName: z.string(),
   createdAt: z.string(), // Sending as string for client
   totalInvestment: z.number(),
-  status: z.string(),
+  status: z.enum(['active', 'blocked']),
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -39,6 +39,7 @@ type UserDocument = {
   firstName: string;
   lastName: string;
   createdAt: Timestamp;
+  status: 'active' | 'blocked';
 };
 
 // Firestore data structure for an investment
@@ -66,10 +67,10 @@ const getAllUsersFlow = ai.defineFlow(
 
     const [usersSnapshot, investmentsSnapshot] = await Promise.all([
         getDocs(query(usersCollection, orderBy("createdAt", "desc"))),
-        getDocs(getDocs(investmentsCollection))
+        getDocs(collection(db, "investments"))
     ]);
 
-    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserDocument));
+    const users = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserDocument));
     const investments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDocument);
     
     // 2. Calculate total investment for each user
@@ -90,7 +91,7 @@ const getAllUsersFlow = ai.defineFlow(
             lastName: user.lastName,
             createdAt: user.createdAt.toDate().toLocaleDateString('fa-IR'),
             totalInvestment: investmentsByUser.get(user.uid) || 0,
-            status: "فعال", // This could also come from the user document
+            status: user.status || 'active', // Default to active if not set
         };
     });
 

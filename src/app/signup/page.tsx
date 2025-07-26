@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { createUserWithEmailAndPassword, signInWithPopup, UserCredential } from "firebase/auth";
 import { auth, db, googleProvider } from "@/lib/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -70,13 +70,14 @@ export default function SignupPage() {
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) {
         const { email, uid } = userCred.user;
-        const displayName = userCred.user.displayName?.split(" ") || [firstName, lastName];
+        const nameParts = userCred.user.displayName?.split(" ") || [];
         await setDoc(userRef, {
             uid,
             email,
-            firstName: displayName[0] || "",
-            lastName: displayName.slice(1).join(" ") || "",
-            createdAt: new Date(),
+            firstName: firstName || nameParts[0] || "",
+            lastName: lastName || nameParts.slice(1).join(" ") || "",
+            createdAt: serverTimestamp(),
+            status: "active", // Set default status
         });
     }
   };
