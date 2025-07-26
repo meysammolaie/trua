@@ -131,7 +131,7 @@ export default function InvestPage() {
           title: "درخواست شما ثبت شد",
           description: result.message,
         });
-        form.reset();
+        form.reset({ amount: minInvestmentUnit, transactionHash: "" });
       } else {
         throw new Error(result.message);
       }
