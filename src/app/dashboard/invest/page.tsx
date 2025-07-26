@@ -89,11 +89,13 @@ export default function InvestPage() {
   });
   
   const watchedAmount = form.watch("amount", 1);
-  const entryFee = watchedAmount * (fundDetails?.settings?.entryFee || 0) / 100;
-  const lotteryFee = watchedAmount * (fundDetails?.settings?.lotteryFee || 0) / 100;
-  const platformFee = watchedAmount * (fundDetails?.settings?.platformFee || 0) / 100;
+  const numericAmount = parseFloat(String(watchedAmount)) || 0;
+  
+  const entryFee = numericAmount * (fundDetails?.settings?.entryFee || 0) / 100;
+  const lotteryFee = numericAmount * (fundDetails?.settings?.lotteryFee || 0) / 100;
+  const platformFee = numericAmount * (fundDetails?.settings?.platformFee || 0) / 100;
   const totalFee = entryFee + lotteryFee + platformFee;
-  const netInvestment = watchedAmount - totalFee;
+  const netInvestment = numericAmount - totalFee;
   const netInvestmentUSD = netInvestment * (activeFund?.price.usd || 0);
 
   async function onSubmit(values: z.infer<typeof investmentSchema>) {
@@ -234,7 +236,7 @@ export default function InvestPage() {
                                </FormControl>
                                 <FormDescription>
                                  شناسه تراکنش را پس از واریز در اینجا وارد کنید.
-                               </FormDescription>
+                                </FormDescription>
                                <FormMessage />
                              </FormItem>
                            )}
@@ -250,19 +252,19 @@ export default function InvestPage() {
                              <CardContent className="space-y-4 text-sm">
                                <div className="flex justify-between items-center">
                                  <span className="text-muted-foreground">مبلغ سرمایه‌گذاری:</span>
-                                 <span className="font-mono font-semibold">{watchedAmount.toFixed(4)} {activeFund.unit}</span>
+                                 <span className="font-mono font-semibold">{numericAmount.toFixed(4)} {activeFund.unit}</span>
                                </div>
                                <div className="flex justify-between items-center">
                                  <span className="text-muted-foreground">کارمزد ورود ({fundDetails.settings?.entryFee}%):</span>
-                                 <span className={cn("font-mono font-semibold", watchedAmount > 0 && "text-red-500")}>-{entryFee.toFixed(4)} {activeFund.unit}</span>
+                                 <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{entryFee.toFixed(4)} {activeFund.unit}</span>
                                </div>
                                 <div className="flex justify-between items-center">
                                  <span className="text-muted-foreground">کارمزد قرعه‌کشی ({fundDetails.settings?.lotteryFee}%):</span>
-                                 <span className={cn("font-mono font-semibold", watchedAmount > 0 && "text-red-500")}>-{lotteryFee.toFixed(4)} {activeFund.unit}</span>
+                                 <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{lotteryFee.toFixed(4)} {activeFund.unit}</span>
                                </div>
                                 <div className="flex justify-between items-center">
                                  <span className="text-muted-foreground">کارمزد پلتفرم ({fundDetails.settings?.platformFee}%):</span>
-                                 <span className={cn("font-mono font-semibold", watchedAmount > 0 && "text-red-500")}>-{platformFee.toFixed(4)} {activeFund.unit}</span>
+                                 <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{platformFee.toFixed(4)} {activeFund.unit}</span>
                                </div>
                                <hr />
                                 <div className="flex justify-between items-center text-base">
