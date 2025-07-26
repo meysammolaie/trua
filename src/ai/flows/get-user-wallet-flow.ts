@@ -50,14 +50,14 @@ type InvestmentDocument = {
   createdAt: Timestamp;
 };
 
-const fundNames = {
+const fundNames: Record<string, string> = {
     gold: "صندوق طلا",
     silver: "صندوق نقره",
     dollar: "صندوق دلار",
     bitcoin: "صندوق بیت‌کوین"
 };
 
-const statusNames = {
+const statusNames: Record<string, string> = {
     pending: "در انتظار",
     active: "فعال",
     completed: "خاتمه یافته",

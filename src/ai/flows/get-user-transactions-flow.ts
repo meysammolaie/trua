@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching a user's transactions and stats from Firestore.
@@ -51,14 +52,14 @@ type InvestmentDocument = {
   createdAt: Timestamp;
 };
 
-const fundNames = {
+const fundNames: Record<string, string> = {
     gold: "طلا",
     silver: "نقره",
     dollar: "دلار",
     bitcoin: "بیت‌کوین"
 };
 
-const statusNames = {
+const statusNames: Record<string, string> = {
     pending: "در انتظار",
     active: "فعال",
     completed: "خاتمه یافته",
