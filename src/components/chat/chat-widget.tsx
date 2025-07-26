@@ -202,7 +202,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
   const ChatWindow = (
     <Card
       className={cn(
-        "w-[400px] h-[700px] flex flex-col shadow-2xl transition-all duration-300 overflow-hidden",
+        "w-[380px] h-[600px] flex flex-col shadow-2xl transition-all duration-300 overflow-hidden",
         isEmbedded && "w-full h-full shadow-none"
       )}
     >
@@ -382,14 +382,13 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                 transition={{ repeat: Infinity, duration: 2.5 }}
                 className="relative"
               >
-                <Avatar className="w-20 h-20 border-4 border-primary/50 shadow-2xl">
-                  <AvatarImage
-                    src="https://placehold.co/80x80/17192A/FBBF24"
-                    alt="AI Assistant"
-                    data-ai-hint="robot assistant"
-                  />
-                  <AvatarFallback>AI</AvatarFallback>
-                </Avatar>
+                 <Button
+                    size="icon"
+                    className="rounded-full w-20 h-20 shadow-2xl border-4 border-primary/50"
+                  >
+                     <Bot className="h-10 w-10" />
+                 </Button>
+
                 <motion.div
                   className="absolute inset-0 rounded-full border-2 border-primary"
                   animate={{ scale: [1, 1.4], opacity: [0.7, 0] }}
@@ -400,9 +399,6 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                   }}
                 />
               </motion.div>
-              <div className="bg-card/80 backdrop-blur-md text-card-foreground px-3 py-1 rounded-full text-xs shadow-lg">
-                روی من ضربه بزن تا گفتگو کنیم
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
