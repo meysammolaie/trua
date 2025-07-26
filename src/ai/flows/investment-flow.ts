@@ -45,15 +45,15 @@ const investmentFlow = ai.defineFlow(
     console.log('Received investment submission for user:', input.userId);
     
     try {
-      // 1. Validate the transactionHash with a blockchain service (mocked for now).
-      // 2. Save the investment details to the database.
+      // Here you could add a step to automatically verify the transaction hash with a blockchain service.
+      // For now, we assume it's valid and set the status to 'pending' for admin approval.
       const investmentsCollection = collection(db, 'investments');
       const docRef = await addDoc(investmentsCollection, {
         userId: input.userId,
         fundId: input.fundId,
         amount: input.amount,
         transactionHash: input.transactionHash,
-        status: 'pending', // Status can be 'pending', 'active', 'completed'
+        status: 'pending', // Statuses: 'pending', 'active', 'completed', 'rejected'
         createdAt: serverTimestamp(),
       });
 
@@ -62,7 +62,7 @@ const investmentFlow = ai.defineFlow(
       return {
         success: true,
         investmentId: docRef.id,
-        message: `سرمایه‌گذاری شما در صندوق ${input.fundId} با شناسه ${docRef.id} ثبت و در حال پردازش است.`,
+        message: `سرمایه‌گذاری شما ثبت شد و اکنون در انتظار تایید مدیر است. شناسه پیگیری: ${docRef.id}`,
       };
     } catch (e) {
         console.error("Error adding document: ", e);

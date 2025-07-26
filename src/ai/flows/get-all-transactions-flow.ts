@@ -23,7 +23,7 @@ const TransactionWithUserSchema = z.object({
   fundId: z.string(),
   amount: z.number(),
   type: z.string(),
-  status: z.enum(['pending', 'active', 'completed', 'failed']).optional(),
+  status: z.enum(['pending', 'active', 'completed', 'failed', 'rejected']).optional(),
   createdAt: z.string(),
   originalInvestmentId: z.string(),
 });
@@ -63,7 +63,7 @@ type InvestmentDocument = {
   userId: string;
   fundId: string;
   amount: number;
-  status: 'pending' | 'active' | 'completed';
+  status: 'pending' | 'active' | 'completed' | 'rejected';
   createdAt: Timestamp;
 };
 
@@ -109,20 +109,52 @@ const getAllTransactionsFlow = ai.defineFlow(
         const userEmail = user ? user.email : 'ایمیل نامشخص';
         const investmentDate = inv.createdAt.toDate();
         
-        const fees = {
-            entry: inv.amount * 0.03,
-            lottery: inv.amount * 0.02,
-            platform: inv.amount * 0.01,
-        };
+        // Fees and revenue are only calculated for active investments
+        if (inv.status === 'active') {
+            const fees = {
+                entry: inv.amount * 0.03,
+                lottery: inv.amount * 0.02,
+                platform: inv.amount * 0.01,
+            };
 
-        totalRevenue += fees.entry + fees.lottery + fees.platform;
-        lotteryPool += fees.lottery;
-        
-        const monthKey = `${investmentDate.getFullYear()}/${String(investmentDate.getMonth() + 1).padStart(2, '0')}`;
-        if (!revenueByMonth[monthKey]) {
-            revenueByMonth[monthKey] = 0;
+            totalRevenue += fees.entry + fees.lottery + fees.platform;
+            lotteryPool += fees.lottery;
+            
+            const monthKey = `${investmentDate.getFullYear()}/${String(investmentDate.getMonth() + 1).padStart(2, '0')}`;
+            if (!revenueByMonth[monthKey]) {
+                revenueByMonth[monthKey] = 0;
+            }
+            revenueByMonth[monthKey] += fees.entry + fees.lottery + fees.platform;
+
+            // Simulate fee transactions for active investments
+            allTransactions.push({
+                id: `fee-entry-${inv.id}`,
+                userId: inv.userId, userFullName, userEmail, fundId: inv.fundId,
+                amount: fees.entry,
+                type: 'fee_entry',
+                status: 'completed',
+                createdAt: subtractMinutes(investmentDate, 1).toLocaleDateString('fa-IR'),
+                originalInvestmentId: inv.id,
+            });
+            allTransactions.push({
+                id: `fee-lottery-${inv.id}`,
+                userId: inv.userId, userFullName, userEmail, fundId: inv.fundId,
+                amount: fees.lottery,
+                type: 'fee_lottery',
+                status: 'completed',
+                createdAt: subtractMinutes(investmentDate, 1).toLocaleDateString('fa-IR'),
+                originalInvestmentId: inv.id,
+            });
+            allTransactions.push({
+                id: `fee-platform-${inv.id}`,
+                userId: inv.userId, userFullName, userEmail, fundId: inv.fundId,
+                amount: fees.platform,
+                type: 'fee_platform',
+                status: 'completed',
+                createdAt: subtractMinutes(investmentDate, 1).toLocaleDateString('fa-IR'),
+                originalInvestmentId: inv.id,
+            });
         }
-        revenueByMonth[monthKey] += fees.entry + fees.lottery + fees.platform;
 
 
         // Simulate a "Deposit" transaction that happened slightly before the investment
@@ -150,35 +182,6 @@ const getAllTransactionsFlow = ai.defineFlow(
             type: 'investment',
             status: inv.status,
             createdAt: investmentDate.toLocaleDateString('fa-IR'),
-            originalInvestmentId: inv.id,
-        });
-
-        // Simulate fee transactions
-        allTransactions.push({
-            id: `fee-entry-${inv.id}`,
-            userId: inv.userId, userFullName, userEmail, fundId: inv.fundId,
-            amount: fees.entry,
-            type: 'fee_entry',
-            status: 'completed',
-            createdAt: subtractMinutes(investmentDate, 1).toLocaleDateString('fa-IR'),
-            originalInvestmentId: inv.id,
-        });
-        allTransactions.push({
-            id: `fee-lottery-${inv.id}`,
-            userId: inv.userId, userFullName, userEmail, fundId: inv.fundId,
-            amount: fees.lottery,
-            type: 'fee_lottery',
-            status: 'completed',
-            createdAt: subtractMinutes(investmentDate, 1).toLocaleDateString('fa-IR'),
-            originalInvestmentId: inv.id,
-        });
-        allTransactions.push({
-            id: `fee-platform-${inv.id}`,
-            userId: inv.userId, userFullName, userEmail, fundId: inv.fundId,
-            amount: fees.platform,
-            type: 'fee_platform',
-            status: 'completed',
-            createdAt: subtractMinutes(investmentDate, 1).toLocaleDateString('fa-IR'),
             originalInvestmentId: inv.id,
         });
     });

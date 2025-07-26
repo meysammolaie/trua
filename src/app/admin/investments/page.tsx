@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -27,6 +27,7 @@ import {
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuTrigger,
+    DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import {
     Select,
@@ -35,10 +36,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2 } from "lucide-react";
+import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2, AlertTriangle, Check, Ban } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { getAllTransactions, TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
+import { updateInvestmentStatus } from "@/ai/flows/update-investment-status-flow";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 const fundNames: Record<string, string> = {
     gold: "طلا",
@@ -48,16 +51,17 @@ const fundNames: Record<string, string> = {
 };
 
 const statusNames: Record<string, string> = {
-    pending: "در انتظار تایید",
+    pending: "در انتظار",
     active: "فعال",
     completed: "خاتمه یافته",
+    rejected: "رد شده",
 };
 
 export default function AdminInvestmentsPage() {
     const { toast } = useToast();
     const [allInvestments, setAllInvestments] = useState<TransactionWithUser[]>([]);
     const [filteredInvestments, setFilteredInvestments] = useState<TransactionWithUser[]>([]);
-    const [stats, setStats] = useState({ totalAmount: 0, activeCount: 0, averageAmount: 0 });
+    const [stats, setStats] = useState({ totalAmount: 0, pendingCount: 0, averageAmount: 0 });
     const [loading, setLoading] = useState(true);
     
     // Filters state
@@ -65,20 +69,18 @@ export default function AdminInvestmentsPage() {
     const [fundFilter, setFundFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
 
-    useEffect(() => {
+    const fetchInvestments = useCallback(() => {
         setLoading(true);
-        // We fetch all transactions and then filter for just the "investment" type
         getAllTransactions()
             .then(data => {
                 const investmentsOnly = data.transactions.filter(t => t.type === 'investment');
                 setAllInvestments(investmentsOnly);
-                setFilteredInvestments(investmentsOnly);
                 
-                // Recalculate stats based on investments only
-                const totalAmount = investmentsOnly.reduce((sum, inv) => sum + inv.amount, 0);
-                const activeCount = investmentsOnly.filter(inv => inv.status === 'active' || inv.status === 'pending').length;
-                const averageAmount = investmentsOnly.length > 0 ? totalAmount / investmentsOnly.length : 0;
-                setStats({ totalAmount, activeCount, averageAmount });
+                const activeInvestments = investmentsOnly.filter(inv => inv.status === 'active');
+                const totalAmount = activeInvestments.reduce((sum, inv) => sum + Math.abs(inv.amount), 0);
+                const pendingCount = investmentsOnly.filter(inv => inv.status === 'pending').length;
+                const averageAmount = activeInvestments.length > 0 ? totalAmount / activeInvestments.length : 0;
+                setStats({ totalAmount, pendingCount, averageAmount });
             })
             .catch(error => {
                 console.error("Error fetching investments:", error);
@@ -90,6 +92,10 @@ export default function AdminInvestmentsPage() {
             })
             .finally(() => setLoading(false));
     }, [toast]);
+
+    useEffect(() => {
+        fetchInvestments();
+    }, [fetchInvestments]);
 
     useEffect(() => {
         let result = allInvestments;
@@ -115,6 +121,28 @@ export default function AdminInvestmentsPage() {
     }, [searchTerm, fundFilter, statusFilter, allInvestments]);
 
 
+    const handleStatusUpdate = async (investmentId: string, newStatus: 'active' | 'rejected') => {
+        try {
+            const result = await updateInvestmentStatus({ investmentId, newStatus });
+            if (result.success) {
+                toast({
+                    title: "عملیات موفق",
+                    description: result.message,
+                });
+                fetchInvestments(); // Refresh data
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "خطا در بروزرسانی وضعیت",
+                description: error instanceof Error ? error.message : "مشکلی پیش آمد."
+            })
+        }
+    };
+
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
@@ -122,7 +150,9 @@ export default function AdminInvestmentsPage() {
       case "pending":
         return <Clock className="h-4 w-4 text-yellow-500" />;
       case "completed":
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <CheckCircle className="h-4 w-4 text-blue-500" />;
+      case "rejected":
+          return <Ban className="h-4 w-4 text-red-500" />;
       default:
         return null;
     }
@@ -135,7 +165,9 @@ export default function AdminInvestmentsPage() {
       case "pending":
         return "outline";
       case "completed":
-        return "destructive";
+        return "default";
+      case "rejected":
+          return "destructive";
       default:
         return "default";
     }
@@ -155,26 +187,26 @@ export default function AdminInvestmentsPage() {
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">کل مبلغ سرمایه‌گذاری</CardTitle>
+            <CardTitle className="text-sm font-medium">کل مبلغ سرمایه‌گذاری فعال</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                 <div className="text-2xl font-bold font-mono">{formatCurrency(stats.totalAmount)}</div>
             )}
-            <p className="text-xs text-muted-foreground">مجموع تمام سرمایه‌گذاری‌ها</p>
+            <p className="text-xs text-muted-foreground">مجموع تمام سرمایه‌گذاری‌های تایید شده</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">سرمایه‌گذاری‌های فعال</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">درخواست‌های در انتظار</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
              {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
-                <div className="text-2xl font-bold">{stats.activeCount.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{stats.pendingCount.toLocaleString()}</div>
              )}
-            <p className="text-xs text-muted-foreground">وضعیت‌های فعال و در انتظار</p>
+            <p className="text-xs text-muted-foreground">نیاز به تایید یا رد توسط مدیر</p>
           </CardContent>
         </Card>
         <Card>
@@ -186,7 +218,7 @@ export default function AdminInvestmentsPage() {
              {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                 <div className="text-2xl font-bold font-mono">{formatCurrency(stats.averageAmount)}</div>
              )}
-            <p className="text-xs text-muted-foreground">میانگین مبلغ هر سرمایه‌گذاری</p>
+            <p className="text-xs text-muted-foreground">میانگین مبلغ سرمایه‌گذاری‌های فعال</p>
           </CardContent>
         </Card>
       </div>
@@ -226,7 +258,7 @@ export default function AdminInvestmentsPage() {
                             <SelectItem value="all">همه صندوق‌ها</SelectItem>
                             <SelectItem value="gold">طلا</SelectItem>
                             <SelectItem value="silver">نقره</SelectItem>
-                            <SelectItem value="dollar">دلار</SelectItem>
+                            <SelectItem value="usdt">تتر</SelectItem>
                             <SelectItem value="bitcoin">بیت‌کوین</SelectItem>
                         </SelectContent>
                     </Select>
@@ -236,9 +268,10 @@ export default function AdminInvestmentsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                            <SelectItem value="pending">در انتظار</SelectItem>
                             <SelectItem value="active">فعال</SelectItem>
-                            <SelectItem value="pending">در انتظار تایید</SelectItem>
                             <SelectItem value="completed">خاتمه یافته</SelectItem>
+                            <SelectItem value="rejected">رد شده</SelectItem>
                         </SelectContent>
                     </Select>
                     <DateRangePicker className="w-full md:w-auto" />
@@ -281,7 +314,7 @@ export default function AdminInvestmentsPage() {
                                         <div className="font-medium">{inv.userFullName}</div>
                                         <div className="text-xs text-muted-foreground">{inv.userEmail}</div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell">{fundNames[inv.fundId]}</TableCell>
+                                    <TableCell className="hidden md:table-cell">{fundNames[inv.fundId] || inv.fundId}</TableCell>
                                     <TableCell className="text-right font-mono">
                                         {formatCurrency(inv.amount)}
                                     </TableCell>
@@ -292,7 +325,7 @@ export default function AdminInvestmentsPage() {
                                         <Badge variant={getStatusBadgeVariant(inv.status!)}>
                                         <div className="flex items-center gap-2">
                                                 {getStatusIcon(inv.status!)}
-                                                <span>{statusNames[inv.status!]}</span>
+                                                <span>{statusNames[inv.status!] || inv.status}</span>
                                         </div>
                                         </Badge>
                                     </TableCell>
@@ -306,9 +339,23 @@ export default function AdminInvestmentsPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                                                <DropdownMenuItem>مشاهده جزئیات کاربر</DropdownMenuItem>
-                                                <DropdownMenuItem>مشاهده تراکنش</DropdownMenuItem>
-                                                <DropdownMenuItem>تغییر وضعیت</DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/admin/users/${inv.userId}`}>مشاهده جزئیات کاربر</Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem disabled>مشاهده تراکنش بلاکچین</DropdownMenuItem>
+                                                {inv.status === 'pending' && (
+                                                    <>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem className="text-green-600" onClick={() => handleStatusUpdate(inv.id, 'active')}>
+                                                            <Check className="ml-2 h-4 w-4" />
+                                                            تایید سرمایه‌گذاری
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="text-red-600" onClick={() => handleStatusUpdate(inv.id, 'rejected')}>
+                                                            <Ban className="ml-2 h-4 w-4" />
+                                                            رد سرمایه‌گذاری
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>

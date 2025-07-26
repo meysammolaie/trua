@@ -13,6 +13,6 @@ import "./flows/get-lottery-data-flow";
 import "./flows/update-user-status-flow";
 import "./flows/platform-settings-flow";
 import "./flows/get-fund-details-flow";
+import "./flows/update-investment-status-flow";
 
 import "./tools/get-crypto-price-tool";
-
