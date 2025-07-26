@@ -11,6 +11,8 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { getAllUsers } from './get-all-users-flow';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const LotteryDrawInputSchema = z.object({});
 export type LotteryDrawInput = z.infer<typeof LotteryDrawInputSchema>;
@@ -34,17 +36,9 @@ const lotteryDrawFlow = ai.defineFlow(
     inputSchema: LotteryDrawInputSchema,
     outputSchema: LotteryDrawOutputSchema,
   },
-  async (input) => {
+  async () => {
     console.log('Running lottery draw...');
 
-    // In a real application, you would:
-    // 1. Get the list of all eligible tickets from the database.
-    // 2. Randomly select a winner.
-    // 3. Get the user associated with the winning ticket.
-    // 4. Get the prize pool amount.
-    // 5. Record the win in the database and create the payout transaction.
-
-    // For now, we get all users and pick a random one.
     try {
         const { users } = await getAllUsers({});
 
@@ -56,25 +50,51 @@ const lotteryDrawFlow = ai.defineFlow(
                 message: 'هیچ کاربری برای شرکت در قرعه‌کشی یافت نشد.',
             }
         }
-
-        const winner = users[Math.floor(Math.random() * users.length)];
-        const winnerName = `${winner.firstName} ${winner.lastName}`;
-        const prize = Math.floor(Math.random() * (10000 - 4000 + 1) + 4000);
         
+        // Calculate the total prize pool from all investments
+        const investmentsSnapshot = await getDocs(collection(db, "investments"));
+        const prizePool = investmentsSnapshot.docs.reduce((sum, doc) => {
+            const amount = doc.data().amount || 0;
+            return sum + (amount * 0.02); // 2% lottery fee
+        }, 0);
+
+
+        const eligibleUsers = users.filter(u => u.totalInvestment > 0);
+        if (eligibleUsers.length === 0) {
+             return {
+                success: false,
+                winnerName: '',
+                prizeAmount: 0,
+                message: 'هیچ کاربر واجد شرایطی (با سرمایه‌گذاری فعال) یافت نشد.',
+            }
+        }
+        
+        const winner = eligibleUsers[Math.floor(Math.random() * eligibleUsers.length)];
+        const winnerName = `${winner.firstName} ${winner.lastName}`;
+        
+        // Save winner to the database
+        await addDoc(collection(db, 'lottery_winners'), {
+            userId: winner.uid,
+            userName: winnerName,
+            prizeAmount: prizePool,
+            drawDate: serverTimestamp(),
+        });
+
         return {
-        success: true,
-        winnerName: winnerName,
-        prizeAmount: prize,
-        message: `قرعه‌کشی با موفقیت انجام شد! برنده این دوره ${winnerName} با جایزه $${prize.toLocaleString()} است.`,
+            success: true,
+            winnerName: winnerName,
+            prizeAmount: prizePool,
+            message: `قرعه‌کشی با موفقیت انجام شد! برنده این دوره ${winnerName} با جایزه $${prizePool.toLocaleString()} است.`,
         };
 
     } catch (error) {
          console.error("Error running lottery draw: ", error);
+         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
          return {
             success: false,
             winnerName: '',
             prizeAmount: 0,
-            message: 'خطایی در هنگام واکشی کاربران برای قرعه‌کشی رخ داد.',
+            message: `خطایی در هنگام اجرای قرعه‌کشی رخ داد: ${errorMessage}`,
         };
     }
   }

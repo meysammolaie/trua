@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -24,23 +24,33 @@ import { CountdownTimer } from "@/components/countdown-timer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { runLotteryDraw } from "@/ai/flows/lottery-flow";
-
-
-const lotteryStats = {
-    pool: 25500.00,
-    tickets: 18432,
-    participants: 4321,
-};
-
-const recentWinners = [
-  { drawDate: "۱۴۰۳/۰۴/۰۱", user: "سارا احمدی", avatar: "/avatars/04.png", prize: 5000.00, txId: "TXN-WIN-001" },
-  { drawDate: "۱۴۰۳/۰۳/۰۱", user: "علی رضایی", avatar: "/avatars/01.png", prize: 4500.00, txId: "TXN-WIN-002" },
-  { drawDate: "۱۴۰۳/۰۲/۰۱", user: "مریم حسینی", avatar: "/avatars/02.png", prize: 5200.00, txId: "TXN-WIN-003" },
-];
+import { getLotteryData, LotteryData, RecentWinner } from "@/ai/flows/get-lottery-data-flow";
 
 export default function AdminLotteryPage() {
     const { toast } = useToast();
     const [isDrawing, setIsDrawing] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(true);
+    const [lotteryData, setLotteryData] = useState<LotteryData | null>(null);
+
+    const fetchLotteryData = async () => {
+        try {
+            setIsLoadingData(true);
+            const data = await getLotteryData();
+            setLotteryData(data);
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "خطا در واکشی اطلاعات",
+                description: error instanceof Error ? error.message : "مشکلی در دریافت اطلاعات قرعه‌کشی رخ داد.",
+            });
+        } finally {
+            setIsLoadingData(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchLotteryData();
+    }, []);
 
     const handleManualDraw = async () => {
         setIsDrawing(true);
@@ -56,7 +66,8 @@ export default function AdminLotteryPage() {
                     title: "قرعه‌کشی با موفقیت انجام شد!",
                     description: result.message,
                 });
-                // Optionally, you could add the new winner to the recentWinners list here
+                // Refresh data to show new stats and winner
+                await fetchLotteryData(); 
             } else {
                 throw new Error(result.message);
             }
@@ -84,9 +95,11 @@ export default function AdminLotteryPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono">${lotteryStats.pool.toLocaleString()}</div>
+             {isLoadingData ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                <div className="text-2xl font-bold font-mono">${lotteryData?.lotteryPool.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            )}
             <p className="text-xs text-muted-foreground">
-              مربوط به دوره فعلی
+              مجموع کارمزد قرعه‌کشی از سرمایه‌گذاری‌ها
             </p>
           </CardContent>
         </Card>
@@ -96,9 +109,11 @@ export default function AdminLotteryPage() {
             <Ticket className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{lotteryStats.tickets.toLocaleString()}</div>
+             {isLoadingData ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                <div className="text-2xl font-bold">{lotteryData?.totalTickets.toLocaleString()}</div>
+             )}
             <p className="text-xs text-muted-foreground">
-              +1,250 در ۲۴ ساعت گذشته
+              بر اساس هر ۱۰ دلار یک بلیت
             </p>
           </CardContent>
         </Card>
@@ -108,9 +123,11 @@ export default function AdminLotteryPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{lotteryStats.participants.toLocaleString()}</div>
+             {isLoadingData ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                <div className="text-2xl font-bold">{lotteryData?.participantsCount.toLocaleString()}</div>
+             )}
             <p className="text-xs text-muted-foreground">
-              +82 کاربر جدید در این دوره
+              کاربران منحصر به فرد با سرمایه‌گذاری
             </p>
           </CardContent>
         </Card>
@@ -128,7 +145,7 @@ export default function AdminLotteryPage() {
                 </div>
             </CardContent>
             <CardFooter className="border-t pt-4">
-                 <Button onClick={handleManualDraw} className="w-full" disabled={isDrawing}>
+                 <Button onClick={handleManualDraw} className="w-full" disabled={isDrawing || isLoadingData}>
                     {isDrawing ? (
                         <Loader2 className="h-4 w-4 ml-2 animate-spin"/>
                     ) : (
@@ -161,23 +178,37 @@ export default function AdminLotteryPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                         {recentWinners.map((winner) => (
-                             <TableRow key={winner.txId}>
+                        {isLoadingData ? (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center py-10">
+                                    <Loader2 className="h-5 w-5 animate-spin mx-auto"/>
+                                </TableCell>
+                            </TableRow>
+                        ) : lotteryData?.recentWinners && lotteryData.recentWinners.length > 0 ? (
+                             lotteryData.recentWinners.map((winner) => (
+                             <TableRow key={winner.id}>
                                 <TableCell>
                                     <div className="flex items-center gap-3">
                                         <Avatar className="hidden h-9 w-9 sm:flex">
-                                            <AvatarImage src={winner.avatar} alt="Avatar" />
-                                            <AvatarFallback>{winner.user.charAt(0)}</AvatarFallback>
+                                            <AvatarImage src={`https://i.pravatar.cc/40?u=${winner.userId}`} alt="Avatar" />
+                                            <AvatarFallback>{winner.userName.charAt(0)}</AvatarFallback>
                                         </Avatar>
-                                        <p className="text-sm font-medium leading-none">{winner.user}</p>
+                                        <p className="text-sm font-medium leading-none">{winner.userName}</p>
                                     </div>
                                 </TableCell>
                                 <TableCell>{winner.drawDate}</TableCell>
                                 <TableCell className="text-right font-mono text-green-600">
-                                    ${winner.prize.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    ${winner.prizeAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ))
+                        ) : (
+                             <TableRow>
+                                <TableCell colSpan={3} className="text-center py-10">
+                                    هنوز برنده‌ای ثبت نشده است.
+                                </TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>
