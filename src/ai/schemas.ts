@@ -5,6 +5,7 @@ export const PlatformSettingsSchema = z.object({
   lotteryFee: z.coerce.number().min(0).max(100),
   platformFee: z.coerce.number().min(0).max(100),
   exitFee: z.coerce.number().min(0).max(100),
+  networkFee: z.coerce.number().min(0).default(1),
   maintenanceMode: z.boolean(),
   goldWalletAddress: z.string(),
   silverWalletAddress: z.string(),

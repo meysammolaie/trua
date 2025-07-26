@@ -52,6 +52,7 @@ const getPlatformSettingsFlow = ai.defineFlow(
             lotteryFee: 2,
             platformFee: 1,
             exitFee: 2,
+            networkFee: 1,
             maintenanceMode: false,
             goldWalletAddress: "0xA1bDa01cd7c599a734615026A355bd80a4ae6f48",
             silverWalletAddress: "0xA1bDa01cd7c599a734615026A355bd80a4ae6f48",

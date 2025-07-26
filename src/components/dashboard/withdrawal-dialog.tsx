@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -30,6 +30,8 @@ import { Loader2, MinusCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { createWithdrawalRequest } from "@/ai/flows/create-withdrawal-request-flow";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getPlatformSettings, type PlatformSettings } from "@/ai/flows/platform-settings-flow";
+import { cn } from "@/lib/utils";
 
 const withdrawalSchema = z.object({
   amount: z.coerce.number().positive({ message: "مبلغ باید مثبت باشد." }),
@@ -45,6 +47,7 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [settings, setSettings] = useState<PlatformSettings | null>(null);
   
   const form = useForm<z.infer<typeof withdrawalSchema>>({
     resolver: zodResolver(withdrawalSchema),
@@ -55,6 +58,12 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
   });
 
   const { isSubmitting } = form.formState;
+
+  useEffect(() => {
+    if (open) {
+        getPlatformSettings().then(setSettings).catch(console.error);
+    }
+  }, [open]);
 
   async function onSubmit(values: z.infer<typeof withdrawalSchema>) {
     if (!user) {
@@ -91,6 +100,14 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
     }
   }
 
+  const watchedAmount = form.watch("amount", 0);
+  const numericAmount = parseFloat(String(watchedAmount)) || 0;
+  
+  const exitFee = settings ? numericAmount * (settings.exitFee / 100) : 0;
+  const networkFee = settings ? settings.networkFee : 0;
+  const totalFees = exitFee + networkFee;
+  const netAmount = numericAmount - totalFees;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -99,7 +116,7 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
             برداشت
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>درخواست برداشت وجه</DialogTitle>
           <DialogDescription>
@@ -137,6 +154,32 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
                         </FormItem>
                     )}
                 />
+
+                {numericAmount > 0 && settings && (
+                    <div className="space-y-2 rounded-lg border p-4">
+                        <h4 className="font-medium text-sm">خلاصه برداشت</h4>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">مبلغ درخواستی:</span>
+                            <span className="font-mono font-semibold">${numericAmount.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">کارمزد خروج ({settings.exitFee}%):</span>
+                            <span className={cn("font-mono font-semibold text-red-500")}>-${exitFee.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                        </div>
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">کارمزد شبکه:</span>
+                            <span className={cn("font-mono font-semibold text-red-500")}>-${networkFee.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                        </div>
+                        <hr className="my-2" />
+                        <div className="flex justify-between items-center font-bold text-base">
+                            <span>مبلغ دریافتی شما:</span>
+                            <span className={cn("font-mono", netAmount > 0 ? "text-green-500" : "text-red-500")}>
+                                ${netAmount > 0 ? netAmount.toLocaleString('en-US', {minimumFractionDigits: 2}) : '0.00'}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
 
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />

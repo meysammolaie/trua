@@ -62,13 +62,22 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     const userBalance = userSnap.data().walletBalance || 0;
     
     const exitFee = amount * (settings.exitFee / 100);
-    const netAmount = amount - exitFee;
+    const networkFee = settings.networkFee || 0;
+    const totalFees = exitFee + networkFee;
+    const netAmount = amount - totalFees;
 
 
     if (amount > userBalance) {
         return {
             success: false,
             message: "مبلغ درخواستی از موجودی کیف پول شما بیشتر است.",
+        };
+    }
+    
+     if (netAmount <= 0) {
+        return {
+            success: false,
+            message: "مبلغ درخواستی پس از کسر کارمزدها باید مثبت باشد.",
         };
     }
 
@@ -80,7 +89,8 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             walletAddress,
             status: 'pending', // pending, approved, rejected, completed
             createdAt: serverTimestamp(),
-            fee: exitFee,
+            exitFee: exitFee,
+            networkFee: networkFee,
             netAmount: netAmount,
         });
 

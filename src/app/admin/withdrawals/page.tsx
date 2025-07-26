@@ -195,10 +195,10 @@ export default function AdminWithdrawalsPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>کاربر</TableHead>
-                                <TableHead className="hidden sm:table-cell">آدرس کیف پول</TableHead>
-                                <TableHead className="text-right">مبلغ</TableHead>
-                                <TableHead className="text-right hidden md:table-cell">کارمزد</TableHead>
-                                <TableHead className="text-right hidden md:table-cell">مبلغ نهایی</TableHead>
+                                <TableHead className="text-right">مبلغ درخواستی</TableHead>
+                                <TableHead className="text-right hidden md:table-cell">کارمزد خروج</TableHead>
+                                <TableHead className="text-right hidden md:table-cell">کارمزد شبکه</TableHead>
+                                <TableHead className="text-right">مبلغ نهایی</TableHead>
                                 <TableHead className="hidden sm:table-cell text-center">تاریخ</TableHead>
                                 <TableHead>وضعیت</TableHead>
                                 <TableHead><span className="sr-only">عملیات</span></TableHead>
@@ -214,12 +214,12 @@ export default function AdminWithdrawalsPage() {
                                     <TableRow key={req.id}>
                                         <TableCell>
                                             <div className="font-medium">{req.userFullName}</div>
-                                            <div className="text-xs text-muted-foreground">{req.userEmail}</div>
+                                            <div className="text-xs text-muted-foreground font-mono" dir="ltr">{req.walletAddress}</div>
                                         </TableCell>
-                                        <TableCell className="hidden sm:table-cell font-mono text-xs" dir="ltr">{req.walletAddress}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(req.amount)}</TableCell>
-                                        <TableCell className="text-right font-mono hidden md:table-cell text-red-500">{formatCurrency(req.fee)}</TableCell>
-                                        <TableCell className="text-right font-mono hidden md:table-cell text-green-600">{formatCurrency(req.netAmount)}</TableCell>
+                                        <TableCell className="text-right font-mono hidden md:table-cell text-red-500">{formatCurrency(req.exitFee)}</TableCell>
+                                        <TableCell className="text-right font-mono hidden md:table-cell text-red-500">{formatCurrency(req.networkFee ?? 0)}</TableCell>
+                                        <TableCell className="text-right font-mono text-green-600">{formatCurrency(req.netAmount)}</TableCell>
                                         <TableCell className="hidden sm:table-cell text-center">{req.createdAt}</TableCell>
                                         <TableCell>
                                             <Badge variant={getStatusBadgeVariant(req.status)}><div className="flex items-center gap-2">{getStatusIcon(req.status)}<span>{statusNames[req.status]}</span></div></Badge>

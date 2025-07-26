@@ -15,7 +15,8 @@ const WithdrawalRequestSchema = z.object({
   userFullName: z.string(),
   userEmail: z.string(),
   amount: z.number(),
-  fee: z.number(),
+  exitFee: z.number(),
+  networkFee: z.number().optional(),
   netAmount: z.number(),
   walletAddress: z.string(),
   status: z.enum(['pending', 'approved', 'rejected', 'completed']),
@@ -69,6 +70,8 @@ const getWithdrawalRequestsFlow = ai.defineFlow(
             id: doc.id,
             userFullName: user ? `${user.firstName} ${user.lastName}`.trim() : 'کاربر نامشخص',
             userEmail: user ? user.email : 'ایمیل نامشخص',
+            exitFee: data.exitFee, // Keep existing field name from DB
+            networkFee: data.networkFee,
             createdAt: data.createdAt.toDate().toLocaleDateString('fa-IR'),
         };
     });

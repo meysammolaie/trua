@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays } from "lucide-react";
+import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPlatformSettings, updatePlatformSettings } from "@/ai/flows/platform-settings-flow";
 import { PlatformSettingsSchema, type PlatformSettings } from "@/ai/schemas";
@@ -59,6 +59,7 @@ export default function AdminSettingsPage() {
       lotteryFee: 2,
       platformFee: 1,
       exitFee: 2,
+      networkFee: 1,
       maintenanceMode: false,
       goldWalletAddress: "",
       silverWalletAddress: "",
@@ -131,7 +132,7 @@ export default function AdminSettingsPage() {
                     قوانین مالی پلتفرم مانند کارمزدها و شرایط برداشت را تنظیم کنید.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <FormField
                     control={form.control}
                     name="entryFee"
@@ -222,6 +223,20 @@ export default function AdminSettingsPage() {
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                     <FormField
+                        control={form.control}
+                        name="networkFee"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>کارمزد شبکه برای برداشت</FormLabel>
+                            <div className="relative">
+                                <Input type="number" {...field} className="pr-8" />
+                                <Network className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <FormMessage />
                             </FormItem>
                         )}
                         />
