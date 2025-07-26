@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -37,59 +37,75 @@ import {
 } from "@/components/ui/select";
 import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2 } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
-import { collection, query, orderBy, getDocs, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getAllInvestments, InvestmentWithUser } from "@/ai/flows/get-all-investments-flow";
+import { useToast } from "@/hooks/use-toast";
 
-
-type Investment = {
-  id: string;
-  userId: string;
-  fundId: string;
-  amount: number;
-  transactionHash: string;
-  status: 'pending' | 'active' | 'completed';
-  createdAt: Timestamp;
-};
-
-const fundNames = {
+const fundNames: Record<string, string> = {
     gold: "طلا",
     silver: "نقره",
     dollar: "دلار",
     bitcoin: "بیت‌کوین"
 };
 
-const statusNames = {
+const statusNames: Record<string, string> = {
     pending: "در انتظار تایید",
     active: "فعال",
     completed: "خاتمه یافته",
 };
 
-
 export default function AdminInvestmentsPage() {
-    const [investments, setInvestments] = useState<Investment[]>([]);
+    const { toast } = useToast();
+    const [allInvestments, setAllInvestments] = useState<InvestmentWithUser[]>([]);
+    const [filteredInvestments, setFilteredInvestments] = useState<InvestmentWithUser[]>([]);
+    const [stats, setStats] = useState({ totalAmount: 0, activeCount: 0, averageAmount: 0 });
     const [loading, setLoading] = useState(true);
+    
+    // Filters state
+    const [searchTerm, setSearchTerm] = useState("");
+    const [fundFilter, setFundFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("all");
 
     useEffect(() => {
-        const fetchInvestments = async () => {
-            try {
-                const investmentsCollection = collection(db, "investments");
-                const q = query(investmentsCollection, orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
-                const investmentsData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as Investment[];
-                setInvestments(investmentsData);
-            } catch (error) {
-                console.error("Error fetching investments: ", error);
-                // TODO: Add toast notification for error
-            } finally {
-                setLoading(false);
-            }
-        };
+        setLoading(true);
+        getAllInvestments()
+            .then(data => {
+                setAllInvestments(data.investments);
+                setFilteredInvestments(data.investments);
+                setStats(data.stats);
+            })
+            .catch(error => {
+                console.error("Error fetching investments:", error);
+                toast({
+                    variant: "destructive",
+                    title: "خطا در واکشی اطلاعات",
+                    description: "مشکلی در دریافت لیست سرمایه‌گذاری‌ها رخ داد.",
+                });
+            })
+            .finally(() => setLoading(false));
+    }, [toast]);
 
-        fetchInvestments();
-    }, []);
+    useEffect(() => {
+        let result = allInvestments;
+
+        if (searchTerm) {
+            const lowercasedTerm = searchTerm.toLowerCase();
+            result = result.filter(inv => 
+                inv.userFullName.toLowerCase().includes(lowercasedTerm) || 
+                inv.userEmail.toLowerCase().includes(lowercasedTerm) ||
+                inv.id.toLowerCase().includes(lowercasedTerm)
+            );
+        }
+
+        if (fundFilter !== "all") {
+            result = result.filter(inv => inv.fundId === fundFilter);
+        }
+        
+        if (statusFilter !== "all") {
+            result = result.filter(inv => inv.status === statusFilter);
+        }
+
+        setFilteredInvestments(result);
+    }, [searchTerm, fundFilter, statusFilter, allInvestments]);
 
 
   const getStatusIcon = (status: string) => {
@@ -118,6 +134,10 @@ export default function AdminInvestmentsPage() {
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
 
   return (
     <>
@@ -132,10 +152,10 @@ export default function AdminInvestmentsPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono">$1,268,750.50</div>
-            <p className="text-xs text-muted-foreground">
-              +12% در ماه گذشته
-            </p>
+            {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
+                <div className="text-2xl font-bold font-mono">{formatCurrency(stats.totalAmount)}</div>
+            )}
+            <p className="text-xs text-muted-foreground">مجموع تمام سرمایه‌گذاری‌ها</p>
           </CardContent>
         </Card>
         <Card>
@@ -144,10 +164,10 @@ export default function AdminInvestmentsPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12,234</div>
-            <p className="text-xs text-muted-foreground">
-              +502 در ماه گذشته
-            </p>
+             {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
+                <div className="text-2xl font-bold">{stats.activeCount.toLocaleString()}</div>
+             )}
+            <p className="text-xs text-muted-foreground">وضعیت‌های فعال و در انتظار</p>
           </CardContent>
         </Card>
         <Card>
@@ -156,10 +176,10 @@ export default function AdminInvestmentsPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono">$1,150.75</div>
-            <p className="text-xs text-muted-foreground">
-              نسبت به ماه گذشته بدون تغییر
-            </p>
+             {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
+                <div className="text-2xl font-bold font-mono">{formatCurrency(stats.averageAmount)}</div>
+             )}
+            <p className="text-xs text-muted-foreground">میانگین مبلغ هر سرمایه‌گذاری</p>
           </CardContent>
         </Card>
       </div>
@@ -178,8 +198,10 @@ export default function AdminInvestmentsPage() {
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
-                                placeholder="جستجو بر اساس کاربر یا شناسه..."
+                                placeholder="جستجو کاربر، ایمیل، شناسه..."
                                 className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <Button variant="outline">
@@ -189,7 +211,7 @@ export default function AdminInvestmentsPage() {
                     </div>
                 </div>
                  <div className="flex flex-col md:flex-row items-center gap-2 mt-4">
-                    <Select>
+                    <Select value={fundFilter} onValueChange={setFundFilter}>
                         <SelectTrigger className="w-full md:w-[180px]">
                             <SelectValue placeholder="فیلتر بر اساس صندوق" />
                         </SelectTrigger>
@@ -201,7 +223,7 @@ export default function AdminInvestmentsPage() {
                             <SelectItem value="bitcoin">بیت‌کوین</SelectItem>
                         </SelectContent>
                     </Select>
-                     <Select>
+                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-full md:w-[180px]">
                             <SelectValue placeholder="فیلتر بر اساس وضعیت" />
                         </SelectTrigger>
@@ -209,7 +231,7 @@ export default function AdminInvestmentsPage() {
                             <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                             <SelectItem value="active">فعال</SelectItem>
                             <SelectItem value="pending">در انتظار تایید</SelectItem>
-                            <SelectItem value="finished">خاتمه یافته</SelectItem>
+                            <SelectItem value="completed">خاتمه یافته</SelectItem>
                         </SelectContent>
                     </Select>
                     <DateRangePicker className="w-full md:w-auto" />
@@ -219,7 +241,7 @@ export default function AdminInvestmentsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>شناسه کاربر</TableHead>
+                            <TableHead>کاربر</TableHead>
                             <TableHead className="hidden md:table-cell">صندوق</TableHead>
                              <TableHead className="text-right">مبلغ</TableHead>
                             <TableHead className="hidden md:table-cell text-center">تاریخ</TableHead>
@@ -239,30 +261,31 @@ export default function AdminInvestmentsPage() {
                                     </div>
                                 </TableCell>
                             </TableRow>
-                        ) : investments.length === 0 ? (
+                        ) : filteredInvestments.length === 0 ? (
                              <TableRow>
                                 <TableCell colSpan={6} className="text-center py-10">
-                                    هیچ سرمایه‌گذاری‌ای یافت نشد.
+                                    هیچ سرمایه‌گذاری‌ای با این فیلترها یافت نشد.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            investments.map((inv) => (
+                            filteredInvestments.map((inv) => (
                                 <TableRow key={inv.id}>
                                     <TableCell>
-                                        <div className="font-medium truncate" title={inv.userId}>{inv.userId.substring(0, 8)}...</div>
+                                        <div className="font-medium">{inv.userFullName}</div>
+                                        <div className="text-xs text-muted-foreground">{inv.userEmail}</div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell">{fundNames[inv.fundId as keyof typeof fundNames]}</TableCell>
+                                    <TableCell className="hidden md:table-cell">{fundNames[inv.fundId]}</TableCell>
                                     <TableCell className="text-right font-mono">
-                                        ${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        {formatCurrency(inv.amount)}
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell text-center">
-                                        {inv.createdAt.toDate().toLocaleDateString('fa-IR')}
+                                        {inv.createdAt}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={getStatusBadgeVariant(inv.status)}>
                                         <div className="flex items-center gap-2">
                                                 {getStatusIcon(inv.status)}
-                                                <span>{statusNames[inv.status as keyof typeof statusNames]}</span>
+                                                <span>{statusNames[inv.status]}</span>
                                         </div>
                                         </Badge>
                                     </TableCell>
@@ -290,9 +313,8 @@ export default function AdminInvestmentsPage() {
             </CardContent>
              <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                    نمایش <strong>{investments.length}</strong> سرمایه‌گذاری
+                    نمایش <strong>{filteredInvestments.length}</strong> از <strong>{allInvestments.length}</strong> سرمایه‌گذاری
                 </div>
-                 {/* Pagination can be added here */}
             </CardFooter>
        </Card>
     </>
