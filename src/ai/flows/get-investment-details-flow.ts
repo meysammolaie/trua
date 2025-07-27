@@ -13,15 +13,15 @@ import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { GetInvestmentDetailsInputSchema, GetInvestmentDetailsOutputSchema } from '@/ai/schemas';
 
 const ai = genkit({
   plugins: [googleAI()],
 });
 
-export const GetInvestmentDetailsInputSchema = z.object({
-  investmentId: z.string().describe('The ID of the investment to fetch.'),
-});
+
 export type GetInvestmentDetailsInput = z.infer<typeof GetInvestmentDetailsInputSchema>;
+
 
 const fundNames: Record<string, string> = {
     gold: "طلا",
@@ -30,20 +30,6 @@ const fundNames: Record<string, string> = {
     bitcoin: "بیت‌کوین"
 };
 
-export const GetInvestmentDetailsOutputSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  userFullName: z.string(),
-  userEmail: z.string(),
-  fundId: z.string(),
-  fundName: z.string(),
-  amount: z.number(),
-  amountUSD: z.number(),
-  transactionHash: z.string(),
-  status: z.enum(['pending', 'active', 'completed', 'rejected']),
-  createdAt: z.string(),
-  rejectionReason: z.string().optional(),
-});
 export type GetInvestmentDetailsOutput = z.infer<typeof GetInvestmentDetailsOutputSchema>;
 
 
