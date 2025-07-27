@@ -31,7 +31,8 @@ import {
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Download, Search, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { GetUserDetailsOutput, getUserDetails } from "@/ai/flows/get-user-details-flow";
+import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
+import { getUserDetailsAction } from "@/app/actions/user-details";
 
 type Transaction = GetUserDetailsOutput["transactions"][0];
 type Stats = GetUserDetailsOutput["stats"];
@@ -46,7 +47,7 @@ export default function ReportsPage() {
     React.useEffect(() => {
         if (user) {
             setLoading(true);
-            getUserDetails({ userId: user.uid })
+            getUserDetailsAction({ userId: user.uid })
                 .then(response => {
                     setTransactions(response.transactions);
                     setStats(response.stats);

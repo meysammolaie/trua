@@ -23,7 +23,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Gift, Users, Copy, Link as LinkIcon } from "lucide-react";
-import { getUserReferrals, GetUserReferralsOutput } from "@/ai/flows/get-user-referrals-flow";
+import { GetUserReferralsOutput } from "@/ai/flows/get-user-referrals-flow";
+import { getUserReferralsAction } from "@/app/actions/referrals";
 import { Badge } from "@/components/ui/badge";
 
 type ReferralData = GetUserReferralsOutput;
@@ -39,7 +40,7 @@ export default function ReferralsPage() {
     setIsClient(true);
     if (user) {
       setLoading(true);
-      getUserReferrals({ userId: user.uid })
+      getUserReferralsAction({ userId: user.uid })
         .then(setData)
         .catch((error) => {
           console.error("Failed to fetch referral data:", error);

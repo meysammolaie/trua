@@ -32,8 +32,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Search, MoreHorizontal, FileDown, Loader2, UserX, UserCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getAllUsers, User } from "@/ai/flows/get-all-users-flow";
-import { updateUserStatus } from "@/ai/flows/update-user-status-flow";
+import { User } from "@/ai/flows/get-all-users-flow";
+import { getAllUsersAction } from "@/app/actions/users";
+import { updateUserStatusAction } from "@/app/actions/user-status";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminUsersPage() {
@@ -45,7 +46,7 @@ export default function AdminUsersPage() {
 
     const fetchUsers = useCallback(() => {
         setLoading(true);
-        getAllUsers()
+        getAllUsersAction()
             .then(response => {
                 setAllUsers(response.users);
                 setFilteredUsers(response.users);
@@ -83,7 +84,7 @@ export default function AdminUsersPage() {
         const newStatus = user.status === 'active' ? 'blocked' : 'active';
         const actionText = newStatus === 'active' ? 'فعال' : 'مسدود';
         try {
-            const result = await updateUserStatus({ userId: user.uid, newStatus: newStatus });
+            const result = await updateUserStatusAction({ userId: user.uid, newStatus: newStatus });
             if (result.success) {
                 toast({
                     title: `کاربر ${actionText} شد`,

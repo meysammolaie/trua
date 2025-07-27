@@ -22,7 +22,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MinusCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { getUserWallet, Asset, Transaction } from "@/ai/flows/get-user-wallet-flow";
+import { Asset, Transaction } from "@/ai/flows/get-user-wallet-flow";
+import { getUserWalletAction } from "@/app/actions/wallet";
 import { WithdrawalDialog } from "@/components/dashboard/withdrawal-dialog";
 
 export default function WalletPage() {
@@ -35,7 +36,7 @@ export default function WalletPage() {
     const fetchWalletData = () => {
         if (user) {
             setLoading(true);
-            getUserWallet({ userId: user.uid })
+            getUserWalletAction({ userId: user.uid })
                 .then(response => {
                     setAssets(response.assets);
                     setTransactions(response.recentTransactions);

@@ -39,8 +39,9 @@ import {
 } from "@/components/ui/select";
 import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2, AlertTriangle, Check, Ban, Undo2, Power } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
-import { getAllTransactions, TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
-import { updateInvestmentStatus } from "@/ai/flows/update-investment-status-flow";
+import { TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
+import { getAllTransactionsAction } from "@/app/actions/transactions";
+import { updateInvestmentStatusAction } from "@/app/actions/investment-status";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import React from "react";
@@ -81,7 +82,7 @@ function AdminInvestmentsPageContent() {
 
     const fetchInvestments = useCallback(() => {
         setLoading(true);
-        getAllTransactions()
+        getAllTransactionsAction()
             .then(data => {
                 const investmentsOnly = data.transactions.filter(t => t.type === 'investment');
                 setAllInvestments(investmentsOnly);
@@ -134,7 +135,7 @@ function AdminInvestmentsPageContent() {
 
     const handleStatusUpdate = async (investmentId: string, newStatus: 'active' | 'rejected' | 'completed') => {
         try {
-            const result = await updateInvestmentStatus({ investmentId, newStatus });
+            const result = await updateInvestmentStatusAction({ investmentId, newStatus });
             if (result.success) {
                 toast({
                     title: "عملیات موفق",
@@ -410,5 +411,3 @@ export default function AdminInvestmentsPage() {
         </Suspense>
     )
 }
-
-    

@@ -21,7 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, FileDown, Loader2, DollarSign, Users, Gift } from "lucide-react";
-import { getCommissions, Commission } from "@/ai/flows/get-commissions-flow";
+import { Commission } from "@/ai/flows/get-commissions-flow";
+import { getCommissionsAction } from "@/app/actions/commissions";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 
@@ -41,7 +42,7 @@ export default function AdminCommissionsPage() {
 
     const fetchCommissions = useCallback(() => {
         setLoading(true);
-        getCommissions()
+        getCommissionsAction()
             .then(data => {
                 setAllCommissions(data.commissions);
                 setFilteredCommissions(data.commissions);

@@ -41,7 +41,8 @@ import { db, auth } from "@/lib/firebase";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
 import { Loader2, Copy } from "lucide-react";
-import { getLoginHistory, LoginHistoryRecord } from "@/ai/flows/get-login-history-flow";
+import { LoginHistoryRecord } from "@/ai/flows/get-login-history-flow";
+import { getLoginHistoryAction } from "@/app/actions/security";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
@@ -93,7 +94,7 @@ export default function ProfilePage() {
 
             const userRef = doc(db, "users", user.uid);
             const userSnapPromise = getDoc(userRef);
-            const historyPromise = getLoginHistory({ userId: user.uid });
+            const historyPromise = getLoginHistoryAction({ userId: user.uid });
 
             const [userSnap, historyResponse] = await Promise.all([userSnapPromise, historyPromise]);
 

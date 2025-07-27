@@ -22,9 +22,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, ArrowUpRight, DollarSign, Ticket, UserX, UserCheck, ArrowRight } from "lucide-react";
-import { GetUserDetailsOutput, getUserDetails } from "@/ai/flows/get-user-details-flow";
+import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
+import { getUserDetailsAction } from "@/app/actions/user-details";
+import { updateUserStatusAction } from "@/app/actions/user-status";
 import { useToast } from "@/hooks/use-toast";
-import { updateUserStatus } from "@/ai/flows/update-user-status-flow";
 import Link from "next/link";
 
 type UserDetails = GetUserDetailsOutput;
@@ -38,7 +39,7 @@ export default function AdminUserDetailPage({ params }: { params: { userId: stri
     const fetchUserDetails = async (id: string) => {
         try {
             setLoading(true);
-            const data = await getUserDetails({ userId: id });
+            const data = await getUserDetailsAction({ userId: id });
             setDetails(data);
         } catch (error) {
             console.error("Error fetching user details:", error);
@@ -64,7 +65,7 @@ export default function AdminUserDetailPage({ params }: { params: { userId: stri
         const newStatus = details.profile.status === 'active' ? 'blocked' : 'active';
         const actionText = newStatus === 'active' ? 'فعال' : 'مسدود';
         try {
-            const result = await updateUserStatus({ userId: userId, newStatus: newStatus });
+            const result = await updateUserStatusAction({ userId: userId, newStatus: newStatus });
             if (result.success) {
                 toast({
                     title: `کاربر ${actionText} شد`,

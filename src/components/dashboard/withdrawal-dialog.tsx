@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, MinusCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { createWithdrawalRequest } from "@/ai/flows/create-withdrawal-request-flow";
+import { createWithdrawalRequestAction } from "@/app/actions/withdrawals";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getPlatformSettingsAction } from "@/app/actions/platform-settings";
 import type { PlatformSettings } from "@/ai/schemas";
@@ -77,7 +77,7 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
     }
 
     try {
-        const result = await createWithdrawalRequest({
+        const result = await createWithdrawalRequestAction({
             userId: user.uid,
             amount: values.amount,
             walletAddress: values.walletAddress,

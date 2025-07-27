@@ -32,10 +32,11 @@ import {
 } from "@/components/ui/form";
 import { Bitcoin, Crown, DollarSign, Medal, Copy, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { submitInvestment } from "@/ai/flows/investment-flow";
+import { submitInvestmentAction } from "@/app/actions/investment";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { getFundDetails, FundDetails } from "@/ai/flows/get-fund-details-flow";
+import { FundDetails } from "@/ai/flows/get-fund-details-flow";
+import { getFundDetailsAction } from "@/app/actions/funds";
 
 const investmentSchema = z.object({
   amount: z.coerce.number().positive({ message: "مقدار باید مثبت باشد." }),
@@ -77,7 +78,7 @@ export default function InvestPage() {
     async function fetchDetails() {
       try {
         setLoading(true);
-        const details = await getFundDetails();
+        const details = await getFundDetailsAction();
         setFundDetails(details);
       } catch (error) {
         toast({
@@ -135,7 +136,7 @@ export default function InvestPage() {
     }
 
     try {
-      const result = await submitInvestment({
+      const result = await submitInvestmentAction({
         userId: user.uid,
         fundId: activeFund.id,
         amount: values.amount,

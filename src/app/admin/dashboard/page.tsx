@@ -30,7 +30,8 @@ import {
 import { DollarSign, Users, Package, Activity, TrendingUp, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { getAdminDashboardData, AdminDashboardData } from "@/ai/flows/get-admin-dashboard-data-flow";
+import { AdminDashboardData } from "@/ai/flows/get-admin-dashboard-data-flow";
+import { getAdminDashboardDataAction } from "@/app/actions/dashboard";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -52,7 +53,7 @@ export default function AdminDashboardPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const dashboardData = await getAdminDashboardData();
+        const dashboardData = await getAdminDashboardDataAction();
         setData(dashboardData);
       } catch (error) {
         console.error("Failed to fetch admin dashboard data:", error);

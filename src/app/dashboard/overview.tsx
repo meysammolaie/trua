@@ -41,7 +41,8 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { GetUserDetailsOutput, getUserDetails } from "@/ai/flows/get-user-details-flow";
+import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
+import { getUserDetailsAction } from "@/app/actions/user-details";
 
 
 type UserDetails = GetUserDetailsOutput;
@@ -96,7 +97,7 @@ export function Overview() {
     useEffect(() => {
         if (user) {
             setLoading(true);
-            getUserDetails({ userId: user.uid })
+            getUserDetailsAction({ userId: user.uid })
                 .then(response => {
                     setTransactions(response.transactions.slice(0, 5));
                     setStats(response.stats);

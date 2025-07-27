@@ -39,7 +39,8 @@ import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, ArrowRig
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { getAllTransactions, TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
+import { TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
+import { getAllTransactionsAction } from "@/app/actions/transactions";
 
 
 const typeNames: Record<string, string> = {
@@ -72,7 +73,7 @@ export default function AdminTransactionsPage() {
 
     useEffect(() => {
         setLoading(true);
-        getAllTransactions()
+        getAllTransactionsAction()
             .then(data => {
                 setAllTransactions(data.transactions);
                 setFilteredTransactions(data.transactions);

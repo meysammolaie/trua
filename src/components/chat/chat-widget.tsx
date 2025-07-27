@@ -13,7 +13,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, User, Send, X, Loader2, AudioLines } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { voiceChat } from "@/ai/flows/voice-chat-flow";
+import { voiceChatAction } from "@/app/actions/chat";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useToast } from "@/hooks/use-toast";
@@ -66,7 +66,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     setIsLoading(true);
 
     try {
-      const result = await voiceChat({ message: messageText });
+      const result = await voiceChatAction({ message: messageText });
       const botMessage: Message = { sender: "bot", text: result.text };
       setMessages((prev) => [...prev, botMessage]);
 

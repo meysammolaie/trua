@@ -30,8 +30,8 @@ import {
     DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, Ban, Loader2, AlertTriangle, Check, ArrowDownUp, TrendingUp } from "lucide-react";
-import { getWithdrawalRequests, WithdrawalRequest } from "@/ai/flows/get-withdrawal-requests-flow";
-import { updateWithdrawalStatus } from "@/ai/flows/update-withdrawal-status-flow";
+import { WithdrawalRequest } from "@/ai/flows/get-withdrawal-requests-flow";
+import { getWithdrawalRequestsAction, updateWithdrawalStatusAction } from "@/app/actions/withdrawals";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 
@@ -52,7 +52,7 @@ export default function AdminWithdrawalsPage() {
 
     const fetchRequests = useCallback(() => {
         setLoading(true);
-        getWithdrawalRequests()
+        getWithdrawalRequestsAction()
             .then(data => {
                 setAllRequests(data.requests);
                 setFilteredRequests(data.requests);
@@ -93,7 +93,7 @@ export default function AdminWithdrawalsPage() {
 
     const handleStatusUpdate = async (withdrawalId: string, newStatus: 'approved' | 'rejected') => {
         try {
-            const result = await updateWithdrawalStatus({ withdrawalId, newStatus });
+            const result = await updateWithdrawalStatusAction({ withdrawalId, newStatus });
             if (result.success) {
                 toast({ title: "عملیات موفق", description: result.message });
                 fetchRequests(); // Refresh data

@@ -29,9 +29,10 @@ import { Bar, BarChart, CartesianGrid, XAxis, Line, LineChart as RechartsLineCha
 import { DateRangePicker } from "@/components/date-range-picker";
 import { FileDown, DollarSign, Users, Ticket, TrendingUp, Loader2, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getAllTransactions, TransactionWithUser, AllTransactionsStats } from "@/ai/flows/get-all-transactions-flow";
+import { TransactionWithUser, AllTransactionsStats } from "@/ai/flows/get-all-transactions-flow";
+import { getAllTransactionsAction } from "@/app/actions/transactions";
 import { useToast } from "@/hooks/use-toast";
-import { distributeProfits } from "@/ai/flows/distribute-profits-flow";
+import { distributeProfitsAction } from "@/app/actions/reports";
 
 
 const revenueChartConfig = {
@@ -58,7 +59,7 @@ export default function AdminReportsPage() {
      const fetchData = async () => {
         try {
             setLoading(true);
-            const data = await getAllTransactions();
+            const data = await getAllTransactionsAction();
             const financialEvents = data.transactions.filter(t => ['fee_entry', 'fee_lottery', 'fee_platform', 'profit_payout', 'lottery_win', 'withdrawal_fee'].includes(t.type));
             setTransactions(financialEvents.slice(0, 5));
             setStats(data.stats);
@@ -81,7 +82,7 @@ export default function AdminReportsPage() {
     const handleDistributeProfits = async () => {
         setIsDistributing(true);
         try {
-            const result = await distributeProfits();
+            const result = await distributeProfitsAction();
             if (result.success) {
                 toast({
                     title: "عملیات موفق",

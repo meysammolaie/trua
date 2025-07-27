@@ -23,8 +23,8 @@ import { Ticket, Users, DollarSign, PlayCircle, History, Loader2 } from "lucide-
 import { CountdownTimer } from "@/components/countdown-timer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { runLotteryDraw } from "@/ai/flows/lottery-flow";
-import { getLotteryData, LotteryData, RecentWinner } from "@/ai/flows/get-lottery-data-flow";
+import { LotteryData } from "@/ai/flows/get-lottery-data-flow";
+import { getLotteryDataAction, runLotteryDrawAction } from "@/app/actions/lottery";
 
 export default function AdminLotteryPage() {
     const { toast } = useToast();
@@ -35,7 +35,7 @@ export default function AdminLotteryPage() {
     const fetchLotteryData = async () => {
         try {
             setIsLoadingData(true);
-            const data = await getLotteryData();
+            const data = await getLotteryDataAction();
             setLotteryData(data);
         } catch (error) {
              toast({
@@ -60,7 +60,7 @@ export default function AdminLotteryPage() {
         });
         
         try {
-            const result = await runLotteryDraw({});
+            const result = await runLotteryDrawAction({});
             if (result.success) {
                 toast({
                     title: "قرعه‌کشی با موفقیت انجام شد!",
