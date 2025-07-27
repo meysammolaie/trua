@@ -8,11 +8,17 @@
  * - LotteryDrawOutput - The return type for the runLotteryDraw function.
  */
 
-import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { getAllUsers } from './get-all-users-flow';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 const LotteryDrawInputSchema = z.object({});
 export type LotteryDrawInput = z.infer<typeof LotteryDrawInputSchema>;

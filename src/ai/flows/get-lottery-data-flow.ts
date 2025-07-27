@@ -7,10 +7,16 @@
  * - LotteryData - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 // Sub-schemas
 const RecentWinnerSchema = z.object({

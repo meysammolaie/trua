@@ -8,10 +8,15 @@
  * - VoiceChatOutput - The return type for the voiceChat function.
  */
 
-import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import wav from 'wav';
-import {googleAI} from '@genkit-ai/googleai';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 // Input and Output Schemas
 const VoiceChatInputSchema = z.object({

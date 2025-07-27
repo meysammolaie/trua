@@ -8,11 +8,17 @@
  * - PlatformSettings - The type for the settings object.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { PlatformSettingsSchema } from '@/ai/schemas';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 export type PlatformSettings = z.infer<typeof PlatformSettingsSchema>;
 

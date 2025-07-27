@@ -7,10 +7,16 @@
  * - GetAllUsersOutput - The return type for the getAllUsers function.
  */
 
-import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 const GetAllUsersInputSchema = z.object({});
 export type GetAllUsersInput = z.infer<typeof GetAllUsersInputSchema>;

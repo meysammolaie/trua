@@ -8,11 +8,17 @@
  * - UpdateInvestmentStatusOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 // Input Schema
 const UpdateInvestmentStatusInputSchema = z.object({

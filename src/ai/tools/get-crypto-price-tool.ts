@@ -6,9 +6,15 @@
  * - getCryptoPrice - A tool that fetches the current price of a cryptocurrency in USD.
  */
 
-import { ai } from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import { z } from 'zod';
 import fetch from 'node-fetch';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 const GetCryptoPriceInputSchema = z.object({
   cryptoId: z.string().describe('The ID of the cryptocurrency on CoinGecko (e.g., "bitcoin", "ethereum", "pax-gold").'),

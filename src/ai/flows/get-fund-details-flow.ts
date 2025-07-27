@@ -7,12 +7,18 @@
  * - FundDetails - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {z} from 'genkit';
 import { getPlatformSettings } from './platform-settings-flow';
 import type { PlatformSettings } from './platform-settings-flow';
-import { PlatformSettingsSchema } from '@/ai/schemas';
 import { getCryptoPrice } from '../tools/get-crypto-price-tool';
+import { PlatformSettingsSchema } from '../schemas';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 
 const PriceSchema = z.object({

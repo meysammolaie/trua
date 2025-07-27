@@ -8,11 +8,17 @@
  * - GetAllTransactionsOutput - The return type for the getAllTransactions function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, query, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, Timestamp, where } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 // Sub-schemas
 const TransactionWithUserSchema = z.object({

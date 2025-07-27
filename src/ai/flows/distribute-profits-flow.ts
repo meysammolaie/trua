@@ -4,11 +4,17 @@
  * @fileOverview A flow for calculating and distributing profits to investors.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 const DistributeProfitsOutputSchema = z.object({
   success: z.boolean(),

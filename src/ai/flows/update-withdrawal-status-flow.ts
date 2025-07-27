@@ -4,22 +4,30 @@
  * @fileOverview A flow for updating a withdrawal request's status, including deducting from balance.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, runTransaction, increment } from 'firebase/firestore';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 // Input Schema
 const UpdateWithdrawalStatusInputSchema = z.object({
   withdrawalId: z.string().describe('The ID of the withdrawal request to update.'),
   newStatus: z.enum(['approved', 'rejected']).describe('The new status for the request.'),
 });
+export type UpdateWithdrawalStatusInput = z.infer<typeof UpdateWithdrawalStatusInputSchema>;
 
 // Output Schema
 const UpdateWithdrawalStatusOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
+export type UpdateWithdrawalStatusOutput = z.infer<typeof UpdateWithdrawalStatusOutputSchema>;
 
 export async function updateWithdrawalStatus(input: z.infer<typeof UpdateWithdrawalStatusInputSchema>): Promise<z.infer<typeof UpdateWithdrawalStatusOutputSchema>> {
     return await updateWithdrawalStatusFlow(input);

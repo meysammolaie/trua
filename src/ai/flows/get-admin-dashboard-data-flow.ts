@@ -7,12 +7,18 @@
  * - AdminDashboardData - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
+import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, where, Timestamp } from 'firebase/firestore';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { faIR } from 'date-fns/locale';
+
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 // Input Schema (empty for this flow)
 const GetAdminDashboardDataInputSchema = z.object({});

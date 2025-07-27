@@ -8,12 +8,17 @@
  * - InvestmentOutput - The return type for the submitInvestment function.
  */
 
-import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getCryptoPrice } from '../tools/get-crypto-price-tool';
 
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 const InvestmentInputSchema = z.object({
   userId: z.string().describe('The ID of the user making the investment.'),

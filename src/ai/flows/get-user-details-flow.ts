@@ -8,11 +8,16 @@
  * - GetUserDetailsOutput - The return type for the getUserDetails function.
  */
 
-import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore';
 
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
 
 const GetUserDetailsInputSchema = z.object({
   userId: z.string().describe('The ID of the user whose details are to be fetched.'),
