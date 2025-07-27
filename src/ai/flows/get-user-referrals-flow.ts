@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for fetching referral data for a specific user.

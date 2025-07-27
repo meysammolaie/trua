@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for fetching all details for a single user.

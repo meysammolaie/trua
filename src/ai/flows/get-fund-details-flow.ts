@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for fetching all details for the investment funds.
@@ -10,15 +9,14 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
-import { getPlatformSettings } from './platform-settings-flow';
+import { getPlatformSettings, PlatformSettingsSchema } from './platform-settings-flow';
 import type { PlatformSettings } from './platform-settings-flow';
 import { getCryptoPrice } from '../tools/get-crypto-price-tool';
-import { PlatformSettingsSchema } from '../schemas';
+
 
 const ai = genkit({
   plugins: [googleAI()],
 });
-
 
 const PriceSchema = z.object({
     usd: z.number(),
