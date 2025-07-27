@@ -7,7 +7,7 @@
  * - FundDetails - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '@/lib/genkit';
 import { z } from 'genkit';
 import { getPlatformSettings } from './platform-settings-flow';
 import { getCryptoPrice } from '../tools/get-crypto-price-tool';

@@ -8,7 +8,7 @@
  * - UpdateUserStatusOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '@/lib/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';

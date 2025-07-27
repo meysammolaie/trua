@@ -8,7 +8,7 @@
  * - InvestmentOutput - The return type for the submitInvestment function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai} from '@/lib/genkit';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';

@@ -4,7 +4,7 @@
  * @fileOverview A flow for fetching withdrawal requests for the admin panel.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '@/lib/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, Timestamp } from 'firebase/firestore';
@@ -18,7 +18,6 @@ const WithdrawalRequestSchema = z.object({
   exitFee: z.number(),
   networkFee: z.number().optional(),
   netAmount: z.number(),
-  walletAddress: z.string(),
   status: z.enum(['pending', 'approved', 'rejected', 'completed']),
   createdAt: z.string(),
 });

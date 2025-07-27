@@ -8,7 +8,7 @@
  * - LotteryDrawOutput - The return type for the runLotteryDraw function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai} from '@/lib/genkit';
 import {z} from 'genkit';
 import { getAllUsers } from './get-all-users-flow';
 import { db } from '@/lib/firebase';
