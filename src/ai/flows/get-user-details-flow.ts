@@ -8,7 +8,7 @@
  * - GetUserDetailsOutput - The return type for the getUserDetails function.
  */
 
-import {ai} from '@/lib/genkit';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore';

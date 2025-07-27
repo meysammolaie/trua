@@ -8,7 +8,7 @@
  * - VoiceChatOutput - The return type for the voiceChat function.
  */
 
-import {ai} from '@/lib/genkit';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import wav from 'wav';
 import {googleAI} from '@genkit-ai/googleai';

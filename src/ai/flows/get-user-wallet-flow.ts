@@ -8,7 +8,7 @@
  * - GetUserWalletOutput - The return type for the getUserWallet function.
  */
 
-import {ai} from '@/lib/genkit';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, limit } from 'firebase/firestore';

@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPlatformSettingsAction, updatePlatformSettingsAction } from "@/app/actions/platform-settings";
-import { PlatformSettingsSchema, type PlatformSettings } from "@/ai/schemas";
+import { PlatformSettings, PlatformSettingsSchema } from "@/ai/flows/platform-settings-flow";
 
 
 const settingsSchema = PlatformSettingsSchema;

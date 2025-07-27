@@ -6,7 +6,7 @@
  * - getCryptoPrice - A tool that fetches the current price of a cryptocurrency in USD.
  */
 
-import { ai } from '@/lib/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import fetch from 'node-fetch';
 

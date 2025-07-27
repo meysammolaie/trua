@@ -4,7 +4,7 @@
  * @fileOverview A flow for fetching withdrawal requests for the admin panel.
  */
 
-import { ai } from '@/lib/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, Timestamp } from 'firebase/firestore';

@@ -4,7 +4,7 @@
  * @fileOverview A flow for updating a withdrawal request's status, including deducting from balance.
  */
 
-import { ai } from '@/lib/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, runTransaction, increment } from 'firebase/firestore';

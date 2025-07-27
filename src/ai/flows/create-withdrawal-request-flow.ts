@@ -4,7 +4,7 @@
  * @fileOverview A flow for handling new withdrawal requests.
  */
 
-import {ai} from '@/lib/genkit';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc } from 'firebase/firestore';

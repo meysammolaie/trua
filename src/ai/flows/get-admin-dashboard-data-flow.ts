@@ -7,7 +7,7 @@
  * - AdminDashboardData - The return type for the function.
  */
 
-import { ai } from '@/lib/genkit';
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, where, Timestamp } from 'firebase/firestore';
