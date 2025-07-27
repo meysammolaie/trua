@@ -48,7 +48,12 @@ const updateInvestmentStatusFlow = ai.defineFlow(
     try {
       const investmentRef = doc(db, 'investments', investmentId);
       
+      // Fetch platform settings outside the transaction, as it's a read-only operation
+      // that doesn't need to be part of the atomic transaction itself.
+      const settings = await getPlatformSettings();
+      
       await runTransaction(db, async (transaction) => {
+        // ========== ALL READS FIRST ==========
         const investmentDoc = await transaction.get(investmentRef);
         if (!investmentDoc.exists()) {
           throw new Error(`Investment with ID ${investmentId} not found.`);
@@ -56,37 +61,36 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         
         const investmentData = investmentDoc.data();
         const userRef = doc(db, 'users', investmentData.userId);
+        const userDoc = await transaction.get(userRef);
 
-        // Update investment status
+        // ========== ALL WRITES LAST ==========
+        
+        // 1. Always update the investment status
         transaction.update(investmentRef, { status: newStatus });
         
         // Handle different statuses
         if (newStatus === 'active') {
-          // If activating, handle referral commission
-          const userDoc = await transaction.get(userRef);
-
+          // If activating, handle referral commission if the user was referred
           if (userDoc.exists() && userDoc.data().referredBy) {
             const referrerId = userDoc.data().referredBy;
-            const settings = await getPlatformSettings();
-            
-            const commissionAmount = investmentData.amount * (settings.entryFee * 2/3 / 100); // 2/3 of entry fee
+            const commissionAmount = investmentData.amountUSD * (settings.entryFee * 2/3 / 100); // 2/3 of entry fee on USD amount
 
             if (commissionAmount > 0) {
               const commissionData = {
                 referrerId: referrerId,
                 referredUserId: investmentData.userId,
                 investmentId: investmentId,
-                investmentAmount: investmentData.amount,
+                investmentAmount: investmentData.amountUSD,
                 commissionAmount: commissionAmount,
                 createdAt: serverTimestamp(),
               };
               
-              // 1. Create the commission document
               const commissionRef = doc(collection(db, 'commissions'));
-              transaction.set(commissionRef, commissionData);
-
-              // 2. Add commission amount to referrer's wallet balance
               const referrerUserRef = doc(db, 'users', referrerId);
+
+              // 1A. Create the commission document
+              transaction.set(commissionRef, commissionData);
+              // 1B. Add commission amount to referrer's wallet balance
               transaction.update(referrerUserRef, {
                   walletBalance: increment(commissionAmount)
               });
@@ -94,17 +98,14 @@ const updateInvestmentStatusFlow = ai.defineFlow(
           }
         } else if (newStatus === 'completed') {
             // If completing, return principal to user's wallet after exit fee
-            const settings = await getPlatformSettings();
-            const exitFee = investmentData.amount * (settings.exitFee / 100);
-            const amountToReturn = investmentData.amount - exitFee;
+            const exitFee = investmentData.amountUSD * (settings.exitFee / 100);
+            const amountToReturn = investmentData.amountUSD - exitFee;
 
             if (amountToReturn > 0) {
                  transaction.update(userRef, {
                     walletBalance: increment(amountToReturn)
                 });
             }
-            // Note: The exitFee should ideally be added to the profit pool for distribution.
-            // This logic can be added later.
         }
       });
 
