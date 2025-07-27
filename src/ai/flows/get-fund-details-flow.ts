@@ -10,9 +10,10 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getPlatformSettings } from './platform-settings-flow';
-import { getCryptoPrice } from '../tools/get-crypto-price-tool';
 import type { PlatformSettings } from './platform-settings-flow';
-import { PlatformSettingsSchema } from './platform-settings-flow';
+import { PlatformSettingsSchema } from '@/ai/schemas';
+import { getCryptoPrice } from '../tools/get-crypto-price-tool';
+
 
 const PriceSchema = z.object({
     usd: z.number(),

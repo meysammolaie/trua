@@ -31,7 +31,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { createWithdrawalRequestAction } from "@/app/actions/withdrawals";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getPlatformSettingsAction } from "@/app/actions/platform-settings";
-import type { PlatformSettings } from "@/ai/schemas";
+import type { PlatformSettings } from "@/ai/flows/platform-settings-flow";
 import { cn } from "@/lib/utils";
 
 const withdrawalSchema = z.object({

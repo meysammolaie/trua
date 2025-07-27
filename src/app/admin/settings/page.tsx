@@ -3,6 +3,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,7 +34,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPlatformSettingsAction, updatePlatformSettingsAction } from "@/app/actions/platform-settings";
-import { PlatformSettings, PlatformSettingsSchema } from "@/ai/flows/platform-settings-flow";
+import { PlatformSettingsSchema } from "@/ai/schemas";
+import type { PlatformSettings } from "@/ai/flows/platform-settings-flow";
 
 
 const settingsSchema = PlatformSettingsSchema;
