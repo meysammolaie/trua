@@ -49,24 +49,35 @@ const createWithdrawalRequestFlow = ai.defineFlow(
 
     // 2. Get platform settings
     const settings = await getPlatformSettings();
-
-    // 3. Check for recent withdrawals (within last 24 hours)
-    const twentyFourHoursAgo = Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
-    const recentWithdrawalsQuery = query(
-        collection(db, 'withdrawals'),
-        where('userId', '==', userId),
-        where('createdAt', '>=', twentyFourHoursAgo),
-        limit(1)
-    );
-    const recentWithdrawalsSnapshot = await getDocs(recentWithdrawalsQuery);
     
-    if (!recentWithdrawalsSnapshot.empty) {
-        return {
-            success: false,
-            message: 'شما در ۲۴ ساعت گذشته یک درخواست برداشت ثبت کرده‌اید. لطفاً بعداً تلاش کنید.',
-        };
-    }
+    // 3. Check for recent withdrawals (within last 24 hours) - CODE-BASED APPROACH
+    const withdrawalsQuery = query(
+        collection(db, 'withdrawals'),
+        where('userId', '==', userId)
+    );
+    const withdrawalsSnapshot = await getDocs(withdrawalsQuery);
 
+    if (!withdrawalsSnapshot.empty) {
+        // Sort documents by createdAt timestamp descending in code
+        const sortedWithdrawals = withdrawalsSnapshot.docs.sort((a, b) => {
+            const timeA = a.data().createdAt?.toMillis() || 0;
+            const timeB = b.data().createdAt?.toMillis() || 0;
+            return timeB - timeA;
+        });
+        
+        const lastWithdrawal = sortedWithdrawals[0].data();
+        if (lastWithdrawal.createdAt) {
+            const lastWithdrawalTime = (lastWithdrawal.createdAt as Timestamp).toMillis();
+            const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+
+            if (lastWithdrawalTime > twentyFourHoursAgo) {
+                 return {
+                    success: false,
+                    message: 'شما در ۲۴ ساعت گذشته یک درخواست برداشت ثبت کرده‌اید. لطفاً بعداً تلاش کنید.',
+                };
+            }
+        }
+    }
 
     // 4. Check withdrawal rules
     if (amount < settings.minWithdrawalAmount) {
