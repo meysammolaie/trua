@@ -9,8 +9,9 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
-import { getPlatformSettings, PlatformSettingsSchema } from './platform-settings-flow';
+import { getPlatformSettings } from './platform-settings-flow';
 import type { PlatformSettings } from './platform-settings-flow';
+import { PlatformSettingsSchema } from '@/ai/schemas';
 import { getCryptoPrice } from '../tools/get-crypto-price-tool';
 
 
