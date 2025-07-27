@@ -25,7 +25,7 @@ import {
   ChartTooltipContent,
   ChartConfig,
 } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, Line, LineChart as RechartsLineChart } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart as RechartsLineChart } from "recharts";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { FileDown, DollarSign, Users, Ticket, TrendingUp, Loader2, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -308,3 +308,5 @@ export default function AdminReportsPage() {
     </>
   );
 }
+
+    
