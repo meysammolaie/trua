@@ -87,7 +87,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 5. Check user balance directly from their wallet document
+    // 5. Check user balance directly from their user document (Single Source of Truth)
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
 
@@ -100,7 +100,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     if (amount > userBalance) {
         return {
             success: false,
-            message: "مبلغ درخواستی از موجودی کیف پول شما بیشتر است.",
+            message: `مبلغ درخواستی (${amount.toLocaleString()}$) از موجودی کیف پول شما (${userBalance.toLocaleString()}$) بیشتر است.`,
         };
     }
 

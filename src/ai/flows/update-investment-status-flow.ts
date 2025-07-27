@@ -91,9 +91,9 @@ const updateInvestmentStatusFlow = ai.defineFlow(
             }
           }
         } else if (newStatus === 'completed') {
-            // If completing, return principal to user's wallet after exit fee
-            const exitFee = investmentData.amountUSD * (settings.exitFee / 100);
-            const amountToReturn = investmentData.amountUSD - exitFee;
+            // If completing, return principal (net amount) to user's wallet after exit fee
+            const exitFee = investmentData.netAmountUSD * (settings.exitFee / 100);
+            const amountToReturn = investmentData.netAmountUSD - exitFee;
 
             if (amountToReturn > 0) {
                  transaction.update(userRef, {

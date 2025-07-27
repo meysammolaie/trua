@@ -90,15 +90,14 @@ const getUserWalletFlow = ai.defineFlow(
     // 3. Get recent transactions from user details
     const recentTransactions = userDetails.transactions.slice(0, 5);
     
-    // 4. Use the calculated balances from user details
-    // Per user request: `withdrawableBalance` should be the `totalBalance`.
-    const totalBalance = userDetails.stats.walletBalance; // This is Gross Investment + Profits
-    const withdrawableBalance = totalBalance;
+    // 4. Use the balances from user details, which now reads directly from DB
+    const withdrawableBalance = userDetails.stats.walletBalance; // This is the free cash in the wallet
+    const totalBalance = totalAssetValue + withdrawableBalance; // Total net worth is active investments + free cash
 
     return {
       assets,
       recentTransactions,
-      totalAssetValue, // This remains the sum of *active* investments' net value
+      totalAssetValue, // This is the sum of *active* investments' net value
       withdrawableBalance,
       totalBalance,
     };

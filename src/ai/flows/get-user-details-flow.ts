@@ -108,17 +108,20 @@ const getUserDetailsFlow = ai.defineFlow(
         const transactionAmount = data.netAmountUSD ?? data.amountUSD;
         const createdAt = data.createdAt.toDate();
 
+        // Gross/Net investment should only consider active/pending funds
         if (data.status === 'active' || data.status === 'pending') {
             grossInvestment += data.amountUSD;
             netInvestment += transactionAmount;
-
-            const date = data.createdAt.toDate();
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            if(!investmentByMonth[monthKey]) {
-                investmentByMonth[monthKey] = 0;
-            }
-            investmentByMonth[monthKey] += data.amountUSD; // Use gross for chart
         }
+
+        // Chart data should consider all investments over time
+        const date = data.createdAt.toDate();
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if(!investmentByMonth[monthKey]) {
+            investmentByMonth[monthKey] = 0;
+        }
+        investmentByMonth[monthKey] += data.amountUSD; // Use gross for chart
+        
         allTransactions.push({
             id: doc.id,
             type: "investment",
@@ -177,15 +180,14 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // Per user request: walletBalance = grossInvestment + totalProfit
-    const calculatedWalletBalance = grossInvestment + totalProfit;
+    const walletBalance = userData.walletBalance || 0;
 
     const stats: z.infer<typeof StatsSchema> = {
         grossInvestment: grossInvestment,
         netInvestment: netInvestment,
         totalProfit: totalProfit,
         lotteryTickets: Math.floor(grossInvestment / lotteryTicketRatio),
-        walletBalance: calculatedWalletBalance,
+        walletBalance: walletBalance,
     };
     
     const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);
