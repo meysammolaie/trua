@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching all transactions from Firestore and simulating related financial events.
@@ -103,7 +104,7 @@ const getAllTransactionsFlow = ai.defineFlow(
     const [usersSnapshot, investmentsSnapshot, profitPayoutsSnapshot] = await Promise.all([
       getDocs(query(usersCollection)),
       getDocs(query(investmentsCollection, orderBy("createdAt", "desc"))),
-      getDocs(query(transactionsCollection, where("type", "==", "profit_payout"), orderBy("createdAt", "desc")))
+      getDocs(query(transactionsCollection, where("type", "==", "profit_payout"))) // Removed orderBy from here
     ]);
 
     const usersData = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...(doc.data() as UserDocument) }));
