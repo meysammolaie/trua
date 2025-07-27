@@ -7,7 +7,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, runTransaction, increment } from 'firebase/firestore';
+import { doc, updateDoc, runTransaction, increment, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -17,6 +17,7 @@ const ai = genkit({
 const UpdateWithdrawalStatusInputSchema = z.object({
   withdrawalId: z.string().describe('The ID of the withdrawal request to update.'),
   newStatus: z.enum(['approved', 'rejected']).describe('The new status for the request.'),
+  adminTransactionProof: z.string().optional().describe('The transaction hash or proof provided by the admin.'),
 });
 export type UpdateWithdrawalStatusInput = z.infer<typeof UpdateWithdrawalStatusInputSchema>;
 
@@ -37,7 +38,7 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
     inputSchema: UpdateWithdrawalStatusInputSchema,
     outputSchema: UpdateWithdrawalStatusOutputSchema,
   },
-  async ({ withdrawalId, newStatus }) => {
+  async ({ withdrawalId, newStatus, adminTransactionProof }) => {
     try {
       const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
 
@@ -51,8 +52,14 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
         const userId = withdrawalData.userId;
         const amountToDeduct = withdrawalData.amount; // The gross amount requested by user
 
-        // If approving, we must check balance and deduct from the user's wallet.
+        const updatePayload: Record<string, any> = { status: newStatus };
+
+        // If approving, we must check balance, deduct from user's wallet, and record the transaction proof.
         if (newStatus === 'approved') {
+          if (!adminTransactionProof) {
+            throw new Error('برای تایید برداشت، ارائه رسید تراکنش الزامی است.');
+          }
+
           const userRef = doc(db, 'users', userId);
           const userDoc = await transaction.get(userRef);
           if (!userDoc.exists()) {
@@ -69,19 +76,33 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
             walletBalance: increment(-amountToDeduct)
           });
 
-          // 2. Update the withdrawal status to 'approved'
-          transaction.update(withdrawalRef, { status: newStatus });
+          // 2. Create a transaction record for the withdrawal
+          const transactionRef = doc(collection(db, 'transactions'));
+          transaction.set(transactionRef, {
+            userId,
+            type: 'withdrawal',
+            amount: -withdrawalData.netAmount,
+            status: 'completed',
+            createdAt: serverTimestamp(),
+            details: `Withdrawal to ${withdrawalData.walletAddress}. Admin proof: ${adminTransactionProof}`,
+            proof: adminTransactionProof
+          });
+          
+          // 3. Update the withdrawal status and add proof
+          updatePayload.adminTransactionProof = adminTransactionProof;
+          updatePayload.status = 'completed'; // Move directly to completed status
+          transaction.update(withdrawalRef, updatePayload);
           
         } else { // If 'rejected'
           // Just update the status, no balance change.
-          transaction.update(withdrawalRef, { status: newStatus });
+          transaction.update(withdrawalRef, updatePayload);
         }
       });
 
       console.log(`Withdrawal ${withdrawalId} status updated to ${newStatus}.`);
 
       const message = newStatus === 'approved' 
-        ? `درخواست برداشت با موفقیت تایید و مبلغ از کیف پول کاربر کسر شد.`
+        ? `درخواست برداشت با موفقیت تایید، مبلغ از کیف پول کاربر کسر و رسید ثبت شد.`
         : `درخواست برداشت با موفقیت رد شد.`;
 
       return { success: true, message: message };

@@ -7,7 +7,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
@@ -18,6 +18,7 @@ const CreateWithdrawalRequestInputSchema = z.object({
   userId: z.string(),
   amount: z.number(),
   walletAddress: z.string(),
+  twoFactorCode: z.string(),
 });
 
 const CreateWithdrawalRequestOutputSchema = z.object({
@@ -35,20 +36,36 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     inputSchema: CreateWithdrawalRequestInputSchema,
     outputSchema: CreateWithdrawalRequestOutputSchema,
   },
-  async ({ userId, amount, walletAddress }) => {
+  async ({ userId, amount, walletAddress, twoFactorCode }) => {
     
-    // 1. Get platform settings
-    const settings = await getPlatformSettings();
-
-    // 2. Check withdrawal rules
-    const today = new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
-    if (today !== settings.withdrawalDay) {
+    // 1. Validate 2FA code (placeholder logic)
+    if (twoFactorCode !== '123456') { // Placeholder for real 2FA validation
         return {
             success: false,
-            message: `امکان برداشت فقط در روزهای ${settings.withdrawalDay} مجاز است.`,
+            message: "کد تایید دو مرحله‌ای نامعتبر است.",
         };
     }
-    
+
+    // 2. Get platform settings
+    const settings = await getPlatformSettings();
+
+    // 3. Check for recent withdrawals (within last 24 hours)
+    const twentyFourHoursAgo = Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
+    const recentWithdrawalsQuery = query(
+        collection(db, 'withdrawals'),
+        where('userId', '==', userId),
+        where('createdAt', '>=', twentyFourHoursAgo),
+        limit(1)
+    );
+    const recentWithdrawalsSnapshot = await getDocs(recentWithdrawalsQuery);
+    if (!recentWithdrawalsSnapshot.empty) {
+        return {
+            success: false,
+            message: 'شما در ۲۴ ساعت گذشته یک درخواست برداشت ثبت کرده‌اید. لطفاً بعداً تلاش کنید.',
+        };
+    }
+
+    // 4. Check withdrawal rules
     if (amount < settings.minWithdrawalAmount) {
         return {
             success: false,
@@ -56,7 +73,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 3. Check user balance from their wallet
+    // 5. Check user balance from their wallet
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
 
@@ -85,7 +102,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 4. Create withdrawal request
+    // 6. Create withdrawal request
     try {
         await addDoc(collection(db, 'withdrawals'), {
             userId,
@@ -100,7 +117,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
 
         return {
             success: true,
-            message: "درخواست برداشت شما با موفقیت ثبت شد و پس از بررسی توسط مدیر، واریز خواهد شد.",
+            message: "درخواست برداشت شما با موفقیت ثبت شد و پس از بررسی توسط مدیر (ظرف ۲۴ ساعت کاری)، واریز خواهد شد.",
         };
     } catch (e) {
         console.error("Error creating withdrawal request: ", e);

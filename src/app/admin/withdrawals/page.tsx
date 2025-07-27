@@ -35,6 +35,7 @@ import { getWithdrawalRequestsAction, updateWithdrawalStatusAction } from "@/app
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { getAllTransactionsAction } from "@/app/actions/transactions";
+import { WithdrawalDetailsDialog } from "@/components/admin/withdrawal-details-dialog";
 
 const statusNames: Record<string, string> = {
     pending: "در انتظار",
@@ -50,6 +51,7 @@ export default function AdminWithdrawalsPage() {
     const [stats, setStats] = useState({ totalPending: 0, totalApproved: 0, pendingCount: 0, platformWallet: 0 });
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedRequest, setSelectedRequest] = useState<WithdrawalRequest | null>(null);
 
     const fetchRequests = useCallback(async () => {
         setLoading(true);
@@ -100,24 +102,6 @@ export default function AdminWithdrawalsPage() {
         }
         setFilteredRequests(result);
     }, [searchTerm, allRequests]);
-
-    const handleStatusUpdate = async (withdrawalId: string, newStatus: 'approved' | 'rejected') => {
-        try {
-            const result = await updateWithdrawalStatusAction({ withdrawalId, newStatus });
-            if (result.success) {
-                toast({ title: "عملیات موفق", description: result.message });
-                fetchRequests(); // Refresh data
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "خطا در بروزرسانی وضعیت",
-                description: error instanceof Error ? error.message : "مشکلی پیش آمد."
-            })
-        }
-    };
 
     const getStatusIcon = (status: string) => {
         switch (status) {
@@ -216,9 +200,7 @@ export default function AdminWithdrawalsPage() {
                             <TableRow>
                                 <TableHead>کاربر</TableHead>
                                 <TableHead className="text-right">مبلغ درخواستی</TableHead>
-                                <TableHead className="text-right hidden md:table-cell">کارمزد خروج</TableHead>
-                                <TableHead className="text-right hidden md:table-cell">کارمزد شبکه</TableHead>
-                                <TableHead className="text-right">مبلغ نهایی</TableHead>
+                                <TableHead className="text-right hidden md:table-cell">مبلغ نهایی</TableHead>
                                 <TableHead className="hidden sm:table-cell text-center">تاریخ</TableHead>
                                 <TableHead>وضعیت</TableHead>
                                 <TableHead><span className="sr-only">عملیات</span></TableHead>
@@ -226,39 +208,26 @@ export default function AdminWithdrawalsPage() {
                         </TableHeader>
                         <TableBody>
                             {loading ? (
-                                <TableRow><TableCell colSpan={8} className="text-center py-10"><Loader2 className="h-5 w-5 animate-spin mx-auto"/></TableCell></TableRow>
+                                <TableRow><TableCell colSpan={6} className="text-center py-10"><Loader2 className="h-5 w-5 animate-spin mx-auto"/></TableCell></TableRow>
                             ) : filteredRequests.length === 0 ? (
-                                <TableRow><TableCell colSpan={8} className="text-center py-10">هیچ درخواستی یافت نشد.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={6} className="text-center py-10">هیچ درخواستی یافت نشد.</TableCell></TableRow>
                             ) : (
                                 filteredRequests.map((req) => (
-                                    <TableRow key={req.id}>
+                                    <TableRow key={req.id} className="cursor-pointer" onClick={() => setSelectedRequest(req)}>
                                         <TableCell>
                                             <div className="font-medium">{req.userFullName}</div>
-                                            <div className="text-xs text-muted-foreground font-mono" dir="ltr">{req.walletAddress}</div>
+                                            <div className="text-xs text-muted-foreground font-mono" dir="ltr">{req.userEmail}</div>
                                         </TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(req.amount)}</TableCell>
-                                        <TableCell className="text-right font-mono hidden md:table-cell text-red-500">{formatCurrency(req.exitFee)}</TableCell>
-                                        <TableCell className="text-right font-mono hidden md:table-cell text-red-500">{formatCurrency(req.networkFee ?? 0)}</TableCell>
-                                        <TableCell className="text-right font-mono text-green-600">{formatCurrency(req.netAmount)}</TableCell>
+                                        <TableCell className="text-right font-mono hidden md:table-cell text-green-600">{formatCurrency(req.netAmount)}</TableCell>
                                         <TableCell className="hidden sm:table-cell text-center">{req.createdAt}</TableCell>
                                         <TableCell>
                                             <Badge variant={getStatusBadgeVariant(req.status)}><div className="flex items-center gap-2">{getStatusIcon(req.status)}<span>{statusNames[req.status]}</span></div></Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                                                    <DropdownMenuItem asChild><Link href={`/admin/users/${req.userId}`}>مشاهده جزئیات کاربر</Link></DropdownMenuItem>
-                                                    {req.status === 'pending' && (
-                                                        <>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem className="text-green-600" onClick={() => handleStatusUpdate(req.id, 'approved')}><Check className="ml-2 h-4 w-4" />تایید درخواست</DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-red-600" onClick={() => handleStatusUpdate(req.id, 'rejected')}><Ban className="ml-2 h-4 w-4" />رد درخواست</DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                             <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedRequest(req)}}>
+                                                بررسی
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -270,6 +239,15 @@ export default function AdminWithdrawalsPage() {
                     <div className="text-xs text-muted-foreground">نمایش <strong>{filteredRequests.length}</strong> از <strong>{allRequests.length}</strong> درخواست</div>
                 </CardFooter>
             </Card>
+            
+            {selectedRequest && (
+                <WithdrawalDetailsDialog
+                    request={selectedRequest}
+                    open={!!selectedRequest}
+                    onOpenChange={(isOpen) => { if (!isOpen) setSelectedRequest(null) }}
+                    onStatusChange={fetchRequests}
+                />
+            )}
         </>
     );
 }

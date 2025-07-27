@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MinusCircle, AlertTriangle } from "lucide-react";
+import { Loader2, MinusCircle, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { createWithdrawalRequestAction } from "@/app/actions/withdrawals";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 const withdrawalSchema = z.object({
   amount: z.coerce.number().positive({ message: "مبلغ باید مثبت باشد." }),
   walletAddress: z.string().min(10, { message: "لطفاً یک آدرس کیف پول معتبر (USDT) وارد کنید." }),
+  twoFactorCode: z.string().length(6, { message: "کد تایید باید ۶ رقم باشد." }),
 });
 
 interface WithdrawalDialogProps {
@@ -55,6 +56,7 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
     defaultValues: {
       amount: 10,
       walletAddress: "",
+      twoFactorCode: "",
     },
   });
 
@@ -81,6 +83,7 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
             userId: user.uid,
             amount: values.amount,
             walletAddress: values.walletAddress,
+            twoFactorCode: values.twoFactorCode,
         });
 
         if (result.success) {
@@ -156,6 +159,27 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
                     )}
                 />
 
+                <FormField
+                    control={form.control}
+                    name="twoFactorCode"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>کد تایید دو مرحله‌ای (2FA)</FormLabel>
+                         <FormControl>
+                            <div className="relative">
+                               <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input dir="ltr" placeholder="123456" {...field} className="tracking-[0.5em] text-center" maxLength={6}/>
+                            </div>
+                         </FormControl>
+                         <FormDescription>
+                           کد تایید اپلیکیشن 2FA خود را وارد کنید. (کد تست: 123456)
+                         </FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+
                 {numericAmount > 0 && settings && (
                     <div className="space-y-2 rounded-lg border p-4">
                         <h4 className="font-medium text-sm">خلاصه برداشت</h4>
@@ -202,5 +226,3 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
     </Dialog>
   );
 }
-
-    

@@ -38,7 +38,8 @@ const TransactionSchema = z.object({
     fund: z.string(),
     status: z.string(),
     date: z.string(),
-    amount: z.number(), // This will be the net amount for investments
+    amount: z.number(),
+    proof: z.string().optional(),
 });
 
 const ChartDataPointSchema = z.object({
@@ -73,6 +74,17 @@ type InvestmentDocument = {
   createdAt: Timestamp;
 };
 
+type DbTransactionDocument = {
+    id: string;
+    userId: string;
+    type: string;
+    amount: number;
+    status: 'completed';
+    createdAt: Timestamp;
+    details?: string;
+    proof?: string;
+}
+
 const fundNames: Record<string, string> = {
     gold: "طلا",
     silver: "نقره",
@@ -83,7 +95,7 @@ const fundNames: Record<string, string> = {
 const statusNames: Record<string, string> = {
     pending: "در انتظار",
     active: "فعال",
-    completed: "خاتمه یافته",
+    completed: "تکمیل شده",
 };
 
 export async function getUserDetails(input: GetUserDetailsInput): Promise<GetUserDetailsOutput> {
@@ -98,18 +110,24 @@ const getUserDetailsFlow = ai.defineFlow(
   },
   async ({ userId }) => {
     
-    // 1. Fetch user profile and investments in parallel
+    // 1. Fetch user profile, investments, and other transactions in parallel
     const userDocRef = doc(db, "users", userId);
     const investmentsCollection = collection(db, "investments");
+    const dbTransactionsCollection = collection(db, "transactions");
+
     const investmentsQuery = query(
         investmentsCollection, 
-        where("userId", "==", userId),
-        orderBy("createdAt", "desc")
+        where("userId", "==", userId)
+    );
+     const dbTransactionsQuery = query(
+        dbTransactionsCollection, 
+        where("userId", "==", userId)
     );
 
-    const [userDoc, investmentsSnapshot] = await Promise.all([
+    const [userDoc, investmentsSnapshot, dbTransactionsSnapshot] = await Promise.all([
         getDoc(userDocRef),
         getDocs(investmentsQuery),
+        getDocs(dbTransactionsQuery),
     ]);
     
     if (!userDoc.exists()) {
@@ -122,16 +140,17 @@ const getUserDetailsFlow = ai.defineFlow(
     let netInvestment = 0;
     const lotteryTicketRatio = 10; // $10 for 1 ticket
     const investmentByMonth: Record<string, number> = {};
+    const allTransactions: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
 
-    const transactionsData = investmentsSnapshot.docs.map(doc => {
+    investmentsSnapshot.docs.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
         const transactionAmount = data.netAmountUSD ?? data.amountUSD;
+        const createdAt = data.createdAt.toDate();
 
         if (data.status === 'active' || data.status === 'pending') {
             grossInvestment += data.amountUSD;
             netInvestment += transactionAmount;
 
-            // For chart data, use net investment
             const date = data.createdAt.toDate();
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
             if(!investmentByMonth[monthKey]) {
@@ -139,17 +158,40 @@ const getUserDetailsFlow = ai.defineFlow(
             }
             investmentByMonth[monthKey] += transactionAmount;
         }
-        return {
+        allTransactions.push({
             id: doc.id,
-            type: "سرمایه‌گذاری",
+            type: "investment",
             fund: fundNames[data.fundId as keyof typeof fundNames] || data.fundId,
             status: statusNames[data.status as keyof typeof statusNames] || data.status,
-            date: data.createdAt.toDate().toLocaleDateString('fa-IR'),
-            amount: -Math.abs(transactionAmount), // Show the net amount as the transaction value
-        };
+            date: createdAt.toLocaleDateString('fa-IR'),
+            amount: -Math.abs(transactionAmount),
+            timestamp: createdAt.getTime(),
+        });
     });
 
-    // 3. Prepare Chart Data
+    // 3. Process other transactions (profits, withdrawals)
+    let totalProfit = 0;
+    dbTransactionsSnapshot.docs.forEach(doc => {
+        const data = doc.data() as DbTransactionDocument;
+        const createdAt = data.createdAt.toDate();
+        if (data.type === 'profit_payout') {
+            totalProfit += data.amount;
+        }
+
+        allTransactions.push({
+            id: doc.id,
+            type: data.type,
+            fund: data.details || '-',
+            status: 'تکمیل شده',
+            date: createdAt.toLocaleDateString('fa-IR'),
+            amount: data.amount,
+            timestamp: createdAt.getTime(),
+            proof: data.proof,
+        });
+    })
+
+
+    // 4. Prepare Chart Data
     const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     const investmentChartData = Object.entries(investmentByMonth)
         .sort(([a], [b]) => a.localeCompare(b))
@@ -163,7 +205,7 @@ const getUserDetailsFlow = ai.defineFlow(
         });
 
 
-    // 4. Assemble final output
+    // 5. Assemble final output
     const profile: z.infer<typeof UserProfileSchema> = {
         uid: userDoc.id,
         firstName: userData.firstName,
@@ -176,14 +218,16 @@ const getUserDetailsFlow = ai.defineFlow(
     const stats: z.infer<typeof StatsSchema> = {
         grossInvestment: grossInvestment,
         netInvestment: netInvestment,
-        totalProfit: 0, // Not implemented yet
+        totalProfit: totalProfit,
         lotteryTickets: Math.floor(grossInvestment / lotteryTicketRatio),
         walletBalance: userData.walletBalance || 0,
     };
+    
+    const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);
 
     return {
       profile,
-      transactions: transactionsData,
+      transactions: sortedTransactions,
       stats: stats,
       investmentChartData,
     };

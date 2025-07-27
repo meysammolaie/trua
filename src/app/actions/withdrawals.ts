@@ -19,6 +19,7 @@ const CreateWithdrawalRequestInputSchema = z.object({
   userId: z.string(),
   amount: z.number(),
   walletAddress: z.string(),
+  twoFactorCode: z.string(),
 });
 const CreateWithdrawalRequestOutputSchema = z.object({
   success: z.boolean(),
