@@ -96,16 +96,20 @@ export default function AdminSettingsPage() {
 
   async function onSubmit(values: z.infer<typeof settingsSchema>) {
     try {
-        await updatePlatformSettingsAction(values);
-        toast({
-            title: "تنظیمات ذخیره شد",
-            description: "تنظیمات جدید پلتفرم با موفقیت اعمال شد.",
-        });
+        const result = await updatePlatformSettingsAction(values);
+        if (result.success) {
+            toast({
+                title: "تنظیمات ذخیره شد",
+                description: "تنظیمات جدید پلتفرم با موفقیت اعمال شد.",
+            });
+        } else {
+            throw new Error(result.message);
+        }
     } catch (error) {
          toast({
             variant: "destructive",
             title: "خطا در ذخیره تنظیمات",
-            description: "مشکلی در ذخیره تنظیمات جدید رخ داد.",
+            description: error instanceof Error ? error.message : "مشکلی در ذخیره تنظیمات جدید رخ داد.",
         });
     }
   }
