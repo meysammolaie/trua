@@ -50,6 +50,11 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         }
         
         const investmentData = investmentDoc.data();
+        if (investmentData.status === newStatus) {
+            // No change needed
+            return;
+        }
+
         const userRef = doc(db, 'users', investmentData.userId);
         const userDoc = await transaction.get(userRef);
 
@@ -92,8 +97,8 @@ const updateInvestmentStatusFlow = ai.defineFlow(
           }
         } else if (newStatus === 'completed') {
             // If completing, return principal (net amount) to user's wallet after exit fee
-            const exitFee = investmentData.netAmountUSD * (settings.exitFee / 100);
-            const amountToReturn = investmentData.netAmountUSD - exitFee;
+            const exitFee = (investmentData.netAmountUSD || 0) * (settings.exitFee / 100);
+            const amountToReturn = (investmentData.netAmountUSD || 0) - exitFee;
 
             if (amountToReturn > 0) {
                  transaction.update(userRef, {

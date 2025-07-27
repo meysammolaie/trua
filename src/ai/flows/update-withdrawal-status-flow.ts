@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for updating a withdrawal request's status, including deducting from balance.
@@ -47,36 +48,18 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
         if (!withdrawalDoc.exists()) {
           throw new Error(`درخواست برداشت با شناسه ${withdrawalId} یافت نشد.`);
         }
-
         const withdrawalData = withdrawalDoc.data();
         const userId = withdrawalData.userId;
-        const amountToDeduct = withdrawalData.amount; // The gross amount requested by user
+        const userRef = doc(db, 'users', userId);
 
         const updatePayload: Record<string, any> = { status: newStatus };
 
-        // If approving, we must check balance, deduct from user's wallet, and record the transaction proof.
         if (newStatus === 'approved') {
           if (!adminTransactionProof) {
             throw new Error('برای تایید برداشت، ارائه رسید تراکنش الزامی است.');
           }
-
-          const userRef = doc(db, 'users', userId);
-          const userDoc = await transaction.get(userRef);
-          if (!userDoc.exists()) {
-            throw new Error(`کاربر با شناسه ${userId} یافت نشد.`);
-          }
-          
-          const currentUserBalance = userDoc.data().walletBalance || 0;
-          if (currentUserBalance < amountToDeduct) {
-            throw new Error(`موجودی کیف پول کاربر (${currentUserBalance.toLocaleString()}$) برای برداشت مبلغ (${amountToDeduct.toLocaleString()}$) کافی نیست.`);
-          }
-
-          // 1. Deduct the amount from the user's walletBalance
-          transaction.update(userRef, {
-            walletBalance: increment(-amountToDeduct)
-          });
-
-          // 2. Create a transaction record for the withdrawal
+          // The amount has already been deducted from the walletBalance when the request was created.
+          // Now we just log the completed transaction.
           const transactionRef = doc(collection(db, 'transactions'));
           transaction.set(transactionRef, {
             userId,
@@ -88,13 +71,16 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
             proof: adminTransactionProof
           });
           
-          // 3. Update the withdrawal status and add proof
           updatePayload.adminTransactionProof = adminTransactionProof;
           updatePayload.status = 'completed'; // Move directly to completed status
           transaction.update(withdrawalRef, updatePayload);
-          
+
         } else { // If 'rejected'
-          // Just update the status, no balance change.
+          // We need to return the deducted amount back to the user's wallet.
+          transaction.update(userRef, {
+              walletBalance: increment(withdrawalData.amount) // Return the gross amount
+          });
+          // And update the status.
           transaction.update(withdrawalRef, updatePayload);
         }
       });
@@ -102,8 +88,8 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
       console.log(`Withdrawal ${withdrawalId} status updated to ${newStatus}.`);
 
       const message = newStatus === 'approved' 
-        ? `درخواست برداشت با موفقیت تایید، مبلغ از کیف پول کاربر کسر و رسید ثبت شد.`
-        : `درخواست برداشت با موفقیت رد شد.`;
+        ? `درخواست برداشت با موفقیت تایید و رسید ثبت شد.`
+        : `درخواست برداشت با موفقیت رد و مبلغ به کیف پول کاربر بازگردانده شد.`;
 
       return { success: true, message: message };
 

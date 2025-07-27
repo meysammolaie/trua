@@ -10,6 +10,7 @@ import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
+import { getUserDetails } from './get-user-details-flow';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -47,8 +48,11 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 2. Get platform settings
-    const settings = await getPlatformSettings();
+    // 2. Get platform settings and user details (for wallet balance) in parallel
+    const [settings, userDetails] = await Promise.all([
+        getPlatformSettings(),
+        getUserDetails({ userId }),
+    ]);
     
     // 3. Check for recent withdrawals (within last 24 hours)
     const withdrawalsQuery = query(
@@ -87,16 +91,9 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 5. Check user balance directly from their user document (Single Source of Truth)
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-        return { success: false, message: "کاربر یافت نشد." };
-    }
-    const userBalance = userSnap.data().walletBalance || 0;
+    // 5. Check user balance from the unified getUserDetails flow
+    const userBalance = userDetails.stats.walletBalance;
     
-    // Check if the gross amount requested is more than the user's wallet balance
     if (amount > userBalance) {
         return {
             success: false,
@@ -128,6 +125,13 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             exitFee: exitFee,
             networkFee: networkFee,
             netAmount: netAmount,
+        });
+
+        // 8. Deduct the amount from user's balance in Firestore
+        // **IMPORTANT**: This uses a negative increment on the gross amount requested.
+        const userRef = doc(db, 'users', userId);
+        await runTransaction(db, async (transaction) => {
+            transaction.update(userRef, { walletBalance: increment(-amount) });
         });
 
         return {

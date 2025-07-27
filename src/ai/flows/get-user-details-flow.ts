@@ -30,7 +30,7 @@ type InvestmentDocument = {
   amount: number;
   amountUSD: number; // Gross amount in USD
   netAmountUSD?: number; // Net amount after fees
-  status: 'pending' | 'active' | 'completed';
+  status: 'pending' | 'active' | 'completed' | 'rejected';
   createdAt: Timestamp;
   transactionHash: string;
 };
@@ -57,6 +57,7 @@ const statusNames: Record<string, string> = {
     pending: "در انتظار",
     active: "فعال",
     completed: "تکمیل شده",
+    rejected: "رد شده",
 };
 
 export async function getUserDetails(input: GetUserDetailsInput): Promise<GetUserDetailsOutput> {
@@ -105,13 +106,14 @@ const getUserDetailsFlow = ai.defineFlow(
 
     investmentsSnapshot.docs.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
-        const transactionAmount = data.netAmountUSD ?? data.amountUSD;
         const createdAt = data.createdAt.toDate();
-
-        // Gross/Net investment should only consider active/pending funds
+        
+        // Use amountUSD for all calculations, as it's the gross investment value
+        grossInvestment += data.amountUSD;
+        
+        // Net investment considers only active/pending
         if (data.status === 'active' || data.status === 'pending') {
-            grossInvestment += data.amountUSD;
-            netInvestment += transactionAmount;
+            netInvestment += data.netAmountUSD ?? data.amountUSD;
         }
 
         // Chart data should consider all investments over time
@@ -180,14 +182,15 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    const walletBalance = userData.walletBalance || 0;
+    // **NEW LOGIC**: Wallet balance is the sum of all gross investments and all profits.
+    const walletBalance = grossInvestment + totalProfit;
 
     const stats: z.infer<typeof StatsSchema> = {
         grossInvestment: grossInvestment,
-        netInvestment: netInvestment,
+        netInvestment: netInvestment, // Net is still based on active/pending
         totalProfit: totalProfit,
         lotteryTickets: Math.floor(grossInvestment / lotteryTicketRatio),
-        walletBalance: walletBalance,
+        walletBalance: walletBalance, // This is now the calculated total asset value
     };
     
     const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);

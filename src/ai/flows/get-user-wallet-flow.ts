@@ -63,7 +63,7 @@ const getUserWalletFlow = ai.defineFlow(
     const investmentsQuery = query(
         investmentsCollection, 
         where("userId", "==", userId),
-        where("status", "==", "active")
+        where("status", "in", ["active", "pending"]) // Use 'in' for multiple statuses
     );
     const investmentsSnapshot = await getDocs(investmentsQuery);
     
@@ -90,14 +90,14 @@ const getUserWalletFlow = ai.defineFlow(
     // 3. Get recent transactions from user details
     const recentTransactions = userDetails.transactions.slice(0, 5);
     
-    // 4. Use the balances from user details, which now reads directly from DB
-    const withdrawableBalance = userDetails.stats.walletBalance; // This is the free cash in the wallet
-    const totalBalance = totalAssetValue + withdrawableBalance; // Total net worth is active investments + free cash
+    // 4. Use the balances from user details
+    const withdrawableBalance = userDetails.stats.walletBalance; 
+    const totalBalance = userDetails.stats.walletBalance;
 
     return {
       assets,
       recentTransactions,
-      totalAssetValue, // This is the sum of *active* investments' net value
+      totalAssetValue,
       withdrawableBalance,
       totalBalance,
     };
