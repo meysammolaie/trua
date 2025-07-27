@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams } from 'next/navigation'
 import {
   Card,
   CardContent,
@@ -30,11 +31,12 @@ import Link from "next/link";
 
 type UserDetails = GetUserDetailsOutput;
 
-export default function AdminUserDetailPage({ params }: { params: { userId: string } }) {
+export default function AdminUserDetailPage() {
     const [details, setDetails] = useState<UserDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
-    const { userId } = params;
+    const params = useParams();
+    const userId = params.userId as string;
 
     const fetchUserDetails = async (id: string) => {
         try {
