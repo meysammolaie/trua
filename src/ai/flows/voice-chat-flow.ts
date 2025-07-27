@@ -15,7 +15,6 @@ import wav from 'wav';
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 // Input and Output Schemas
@@ -73,6 +72,7 @@ const voiceChatFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       prompt: message,
       system: systemPrompt,
+      model: 'googleai/gemini-2.0-flash',
     });
     const responseText = llmResponse.text;
 

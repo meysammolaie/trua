@@ -14,7 +14,6 @@ import {z} from 'genkit';
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 const ChatInputSchema = z.object({
@@ -65,6 +64,7 @@ const chatFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       prompt: input.message,
       system: systemPrompt,
+      model: 'googleai/gemini-2.0-flash',
     });
 
     return {

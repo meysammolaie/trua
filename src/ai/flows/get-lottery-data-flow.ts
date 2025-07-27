@@ -15,7 +15,6 @@ import { collection, query, getDocs, orderBy, limit, Timestamp } from 'firebase/
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 // Sub-schemas

@@ -16,7 +16,6 @@ import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 const GetUserTransactionsInputSchema = z.object({

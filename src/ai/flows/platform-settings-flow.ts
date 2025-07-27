@@ -17,7 +17,6 @@ import { PlatformSettingsSchema } from '@/ai/schemas';
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 export type PlatformSettings = z.infer<typeof PlatformSettingsSchema>;

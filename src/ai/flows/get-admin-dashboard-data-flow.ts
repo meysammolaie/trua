@@ -17,7 +17,6 @@ import { faIR } from 'date-fns/locale';
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 // Input Schema (empty for this flow)

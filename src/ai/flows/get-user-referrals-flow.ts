@@ -16,7 +16,6 @@ import { doc, getDoc, collection, query, where, getDocs, orderBy, Timestamp } fr
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 const GetUserReferralsInputSchema = z.object({

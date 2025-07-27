@@ -13,7 +13,6 @@ import fetch from 'node-fetch';
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 const GetCryptoPriceInputSchema = z.object({

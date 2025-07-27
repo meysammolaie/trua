@@ -17,7 +17,6 @@ import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 const LotteryDrawInputSchema = z.object({});

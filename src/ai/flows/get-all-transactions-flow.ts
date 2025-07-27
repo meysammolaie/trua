@@ -17,7 +17,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 // Sub-schemas

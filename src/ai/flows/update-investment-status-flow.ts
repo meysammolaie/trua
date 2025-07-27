@@ -17,7 +17,6 @@ import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 // Input Schema

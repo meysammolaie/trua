@@ -17,7 +17,6 @@ import { getCryptoPrice } from '../tools/get-crypto-price-tool';
 
 const ai = genkit({
   plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
 });
 
 const InvestmentInputSchema = z.object({
