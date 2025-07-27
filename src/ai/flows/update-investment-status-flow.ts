@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for updating an investment's status.
@@ -7,9 +8,9 @@
  * - UpdateInvestmentStatusOutput - The return type for the function.
  */
 
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
-import {z} from 'genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
@@ -19,14 +20,15 @@ const ai = genkit({
 });
 
 // Input Schema
-const UpdateInvestmentStatusInputSchema = z.object({
+export const UpdateInvestmentStatusInputSchema = z.object({
   investmentId: z.string().describe('The ID of the investment to update.'),
   newStatus: z.enum(['active', 'rejected', 'completed']).describe('The new status for the investment.'),
+  rejectionReason: z.string().optional().describe('The reason for rejecting the investment.'),
 });
 export type UpdateInvestmentStatusInput = z.infer<typeof UpdateInvestmentStatusInputSchema>;
 
 // Output Schema
-const UpdateInvestmentStatusOutputSchema = z.object({
+export const UpdateInvestmentStatusOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
@@ -44,12 +46,10 @@ const updateInvestmentStatusFlow = ai.defineFlow(
     inputSchema: UpdateInvestmentStatusInputSchema,
     outputSchema: UpdateInvestmentStatusOutputSchema,
   },
-  async ({ investmentId, newStatus }) => {
+  async ({ investmentId, newStatus, rejectionReason }) => {
     try {
       const investmentRef = doc(db, 'investments', investmentId);
       
-      // Fetch platform settings outside the transaction, as it's a read-only operation
-      // that doesn't need to be part of the atomic transaction itself.
       const settings = await getPlatformSettings();
       
       await runTransaction(db, async (transaction) => {
@@ -66,7 +66,11 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         // ========== ALL WRITES LAST ==========
         
         // 1. Always update the investment status
-        transaction.update(investmentRef, { status: newStatus });
+        const updatePayload: { status: string, rejectionReason?: string } = { status: newStatus };
+        if (newStatus === 'rejected' && rejectionReason) {
+          updatePayload.rejectionReason = rejectionReason;
+        }
+        transaction.update(investmentRef, updatePayload);
         
         // Handle different statuses
         if (newStatus === 'active') {

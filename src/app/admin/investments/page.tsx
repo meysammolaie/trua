@@ -23,28 +23,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-    DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, DollarSign, Package, TrendingUp, Loader2, AlertTriangle, Check, Ban, Undo2, Power } from "lucide-react";
+import { Search, FileDown, CheckCircle, Clock, Ban, DollarSign, TrendingUp, Loader2, AlertTriangle, Eye } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
 import { getAllTransactionsAction } from "@/app/actions/transactions";
-import { updateInvestmentStatusAction } from "@/app/actions/investment-status";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
 import React from "react";
+import { InvestmentDetailsDialog } from "@/components/admin/investment-details-dialog";
 
 const fundNames: Record<string, string> = {
     gold: "طلا",
@@ -67,6 +58,7 @@ function AdminInvestmentsPageContent() {
     const [filteredInvestments, setFilteredInvestments] = useState<TransactionWithUser[]>([]);
     const [stats, setStats] = useState({ totalAmount: 0, pendingCount: 0, averageAmount: 0 });
     const [loading, setLoading] = useState(true);
+    const [selectedInvestmentId, setSelectedInvestmentId] = useState<string | null>(null);
     
     // Filters state
     const [searchTerm, setSearchTerm] = useState("");
@@ -131,28 +123,6 @@ function AdminInvestmentsPageContent() {
 
         setFilteredInvestments(result);
     }, [searchTerm, fundFilter, statusFilter, allInvestments]);
-
-
-    const handleStatusUpdate = async (investmentId: string, newStatus: 'active' | 'rejected' | 'completed') => {
-        try {
-            const result = await updateInvestmentStatusAction({ investmentId, newStatus });
-            if (result.success) {
-                toast({
-                    title: "عملیات موفق",
-                    description: result.message,
-                });
-                fetchInvestments(); // Refresh data
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "خطا در بروزرسانی وضعیت",
-                description: error instanceof Error ? error.message : "مشکلی پیش آمد."
-            })
-        }
-    };
 
 
   const getStatusIcon = (status: string) => {
@@ -318,7 +288,7 @@ function AdminInvestmentsPageContent() {
                             </TableRow>
                         ) : (
                             filteredInvestments.map((inv) => (
-                                <TableRow key={inv.id}>
+                                <TableRow key={inv.id} className="cursor-pointer" onClick={() => setSelectedInvestmentId(inv.originalInvestmentId!)}>
                                     <TableCell>
                                         <div className="font-medium">{inv.userFullName}</div>
                                         <div className="text-xs text-muted-foreground">{inv.userEmail}</div>
@@ -339,52 +309,10 @@ function AdminInvestmentsPageContent() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">Toggle menu</span>
-                                            </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={`/admin/users/${inv.userId}`}>مشاهده جزئیات کاربر</Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem disabled>مشاهده تراکنش بلاکچین</DropdownMenuItem>
-                                                {inv.status === 'pending' && (
-                                                    <>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="text-green-600 focus:text-green-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId!, 'active')}>
-                                                            <Check className="ml-2 h-4 w-4" />
-                                                            تایید سرمایه‌گذاری
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId!, 'rejected')}>
-                                                            <Ban className="ml-2 h-4 w-4" />
-                                                            رد سرمایه‌گذاری
-                                                        </DropdownMenuItem>
-                                                    </>
-                                                )}
-                                                {inv.status === 'active' && (
-                                                    <>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="text-blue-600 focus:text-blue-600" onClick={() => handleStatusUpdate(inv.originalInvestmentId!, 'completed')}>
-                                                            <Undo2 className="ml-2 h-4 w-4" />
-                                                            تکمیل و بازپرداخت سرمایه
-                                                        </DropdownMenuItem>
-                                                    </>
-                                                )}
-                                                {inv.status === 'completed' && (
-                                                    <>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="text-orange-500 focus:text-orange-500" onClick={() => handleStatusUpdate(inv.originalInvestmentId!, 'active')}>
-                                                            <Power className="ml-2 h-4 w-4" />
-                                                            فعال‌سازی مجدد
-                                                        </DropdownMenuItem>
-                                                    </>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelectedInvestmentId(inv.originalInvestmentId!); }}>
+                                            <Eye className="h-4 w-4" />
+                                            <span className="sr-only">مشاهده جزئیات</span>
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -398,6 +326,18 @@ function AdminInvestmentsPageContent() {
                 </div>
             </CardFooter>
        </Card>
+        {selectedInvestmentId && (
+            <InvestmentDetailsDialog 
+                investmentId={selectedInvestmentId}
+                open={!!selectedInvestmentId}
+                onOpenChange={(isOpen) => {
+                    if (!isOpen) {
+                        setSelectedInvestmentId(null);
+                    }
+                }}
+                onStatusChange={fetchInvestments}
+            />
+        )}
     </>
   );
 }
