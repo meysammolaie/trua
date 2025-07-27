@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching all details for a single user.
@@ -191,7 +192,7 @@ const getUserDetailsFlow = ai.defineFlow(
 
     return {
       profile,
-      transactions: sortedTransactions,
+      transactions: sortedTransactions.map(({timestamp, ...rest}) => rest), // remove timestamp before returning
       stats: stats,
       investmentChartData,
     };

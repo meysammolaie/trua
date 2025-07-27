@@ -44,3 +44,65 @@ export const UpdateInvestmentStatusOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
+
+// User Details Schemas
+export const GetUserDetailsInputSchema = z.object({
+  userId: z.string(),
+});
+
+export const UserProfileSchema = z.object({
+  uid: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string().email(),
+  createdAt: z.string(),
+  status: z.enum(['active', 'blocked']),
+});
+
+export const TransactionSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  fund: z.string(),
+  status: z.string(),
+  date: z.string(),
+  amount: z.number(),
+  proof: z.string().optional(),
+});
+
+export const StatsSchema = z.object({
+  grossInvestment: z.number(),
+  netInvestment: z.number(),
+  totalProfit: z.number(),
+  lotteryTickets: z.number(),
+  walletBalance: z.number(),
+});
+
+export const ChartDataPointSchema = z.object({
+  month: z.string(),
+  investment: z.number(),
+});
+
+export const GetUserDetailsOutputSchema = z.object({
+  profile: UserProfileSchema,
+  transactions: z.array(TransactionSchema),
+  stats: StatsSchema,
+  investmentChartData: z.array(ChartDataPointSchema),
+});
+
+
+export const GetUserWalletInputSchema = z.object({
+  userId: z.string(),
+});
+
+export const AssetSchema = z.object({
+  fund: z.string(),
+  value: z.number(),
+});
+
+export const GetUserWalletOutputSchema = z.object({
+  assets: z.array(AssetSchema),
+  recentTransactions: z.array(TransactionSchema),
+  totalAssetValue: z.number(),
+  withdrawableBalance: z.number(),
+  totalBalance: z.number(),
+});
