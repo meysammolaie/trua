@@ -19,18 +19,14 @@ const nextConfig: NextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
-    // Acknowledge that async_hooks is not available in the client-side bundle.
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         async_hooks: false,
       };
     }
-
     return config;
   },
 };
 
 export default nextConfig;
-
-    
