@@ -32,7 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getPlatformSettings, updatePlatformSettings } from "@/ai/flows/platform-settings-flow";
+import { getPlatformSettingsAction, updatePlatformSettingsAction } from "@/app/actions/platform-settings";
 import { PlatformSettingsSchema, type PlatformSettings } from "@/ai/schemas";
 
 
@@ -74,7 +74,7 @@ export default function AdminSettingsPage() {
     async function fetchSettings() {
       try {
         setLoading(true);
-        const settings = await getPlatformSettings();
+        const settings = await getPlatformSettingsAction();
         if (settings) {
           form.reset(settings);
         }
@@ -94,7 +94,7 @@ export default function AdminSettingsPage() {
 
   async function onSubmit(values: z.infer<typeof settingsSchema>) {
     try {
-        await updatePlatformSettings(values);
+        await updatePlatformSettingsAction(values);
         toast({
             title: "تنظیمات ذخیره شد",
             description: "تنظیمات جدید پلتفرم با موفقیت اعمال شد.",

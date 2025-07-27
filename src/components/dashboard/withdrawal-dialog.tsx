@@ -30,7 +30,8 @@ import { Loader2, MinusCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { createWithdrawalRequest } from "@/ai/flows/create-withdrawal-request-flow";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getPlatformSettings, type PlatformSettings } from "@/ai/flows/platform-settings-flow";
+import { getPlatformSettingsAction } from "@/app/actions/platform-settings";
+import type { PlatformSettings } from "@/ai/schemas";
 import { cn } from "@/lib/utils";
 
 const withdrawalSchema = z.object({
@@ -61,7 +62,7 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
 
   useEffect(() => {
     if (open) {
-        getPlatformSettings().then(setSettings).catch(console.error);
+        getPlatformSettingsAction().then(setSettings).catch(console.error);
     }
   }, [open]);
 
