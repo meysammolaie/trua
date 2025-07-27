@@ -15,6 +15,7 @@ import {
   Settings,
   Users,
   Wallet,
+  CandlestickChart,
 } from "lucide-react";
 
 import {
@@ -40,6 +41,7 @@ const navItems = [
   { href: "/dashboard", icon: Home, label: "داشبورد" },
   { href: "/dashboard/invest", icon: Package, label: "سرمایه‌گذاری" },
   { href: "/dashboard/wallet", icon: Wallet, label: "کیف پول" },
+  { href: "/dashboard/analytics", icon: CandlestickChart, label: "تحلیل بازار" },
   { href: "/dashboard/reports", icon: LineChart, label: "گزارش‌ها" },
   { href: "/dashboard/referrals", icon: Users, label: "معرفی‌ها" },
   { href: "/dashboard/profile", icon: CircleUser, label: "پروفایل" },
