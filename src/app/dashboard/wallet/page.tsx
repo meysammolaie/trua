@@ -25,12 +25,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { Asset, Transaction } from "@/ai/flows/get-user-wallet-flow";
 import { getUserWalletAction } from "@/app/actions/wallet";
 import { WithdrawalDialog } from "@/components/dashboard/withdrawal-dialog";
+import { GetUserWalletOutput } from "@/ai/flows/get-user-wallet-flow";
 
 export default function WalletPage() {
     const { user } = useAuth();
-    const [assets, setAssets] = useState<Asset[]>([]);
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [totalBalance, setTotalBalance] = useState(0);
+    const [walletData, setWalletData] = useState<GetUserWalletOutput | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchWalletData = useCallback(() => {
@@ -38,9 +37,7 @@ export default function WalletPage() {
             setLoading(true);
             getUserWalletAction({ userId: user.uid })
                 .then(response => {
-                    setAssets(response.assets);
-                    setTransactions(response.recentTransactions);
-                    setTotalBalance(response.totalBalance);
+                    setWalletData(response);
                 })
                 .catch(error => {
                     console.error("Failed to fetch wallet data:", error);
@@ -72,13 +69,20 @@ export default function WalletPage() {
             {loading ? (
                 <Loader2 className="h-8 w-8 animate-spin" />
             ) : (
-                <div className="text-4xl font-bold font-mono">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <>
+                <div className="text-4xl font-bold font-mono">${walletData?.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                 <div className="text-xs text-muted-foreground mt-2">
+                    (سرمایه فعال: ${walletData?.totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                </div>
+                 <div className="text-xs text-muted-foreground">
+                    (قابل برداشت: ${walletData?.withdrawableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                </div>
+                </>
             )}
-            <p className="text-xs text-muted-foreground mt-2">این مقدار بر اساس قیمت‌های لحظه‌ای است.</p>
           </CardContent>
           <CardFooter className="flex gap-2">
             <WithdrawalDialog 
-                totalBalance={totalBalance}
+                totalBalance={walletData?.withdrawableBalance ?? 0}
                 onWithdrawalSuccess={fetchWalletData}
             />
           </CardFooter>
@@ -87,7 +91,7 @@ export default function WalletPage() {
         {/* Asset Breakdown Card */}
         <Card className="lg:col-span-3 xl:col-span-3">
             <CardHeader>
-                <CardTitle>تفکیک دارایی‌ها</CardTitle>
+                <CardTitle>تفکیک دارایی‌های فعال</CardTitle>
                 <CardDescription>موجودی شما در هر یک از صندوق‌های سرمایه‌گذاری.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -108,14 +112,14 @@ export default function WalletPage() {
                                     </div>
                                 </TableCell>
                             </TableRow>
-                       ) : assets.length === 0 ? (
+                       ) : walletData?.assets.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={2} className="text-center py-10">
                                     شما در حال حاضر هیچ دارایی فعالی ندارید.
                                 </TableCell>
                             </TableRow>
                        ) : (
-                            assets.map((asset) => (
+                            walletData?.assets.map((asset) => (
                                 <TableRow key={asset.fund}>
                                     <TableCell className="font-medium flex items-center">{asset.fund}</TableCell>
                                     <TableCell className="text-right font-mono">${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
@@ -155,14 +159,14 @@ export default function WalletPage() {
                                 </div>
                             </TableCell>
                         </TableRow>
-                     ) : transactions.length === 0 ? (
+                     ) : walletData?.recentTransactions.length === 0 ? (
                         <TableRow>
                             <TableCell colSpan={5} className="text-center py-10">
                                 هیچ تراکنشی برای نمایش وجود ندارد.
                             </TableCell>
                         </TableRow>
                      ): (
-                        transactions.map((tx) => (
+                        walletData?.recentTransactions.map((tx) => (
                             <TableRow key={tx.id}>
                                 <TableCell className="font-mono" title={tx.id}>{tx.id.substring(0,8)}...</TableCell>
                                 <TableCell className="font-medium">{tx.type}</TableCell>
