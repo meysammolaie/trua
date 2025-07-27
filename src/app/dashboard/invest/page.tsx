@@ -245,6 +245,7 @@ export default function InvestPage() {
                            </div>
                            <p className="text-xs text-muted-foreground mt-2">
                              مقدار ({activeFund.unit}) را به این آدرس واریز کرده و سپس شناسه تراکنش را در فرم زیر وارد کنید.
+                             <span className="font-bold text-yellow-500"> (شبکه BEP-20)</span>
                            </p>
                          </div>
    
@@ -321,3 +322,5 @@ export default function InvestPage() {
     </>
   );
 }
+
+    

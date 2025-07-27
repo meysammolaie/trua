@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Flows for managing platform-wide settings.
@@ -60,10 +61,10 @@ const getPlatformSettingsFlow = ai.defineFlow(
             exitFee: 2,
             networkFee: 1,
             maintenanceMode: false,
-            goldWalletAddress: "0xA1bDa01cd7c599a734615026A355bd80a4ae6f48",
-            silverWalletAddress: "0xA1bDa01cd7c599a734615026A355bd80a4ae6f48",
-            usdtWalletAddress: "0xA1bDa01cd7c599a734615026A355bd80a4ae6f48",
-            bitcoinWalletAddress: "0xA1bDa01cd7c599a734615026A355bd80a4ae6f48",
+            goldWalletAddress: "0x55d398326f99059fF775485246999027B3197955",
+            silverWalletAddress: "0x55d398326f99059fF775485246999027B3197955",
+            usdtWalletAddress: "0x55d398326f99059fF775485246999027B3197955",
+            bitcoinWalletAddress: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
             minWithdrawalAmount: 10,
             withdrawalDay: 'saturday',
         };
@@ -108,3 +109,5 @@ const updatePlatformSettingsFlow = ai.defineFlow(
     }
   }
 );
+
+    

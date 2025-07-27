@@ -147,9 +147,9 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
                     name="walletAddress"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>آدرس کیف پول USDT (شبکه TRC20)</FormLabel>
+                        <FormLabel>آدرس کیف پول USDT (شبکه BEP-20)</FormLabel>
                         <FormControl>
-                            <Input dir="ltr" placeholder="T..." {...field} />
+                            <Input dir="ltr" placeholder="0x..." {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -186,7 +186,7 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>هشدار مهم</AlertTitle>
                   <AlertDescription>
-                    لطفاً آدرس کیف پول USDT (شبکه TRC20) را با دقت وارد کنید. مسئولیت آدرس اشتباه بر عهده شماست و ممکن است منجر به از دست رفتن دارایی شما شود.
+                    لطفاً آدرس کیف پول USDT (شبکه BEP-20) را با دقت وارد کنید. مسئولیت آدرس اشتباه بر عهده شماست و ممکن است منجر به از دست رفتن دارایی شما شود.
                   </AlertDescription>
                 </Alert>
 
@@ -202,3 +202,5 @@ export function WithdrawalDialog({ totalBalance, onWithdrawalSuccess }: Withdraw
     </Dialog>
   );
 }
+
+    
