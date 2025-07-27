@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching a user's wallet data from Firestore.
@@ -11,7 +12,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, Timestamp, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, Timestamp, limit, doc, getDoc } from 'firebase/firestore';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -57,8 +58,8 @@ type InvestmentDocument = {
 const fundNames: Record<string, string> = {
     gold: "صندوق طلا",
     silver: "صندوق نقره",
-    dollar: "صندوق دلار",
-    bitcoin: "صندوق بیت‌کوین"
+    usdt: "تتر",
+    bitcoin: "بیت‌کوین"
 };
 
 const statusNames: Record<string, string> = {
@@ -79,6 +80,11 @@ const getUserWalletFlow = ai.defineFlow(
   },
   async ({ userId }) => {
     
+    // Fetch user document to get the authoritative walletBalance
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    const totalBalance = userSnap.exists() ? userSnap.data().walletBalance || 0 : 0;
+
     const investmentsCollection = collection(db, "investments");
     const q = query(
         investmentsCollection, 
@@ -89,19 +95,17 @@ const getUserWalletFlow = ai.defineFlow(
     const querySnapshot = await getDocs(q);
     
     const assetsMap: Record<string, number> = {};
-    let totalBalance = 0;
 
     const allTransactions = querySnapshot.docs.map(doc => {
         const data = doc.data() as InvestmentDocument;
         const fundName = fundNames[data.fundId as keyof typeof fundNames] || data.fundId;
 
-        // Only active investments contribute to the balance and asset breakdown
+        // Only active investments contribute to the asset breakdown
         if (data.status === 'active') {
             if (!assetsMap[fundName]) {
                 assetsMap[fundName] = 0;
             }
             assetsMap[fundName] += data.amount;
-            totalBalance += data.amount;
         }
 
         return {

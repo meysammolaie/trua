@@ -87,7 +87,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 5. Check user balance from their wallet
+    // 5. Check user balance directly from their wallet document
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
 
@@ -96,7 +96,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     }
     const userBalance = userSnap.data().walletBalance || 0;
     
-    // Check if the gross amount requested is more than the user's balance
+    // Check if the gross amount requested is more than the user's wallet balance
     if (amount > userBalance) {
         return {
             success: false,
