@@ -12,55 +12,14 @@ import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { GetUserDetailsInputSchema, GetUserDetailsOutputSchema, UserProfileSchema, TransactionSchema, StatsSchema, ChartDataPointSchema } from '@/ai/schemas';
 
 const ai = genkit({
   plugins: [googleAI()],
 });
 
 
-const GetUserDetailsInputSchema = z.object({
-  userId: z.string().describe('The ID of the user whose details are to be fetched.'),
-});
 export type GetUserDetailsInput = z.infer<typeof GetUserDetailsInputSchema>;
-
-const UserProfileSchema = z.object({
-    uid: z.string(),
-    firstName: z.string(),
-    lastName: z.string(),
-    email: z.string(),
-    createdAt: z.string(),
-    status: z.enum(['active', 'blocked']),
-});
-
-const TransactionSchema = z.object({
-    id: z.string(),
-    type: z.string(),
-    fund: z.string(),
-    status: z.string(),
-    date: z.string(),
-    amount: z.number(),
-    proof: z.string().optional(),
-});
-
-const ChartDataPointSchema = z.object({
-  month: z.string(),
-  investment: z.number(),
-});
-
-const StatsSchema = z.object({
-    grossInvestment: z.number(),
-    netInvestment: z.number(),
-    totalProfit: z.number(),
-    lotteryTickets: z.number(),
-    walletBalance: z.number(),
-});
-
-const GetUserDetailsOutputSchema = z.object({
-  profile: UserProfileSchema,
-  transactions: z.array(TransactionSchema),
-  stats: StatsSchema,
-  investmentChartData: z.array(ChartDataPointSchema),
-});
 export type GetUserDetailsOutput = z.infer<typeof GetUserDetailsOutputSchema>;
 
 type InvestmentDocument = {
@@ -72,6 +31,7 @@ type InvestmentDocument = {
   netAmountUSD?: number; // Net amount after fees
   status: 'pending' | 'active' | 'completed';
   createdAt: Timestamp;
+  transactionHash: string;
 };
 
 type DbTransactionDocument = {
@@ -156,7 +116,7 @@ const getUserDetailsFlow = ai.defineFlow(
             if(!investmentByMonth[monthKey]) {
                 investmentByMonth[monthKey] = 0;
             }
-            investmentByMonth[monthKey] += transactionAmount;
+            investmentByMonth[monthKey] += data.amountUSD; // Use gross for chart
         }
         allTransactions.push({
             id: doc.id,
@@ -164,8 +124,9 @@ const getUserDetailsFlow = ai.defineFlow(
             fund: fundNames[data.fundId as keyof typeof fundNames] || data.fundId,
             status: statusNames[data.status as keyof typeof statusNames] || data.status,
             date: createdAt.toLocaleDateString('fa-IR'),
-            amount: -Math.abs(transactionAmount),
+            amount: -Math.abs(data.amountUSD), // Show gross amount
             timestamp: createdAt.getTime(),
+            proof: data.transactionHash
         });
     });
 
@@ -214,13 +175,16 @@ const getUserDetailsFlow = ai.defineFlow(
         createdAt: (userData.createdAt as Timestamp).toDate().toLocaleDateString('fa-IR'),
         status: userData.status || 'active',
     };
+    
+    // Per user request: walletBalance = grossInvestment + totalProfit
+    const calculatedWalletBalance = grossInvestment + totalProfit;
 
     const stats: z.infer<typeof StatsSchema> = {
         grossInvestment: grossInvestment,
         netInvestment: netInvestment,
         totalProfit: totalProfit,
         lotteryTickets: Math.floor(grossInvestment / lotteryTicketRatio),
-        walletBalance: userData.walletBalance || 0,
+        walletBalance: calculatedWalletBalance,
     };
     
     const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);

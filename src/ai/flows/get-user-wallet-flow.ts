@@ -13,39 +13,18 @@ import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, limit, doc, getDoc } from 'firebase/firestore';
+import { getUserDetails } from './get-user-details-flow';
+import { GetUserWalletInputSchema, GetUserWalletOutputSchema, AssetSchema, TransactionSchema } from '@/ai/schemas';
 
 const ai = genkit({
   plugins: [googleAI()],
 });
 
-const GetUserWalletInputSchema = z.object({
-  userId: z.string().describe('The ID of the user whose wallet data is to be fetched.'),
-});
 export type GetUserWalletInput = z.infer<typeof GetUserWalletInputSchema>;
-
-const AssetSchema = z.object({
-    fund: z.string(),
-    value: z.number(),
-});
+export type GetUserWalletOutput = z.infer<typeof GetUserWalletOutputSchema>;
 export type Asset = z.infer<typeof AssetSchema>;
-
-const TransactionSchema = z.object({
-    id: z.string(),
-    type: z.string(),
-    status: z.string(),
-    date: z.string(),
-    amount: z.number(),
-});
 export type Transaction = z.infer<typeof TransactionSchema>;
 
-const GetUserWalletOutputSchema = z.object({
-  assets: z.array(AssetSchema),
-  recentTransactions: z.array(TransactionSchema),
-  totalAssetValue: z.number().describe("The total value of all active investments."),
-  withdrawableBalance: z.number().describe("The balance available for withdrawal from the wallet."),
-  totalBalance: z.number().describe("The sum of totalAssetValue and withdrawableBalance."),
-});
-export type GetUserWalletOutput = z.infer<typeof GetUserWalletOutputSchema>;
 
 type InvestmentDocument = {
   id: string;
@@ -64,12 +43,6 @@ const fundNames: Record<string, string> = {
     bitcoin: "بیت‌کوین"
 };
 
-const statusNames: Record<string, string> = {
-    pending: "در انتظار",
-    active: "فعال",
-    completed: "خاتمه یافته",
-};
-
 export async function getUserWallet(input: GetUserWalletInput): Promise<GetUserWalletOutput> {
   return await getUserWalletFlow(input);
 }
@@ -82,44 +55,31 @@ const getUserWalletFlow = ai.defineFlow(
   },
   async ({ userId }) => {
     
-    // 1. Fetch user document to get the authoritative withdrawableBalance
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-    const withdrawableBalance = userSnap.exists() ? userSnap.data().walletBalance || 0 : 0;
+    // 1. Fetch comprehensive user details from the single source of truth flow
+    const userDetails = await getUserDetails({ userId });
 
-    // 2. Fetch all investments to calculate asset values
+    // 2. Fetch active investments to calculate asset breakdown
     const investmentsCollection = collection(db, "investments");
     const investmentsQuery = query(
         investmentsCollection, 
         where("userId", "==", userId),
-        orderBy("createdAt", "desc")
+        where("status", "==", "active")
     );
     const investmentsSnapshot = await getDocs(investmentsQuery);
     
     const assetsMap: Record<string, number> = {};
     let totalAssetValue = 0;
 
-    const allTransactions = investmentsSnapshot.docs.map(doc => {
+    investmentsSnapshot.docs.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
         const fundName = fundNames[data.fundId as keyof typeof fundNames] || data.fundId;
-        const assetValue = data.netAmountUSD || 0; // Use net amount for value
+        const assetValue = data.netAmountUSD || 0; // Asset value is based on net investment
 
-        // Only active investments contribute to the asset breakdown
-        if (data.status === 'active') {
-            if (!assetsMap[fundName]) {
-                assetsMap[fundName] = 0;
-            }
-            assetsMap[fundName] += assetValue;
-            totalAssetValue += assetValue;
+        if (!assetsMap[fundName]) {
+            assetsMap[fundName] = 0;
         }
-
-        return {
-            id: doc.id,
-            type: "سرمایه‌گذاری",
-            status: statusNames[data.status as keyof typeof statusNames] || data.status,
-            date: data.createdAt.toDate().toLocaleDateString('fa-IR'),
-            amount: -Math.abs(assetValue), // Show net amount as outgoing
-        };
+        assetsMap[fundName] += assetValue;
+        totalAssetValue += assetValue;
     });
 
     const assets: Asset[] = Object.entries(assetsMap).map(([fund, value]) => ({
@@ -127,17 +87,18 @@ const getUserWalletFlow = ai.defineFlow(
         value,
     }));
     
-    // 3. In a real app, you would fetch other transaction types (profits, withdrawals)
-    // and merge them here, then sort by date before taking the last 5.
-    const recentTransactions = allTransactions.slice(0, 5);
+    // 3. Get recent transactions from user details
+    const recentTransactions = userDetails.transactions.slice(0, 5);
     
-    // 4. Calculate total balance
-    const totalBalance = totalAssetValue + withdrawableBalance;
+    // 4. Use the calculated balances from user details
+    // Per user request: `withdrawableBalance` should be the `totalBalance`.
+    const totalBalance = userDetails.stats.walletBalance; // This is Gross Investment + Profits
+    const withdrawableBalance = totalBalance;
 
     return {
       assets,
       recentTransactions,
-      totalAssetValue,
+      totalAssetValue, // This remains the sum of *active* investments' net value
       withdrawableBalance,
       totalBalance,
     };
