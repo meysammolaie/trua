@@ -33,3 +33,14 @@ export const GetInvestmentDetailsOutputSchema = z.object({
   createdAt: z.string(),
   rejectionReason: z.string().optional(),
 });
+
+export const UpdateInvestmentStatusInputSchema = z.object({
+  investmentId: z.string().describe('The ID of the investment to update.'),
+  newStatus: z.enum(['active', 'rejected', 'completed']).describe('The new status for the investment.'),
+  rejectionReason: z.string().optional().describe('The reason for rejecting the investment.'),
+});
+
+export const UpdateInvestmentStatusOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});

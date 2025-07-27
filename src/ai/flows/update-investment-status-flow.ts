@@ -14,24 +14,14 @@ import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
+import { UpdateInvestmentStatusInputSchema, UpdateInvestmentStatusOutputSchema } from '@/ai/schemas';
 
 const ai = genkit({
   plugins: [googleAI()],
 });
 
-// Input Schema
-export const UpdateInvestmentStatusInputSchema = z.object({
-  investmentId: z.string().describe('The ID of the investment to update.'),
-  newStatus: z.enum(['active', 'rejected', 'completed']).describe('The new status for the investment.'),
-  rejectionReason: z.string().optional().describe('The reason for rejecting the investment.'),
-});
-export type UpdateInvestmentStatusInput = z.infer<typeof UpdateInvestmentStatusInputSchema>;
 
-// Output Schema
-export const UpdateInvestmentStatusOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-});
+export type UpdateInvestmentStatusInput = z.infer<typeof UpdateInvestmentStatusInputSchema>;
 export type UpdateInvestmentStatusOutput = z.infer<typeof UpdateInvestmentStatusOutputSchema>;
 
 
@@ -50,11 +40,11 @@ const updateInvestmentStatusFlow = ai.defineFlow(
     try {
       const investmentRef = doc(db, 'investments', investmentId);
       
-      const settings = await getPlatformSettings();
-      
       await runTransaction(db, async (transaction) => {
         // ========== ALL READS FIRST ==========
+        const settings = await getPlatformSettings();
         const investmentDoc = await transaction.get(investmentRef);
+        
         if (!investmentDoc.exists()) {
           throw new Error(`Investment with ID ${investmentId} not found.`);
         }
