@@ -50,7 +50,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     // 2. Get platform settings
     const settings = await getPlatformSettings();
     
-    // 3. Check for recent withdrawals (within last 24 hours) - CODE-BASED APPROACH
+    // 3. Check for recent withdrawals (within last 24 hours)
     const withdrawalsQuery = query(
         collection(db, 'withdrawals'),
         where('userId', '==', userId)
@@ -96,19 +96,20 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     }
     const userBalance = userSnap.data().walletBalance || 0;
     
-    const exitFee = amount * (settings.exitFee / 100);
-    const networkFee = settings.networkFee || 0;
-    const totalFees = exitFee + networkFee;
-    const netAmount = amount - totalFees;
-
-
+    // Check if the gross amount requested is more than the user's balance
     if (amount > userBalance) {
         return {
             success: false,
             message: "مبلغ درخواستی از موجودی کیف پول شما بیشتر است.",
         };
     }
-    
+
+    // 6. Calculate fees and net amount
+    const exitFee = amount * (settings.exitFee / 100);
+    const networkFee = settings.networkFee || 0;
+    const totalFees = exitFee + networkFee;
+    const netAmount = amount - totalFees;
+
      if (netAmount <= 0) {
         return {
             success: false,
@@ -116,7 +117,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 6. Create withdrawal request
+    // 7. Create withdrawal request
     try {
         await addDoc(collection(db, 'withdrawals'), {
             userId,
