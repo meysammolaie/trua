@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for handling new withdrawal requests.
@@ -7,7 +8,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
@@ -51,19 +52,25 @@ const createWithdrawalRequestFlow = ai.defineFlow(
 
     // 3. Check for recent withdrawals (within last 24 hours)
     const twentyFourHoursAgo = Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
+    
+    // Simpler query on just userId, then filter/sort in code to avoid complex index.
     const recentWithdrawalsQuery = query(
         collection(db, 'withdrawals'),
         where('userId', '==', userId),
-        where('createdAt', '>=', twentyFourHoursAgo),
-        limit(1)
+        orderBy('createdAt', 'desc') // This now uses the single-field index.
     );
     const recentWithdrawalsSnapshot = await getDocs(recentWithdrawalsQuery);
+    
     if (!recentWithdrawalsSnapshot.empty) {
-        return {
-            success: false,
-            message: 'شما در ۲۴ ساعت گذشته یک درخواست برداشت ثبت کرده‌اید. لطفاً بعداً تلاش کنید.',
-        };
+        const latestWithdrawal = recentWithdrawalsSnapshot.docs[0].data();
+        if (latestWithdrawal.createdAt >= twentyFourHoursAgo) {
+            return {
+                success: false,
+                message: 'شما در ۲۴ ساعت گذشته یک درخواست برداشت ثبت کرده‌اید. لطفاً بعداً تلاش کنید.',
+            };
+        }
     }
+
 
     // 4. Check withdrawal rules
     if (amount < settings.minWithdrawalAmount) {
