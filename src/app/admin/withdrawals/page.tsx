@@ -29,11 +29,12 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, XCircle, Ban, Loader2, AlertTriangle, Check, ArrowDownUp, TrendingUp } from "lucide-react";
+import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, Ban, Loader2, AlertTriangle, Check, DollarSign } from "lucide-react";
 import { WithdrawalRequest } from "@/ai/flows/get-withdrawal-requests-flow";
 import { getWithdrawalRequestsAction, updateWithdrawalStatusAction } from "@/app/actions/withdrawals";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { getAllTransactionsAction } from "@/app/actions/transactions";
 
 const statusNames: Record<string, string> = {
     pending: "در انتظار",
@@ -46,31 +47,40 @@ export default function AdminWithdrawalsPage() {
     const { toast } = useToast();
     const [allRequests, setAllRequests] = useState<WithdrawalRequest[]>([]);
     const [filteredRequests, setFilteredRequests] = useState<WithdrawalRequest[]>([]);
-    const [stats, setStats] = useState({ totalPending: 0, totalApproved: 0, pendingCount: 0 });
+    const [stats, setStats] = useState({ totalPending: 0, totalApproved: 0, pendingCount: 0, platformWallet: 0 });
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const fetchRequests = useCallback(() => {
+    const fetchRequests = useCallback(async () => {
         setLoading(true);
-        getWithdrawalRequestsAction()
-            .then(data => {
-                setAllRequests(data.requests);
-                setFilteredRequests(data.requests);
-                
-                const totalPending = data.requests.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0);
-                const totalApproved = data.requests.filter(r => r.status === 'approved' || r.status === 'completed').reduce((sum, r) => sum + r.amount, 0);
-                const pendingCount = data.requests.filter(r => r.status === 'pending').length;
-                setStats({ totalPending, totalApproved, pendingCount });
-            })
-            .catch(error => {
-                console.error("Error fetching withdrawal requests:", error);
-                toast({
-                    variant: "destructive",
-                    title: "خطا در واکشی اطلاعات",
-                    description: "مشکلی در دریافت لیست درخواست‌های برداشت رخ داد.",
-                });
-            })
-            .finally(() => setLoading(false));
+        try {
+            const [requestsData, transactionsData] = await Promise.all([
+                getWithdrawalRequestsAction(),
+                getAllTransactionsAction()
+            ]);
+
+            setAllRequests(requestsData.requests);
+            setFilteredRequests(requestsData.requests);
+            
+            const totalPending = requestsData.requests.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0);
+            const totalApproved = requestsData.requests.filter(r => r.status === 'approved' || r.status === 'completed').reduce((sum, r) => sum + r.amount, 0);
+            const pendingCount = requestsData.requests.filter(r => r.status === 'pending').length;
+            
+            // Calculate platform wallet balance from all active investments
+            const activeInvestments = transactionsData.transactions.filter(t => t.type === 'investment' && t.status === 'active');
+            const platformWallet = activeInvestments.reduce((sum, inv) => sum + Math.abs(inv.amount), 0);
+
+            setStats({ totalPending, totalApproved, pendingCount, platformWallet });
+        } catch(error) {
+            console.error("Error fetching withdrawal requests:", error);
+            toast({
+                variant: "destructive",
+                title: "خطا در واکشی اطلاعات",
+                description: "مشکلی در دریافت لیست درخواست‌های برداشت رخ داد.",
+            });
+        } finally {
+            setLoading(false);
+        }
     }, [toast]);
 
     useEffect(() => {
@@ -146,6 +156,16 @@ export default function AdminWithdrawalsPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">موجودی کیف پول پلتفرم</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats.platformWallet)}</div>}
+                        <p className="text-xs text-muted-foreground">مجموع سرمایه‌گذاری‌های فعال</p>
+                    </CardContent>
+                </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">مجموع برداشت‌های در انتظار</CardTitle>
@@ -153,17 +173,17 @@ export default function AdminWithdrawalsPage() {
                     </CardHeader>
                     <CardContent>
                         {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats.totalPending)}</div>}
-                        <p className="text-xs text-muted-foreground">در {stats.pendingCount} درخواست</p>
+                        <p className="text-xs text-muted-foreground">در {stats.pendingCount.toLocaleString()} درخواست</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">مجموع برداشت‌های تایید شده</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">موجودی پس از برداشت‌ها</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats.totalApproved)}</div>}
-                        <p className="text-xs text-muted-foreground">مجموع تمام برداشت‌های موفق</p>
+                        {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats.platformWallet - stats.totalPending)}</div>}
+                        <p className="text-xs text-muted-foreground">موجودی پلتفرم با کسر درخواست‌های در انتظار</p>
                     </CardContent>
                 </Card>
             </div>

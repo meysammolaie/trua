@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -23,9 +23,8 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartConfig,
 } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart as RechartsLineChart } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { FileDown, DollarSign, Users, Ticket, TrendingUp, Loader2, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -34,20 +33,12 @@ import { getAllTransactionsAction } from "@/app/actions/transactions";
 import { useToast } from "@/hooks/use-toast";
 import { distributeProfitsAction } from "@/app/actions/reports";
 
-
 const revenueChartConfig = {
   revenue: {
     label: "درآمد",
     color: "hsl(var(--primary))",
   },
-} satisfies ChartConfig;
-
-const profitChartConfig = {
-  profit: {
-    label: "سود",
-    color: "hsl(var(--chart-2))",
-  },
-} satisfies ChartConfig;
+};
 
 export default function AdminReportsPage() {
     const { toast } = useToast();
@@ -56,12 +47,13 @@ export default function AdminReportsPage() {
     const [transactions, setTransactions] = useState<TransactionWithUser[]>([]);
     const [stats, setStats] = useState<AllTransactionsStats | null>(null);
 
-     const fetchData = async () => {
+     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             const data = await getAllTransactionsAction();
-            const financialEvents = data.transactions.filter(t => ['fee_entry', 'fee_lottery', 'fee_platform', 'profit_payout', 'lottery_win', 'withdrawal_fee'].includes(t.type));
-            setTransactions(financialEvents.slice(0, 5));
+            // Filter for financial events to show in the recent list
+            const financialEvents = data.transactions.filter(t => ['profit_payout', 'investment'].includes(t.type) || t.type.startsWith('fee_'));
+            setTransactions(financialEvents.slice(0, 10)); // Show latest 10
             setStats(data.stats);
         } catch (error) {
             console.error("Failed to fetch transaction data:", error);
@@ -73,11 +65,11 @@ export default function AdminReportsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [toast]);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     const handleDistributeProfits = async () => {
         setIsDistributing(true);
@@ -145,7 +137,7 @@ export default function AdminReportsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">سود پرداخت شده (نمایشی)</CardTitle>
+            <CardTitle className="text-sm font-medium">سود پرداخت شده</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -153,7 +145,7 @@ export default function AdminReportsPage() {
                 <div className="text-2xl font-bold font-mono">$0.00</div>
             }
             <p className="text-xs text-muted-foreground">
-              قابلیت توزیع سود پیاده‌سازی نشده
+              مجموع سودهای توزیع شده بین کاربران
             </p>
           </CardContent>
         </Card>
@@ -218,7 +210,7 @@ export default function AdminReportsPage() {
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle>نمودار درآمد کارمزدها (نمایشی)</CardTitle>
+                <CardTitle>نمودار درآمد کارمزدها</CardTitle>
                 <CardDescription>نمایش روند درآمد ماهانه از کارمزدها.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -308,5 +300,3 @@ export default function AdminReportsPage() {
     </>
   );
 }
-
-    

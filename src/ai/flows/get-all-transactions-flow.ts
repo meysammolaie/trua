@@ -13,7 +13,7 @@ import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, Timestamp, where } from 'firebase/firestore';
-import { v4 as uuidv4 } from 'uuid';
+import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -66,9 +66,10 @@ type UserDocument = {
 type TransactionDocument = {
     id: string;
     userId: string;
-    type: 'profit_payout';
+    type: string;
     amount: number;
     createdAt: Timestamp;
+    details?: string;
 }
 
 type InvestmentDocument = {
@@ -80,10 +81,6 @@ type InvestmentDocument = {
   createdAt: Timestamp;
 };
 
-// Helper function to simulate a slightly earlier date
-const subtractMinutes = (date: Date, minutes: number) => {
-    return new Date(date.getTime() - minutes * 60000);
-};
 
 export async function getAllTransactions(): Promise<GetAllTransactionsOutput> {
   return await getAllTransactionsFlow({});
@@ -100,95 +97,52 @@ const getAllTransactionsFlow = ai.defineFlow(
     const usersCollection = collection(db, "users");
     const investmentsCollection = collection(db, "investments");
     const transactionsCollection = collection(db, "transactions");
+    const settingsPromise = getPlatformSettings();
 
-    const [usersSnapshot, investmentsSnapshot, profitPayoutsSnapshot] = await Promise.all([
+    const [usersSnapshot, investmentsSnapshot, dbTransactionsSnapshot, settings] = await Promise.all([
       getDocs(query(usersCollection)),
-      getDocs(query(investmentsCollection, orderBy("createdAt", "desc"))),
-      getDocs(query(transactionsCollection, where("type", "==", "profit_payout"))) // Removed orderBy from here
+      getDocs(query(investmentsCollection)),
+      getDocs(query(transactionsCollection)),
+      settingsPromise
     ]);
 
     const usersData = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...(doc.data() as UserDocument) }));
     const usersMap = new Map(usersData.map(user => [user.uid, user]));
     
     const investments = investmentsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as InvestmentDocument) }));
-    const profitPayouts = profitPayoutsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as TransactionDocument) }));
+    const dbTransactions = dbTransactionsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as TransactionDocument) }));
 
-
-    // 2. Generate a comprehensive transaction list from investments
+    // 2. Generate a comprehensive transaction list
     const allTransactions: TransactionWithUser[] = [];
     let totalRevenue = 0;
     let lotteryPool = 0;
     const revenueByMonth: Record<string, number> = {};
 
+    // Process actual investments and calculate fees
     investments.forEach(inv => {
         const user = usersMap.get(inv.userId);
         const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'کاربر نامشخص';
         const userEmail = user ? user.email : 'ایمیل نامشخص';
         const investmentDate = inv.createdAt.toDate();
         
-        // Fees and revenue are only calculated for active investments
         if (inv.status === 'active') {
             const fees = {
-                entry: inv.amount * 0.03,
-                lottery: inv.amount * 0.02,
-                platform: inv.amount * 0.01,
+                entry: inv.amount * (settings.entryFee / 100),
+                lottery: inv.amount * (settings.lotteryFee / 100),
+                platform: inv.amount * (settings.platformFee / 100),
             };
 
-            totalRevenue += fees.entry + fees.lottery + fees.platform;
+            const investmentRevenue = fees.entry + fees.lottery + fees.platform;
+            totalRevenue += investmentRevenue;
             lotteryPool += fees.lottery;
             
             const monthKey = `${investmentDate.getFullYear()}/${String(investmentDate.getMonth() + 1).padStart(2, '0')}`;
             if (!revenueByMonth[monthKey]) {
                 revenueByMonth[monthKey] = 0;
             }
-            revenueByMonth[monthKey] += fees.entry + fees.lottery + fees.platform;
-
-            // Simulate fee transactions for active investments
-            allTransactions.push({
-                id: `fee-entry-${inv.id}`,
-                userId: inv.userId, userFullName, userEmail, fundId: inv.fundId,
-                amount: fees.entry,
-                type: 'fee_entry',
-                status: 'completed',
-                createdAt: subtractMinutes(investmentDate, 1).toLocaleDateString('fa-IR'),
-                originalInvestmentId: inv.id,
-            });
-            allTransactions.push({
-                id: `fee-lottery-${inv.id}`,
-                userId: inv.userId, userFullName, userEmail, fundId: inv.fundId,
-                amount: fees.lottery,
-                type: 'fee_lottery',
-                status: 'completed',
-                createdAt: subtractMinutes(investmentDate, 1).toLocaleDateString('fa-IR'),
-                originalInvestmentId: inv.id,
-            });
-            allTransactions.push({
-                id: `fee-platform-${inv.id}`,
-                userId: inv.userId, userFullName, userEmail, fundId: inv.fundId,
-                amount: fees.platform,
-                type: 'fee_platform',
-                status: 'completed',
-                createdAt: subtractMinutes(investmentDate, 1).toLocaleDateString('fa-IR'),
-                originalInvestmentId: inv.id,
-            });
+            revenueByMonth[monthKey] += investmentRevenue;
         }
 
-
-        // Simulate a "Deposit" transaction that happened slightly before the investment
-        allTransactions.push({
-            id: `dep-${inv.id}`,
-            userId: inv.userId,
-            userFullName,
-            userEmail,
-            fundId: inv.fundId,
-            amount: inv.amount,
-            type: 'deposit',
-            status: 'completed',
-            createdAt: subtractMinutes(investmentDate, 2).toLocaleDateString('fa-IR'),
-            originalInvestmentId: inv.id,
-        });
-        
-        // The actual "Investment" transaction
         allTransactions.push({
             id: inv.id,
             userId: inv.userId,
@@ -203,21 +157,21 @@ const getAllTransactionsFlow = ai.defineFlow(
         });
     });
 
-    // Add profit payouts to the list
-    profitPayouts.forEach(payout => {
-        const user = usersMap.get(payout.userId);
+    // Process transactions from the transactions collection
+    dbTransactions.forEach(tx => {
+        const user = usersMap.get(tx.userId);
         const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'کاربر نامشخص';
         const userEmail = user ? user.email : 'ایمیل نامشخص';
         
         allTransactions.push({
-            id: payout.id,
-            userId: payout.userId,
+            id: tx.id,
+            userId: tx.userId,
             userFullName,
             userEmail,
-            amount: payout.amount,
-            type: 'profit_payout',
+            amount: tx.amount,
+            type: tx.type,
             status: 'completed',
-            createdAt: payout.createdAt.toDate().toLocaleDateString('fa-IR'),
+            createdAt: tx.createdAt.toDate().toLocaleDateString('fa-IR'),
         });
     });
 
@@ -234,21 +188,11 @@ const getAllTransactionsFlow = ai.defineFlow(
             };
         });
 
-    // Sort all generated transactions by date descending (approximation)
+    // Sort all generated transactions by date descending
     const sortedTransactions = allTransactions.sort((a, b) => {
-      const getMillis = (id?: string) => {
-        if (!id) return new Date().getTime(); // Should not happen for investments
-        const investment = investments.find(inv => inv.id === id);
-        if (investment) return investment.createdAt.toMillis();
-        const payout = profitPayouts.find(p => p.id === id);
-        if (payout) return payout.createdAt.toMillis();
-        return 0;
-      }
-      const dateA = new Date(getMillis(a.originalInvestmentId || a.id));
-      const dateB = new Date(getMillis(b.originalInvestmentId || b.id));
-      return dateB.getTime() - dateA.getTime();
+      // A simple date string comparison is not robust, but works for fa-IR format (YYYY/MM/DD)
+      return b.createdAt.localeCompare(a.createdAt);
     });
-
 
     return {
       transactions: sortedTransactions,
@@ -261,10 +205,3 @@ const getAllTransactionsFlow = ai.defineFlow(
     };
   }
 );
-// Needed for generating unique IDs for simulated transactions
-const crypto = require('crypto');
-Object.defineProperty(global, 'crypto', {
-    value: {
-        randomUUID: () => uuidv4(),
-    },
-});

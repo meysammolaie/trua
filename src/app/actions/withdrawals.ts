@@ -3,7 +3,7 @@
 
 import { getWithdrawalRequests, GetAllWithdrawalsOutput } from '@/ai/flows/get-withdrawal-requests-flow';
 import { updateWithdrawalStatus as updateWithdrawalStatusFlow, type UpdateWithdrawalStatusInput, type UpdateWithdrawalStatusOutput } from '@/ai/flows/update-withdrawal-status-flow';
-import { createWithdrawalRequest as createWithdrawalRequestFlow, type createWithdrawalRequest } from '@/ai/flows/create-withdrawal-request-flow';
+import { createWithdrawalRequest as createWithdrawalRequestFlow } from '@/ai/flows/create-withdrawal-request-flow';
 import { z } from 'zod';
 
 

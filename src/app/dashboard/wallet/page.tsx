@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,7 +33,7 @@ export default function WalletPage() {
     const [totalBalance, setTotalBalance] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    const fetchWalletData = () => {
+    const fetchWalletData = useCallback(() => {
         if (user) {
             setLoading(true);
             getUserWalletAction({ userId: user.uid })
@@ -50,11 +50,11 @@ export default function WalletPage() {
                     setLoading(false);
                 });
         }
-    };
+    }, [user]);
 
     useEffect(() => {
         fetchWalletData();
-    }, [user]);
+    }, [user, fetchWalletData]);
 
   return (
     <>
