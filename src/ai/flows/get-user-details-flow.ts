@@ -17,6 +17,7 @@ const ai = genkit({
   plugins: [googleAI()],
 });
 
+
 const GetUserDetailsInputSchema = z.object({
   userId: z.string().describe('The ID of the user whose details are to be fetched.'),
 });
@@ -37,7 +38,7 @@ const TransactionSchema = z.object({
     fund: z.string(),
     status: z.string(),
     date: z.string(),
-    amount: z.number(),
+    amount: z.number(), // This will be the net amount for investments
 });
 
 const ChartDataPointSchema = z.object({
@@ -46,7 +47,8 @@ const ChartDataPointSchema = z.object({
 });
 
 const StatsSchema = z.object({
-    totalInvestment: z.number(),
+    grossInvestment: z.number(),
+    netInvestment: z.number(),
     totalProfit: z.number(),
     lotteryTickets: z.number(),
     walletBalance: z.number(),
@@ -65,6 +67,8 @@ type InvestmentDocument = {
   userId: string;
   fundId: string;
   amount: number;
+  amountUSD: number; // Gross amount in USD
+  netAmountUSD?: number; // Net amount after fees
   status: 'pending' | 'active' | 'completed';
   createdAt: Timestamp;
 };
@@ -114,22 +118,26 @@ const getUserDetailsFlow = ai.defineFlow(
     const userData = userDoc.data();
     
     // 2. Process investments and calculate stats
-    let totalInvestment = 0;
+    let grossInvestment = 0;
+    let netInvestment = 0;
     const lotteryTicketRatio = 10; // $10 for 1 ticket
     const investmentByMonth: Record<string, number> = {};
 
     const transactionsData = investmentsSnapshot.docs.map(doc => {
         const data = doc.data() as InvestmentDocument;
-        if (data.status === 'active' || data.status === 'pending') {
-            totalInvestment += data.amount;
+        const transactionAmount = data.netAmountUSD ?? data.amountUSD;
 
-            // For chart data
+        if (data.status === 'active' || data.status === 'pending') {
+            grossInvestment += data.amountUSD;
+            netInvestment += transactionAmount;
+
+            // For chart data, use net investment
             const date = data.createdAt.toDate();
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
             if(!investmentByMonth[monthKey]) {
                 investmentByMonth[monthKey] = 0;
             }
-            investmentByMonth[monthKey] += data.amount;
+            investmentByMonth[monthKey] += transactionAmount;
         }
         return {
             id: doc.id,
@@ -137,7 +145,7 @@ const getUserDetailsFlow = ai.defineFlow(
             fund: fundNames[data.fundId as keyof typeof fundNames] || data.fundId,
             status: statusNames[data.status as keyof typeof statusNames] || data.status,
             date: data.createdAt.toDate().toLocaleDateString('fa-IR'),
-            amount: -Math.abs(data.amount), 
+            amount: -Math.abs(transactionAmount), // Show the net amount as the transaction value
         };
     });
 
@@ -166,9 +174,10 @@ const getUserDetailsFlow = ai.defineFlow(
     };
 
     const stats: z.infer<typeof StatsSchema> = {
-        totalInvestment: totalInvestment,
+        grossInvestment: grossInvestment,
+        netInvestment: netInvestment,
         totalProfit: 0, // Not implemented yet
-        lotteryTickets: Math.floor(totalInvestment / lotteryTicketRatio),
+        lotteryTickets: Math.floor(grossInvestment / lotteryTicketRatio),
         walletBalance: userData.walletBalance || 0,
     };
 

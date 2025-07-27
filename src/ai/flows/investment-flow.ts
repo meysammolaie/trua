@@ -13,10 +13,12 @@ import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getCryptoPrice } from '../tools/get-crypto-price-tool';
+import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
   plugins: [googleAI()],
 });
+
 
 const InvestmentInputSchema = z.object({
   userId: z.string().describe('The ID of the user making the investment.'),
@@ -49,18 +51,31 @@ const investmentFlow = ai.defineFlow(
     console.log('Received investment submission for user:', input.userId);
     
     try {
-      // 1. Get the current price of the asset to store the USD value
-      const priceData = await getCryptoPrice({ cryptoId: input.fundId });
+      // 1. Get platform settings and current price in parallel
+      const [settings, priceData] = await Promise.all([
+        getPlatformSettings(),
+        getCryptoPrice({ cryptoId: input.fundId })
+      ]);
+      
       const unitPrice = priceData.usd;
       const amountUSD = input.amount * unitPrice;
 
-      // 2. Add investment to Firestore
+      // 2. Calculate fees based on USD value
+      const entryFee = amountUSD * (settings.entryFee / 100);
+      const lotteryFee = amountUSD * (settings.lotteryFee / 100);
+      const platformFee = amountUSD * (settings.platformFee / 100);
+      const totalFees = entryFee + lotteryFee + platformFee;
+      const netAmountUSD = amountUSD - totalFees;
+
+      // 3. Add investment to Firestore
       const investmentsCollection = collection(db, 'investments');
       const docRef = await addDoc(investmentsCollection, {
         userId: input.userId,
         fundId: input.fundId,
         amount: input.amount, // amount in native unit (e.g., BTC)
-        amountUSD: amountUSD, // amount in USD at time of investment
+        amountUSD: amountUSD, // Gross amount in USD at time of investment
+        netAmountUSD: netAmountUSD, // Net amount after fees
+        feesUSD: totalFees, // Total fees in USD
         unitPrice: unitPrice, // price per unit at time of investment
         transactionHash: input.transactionHash,
         status: 'pending', // Statuses: 'pending', 'active', 'completed', 'rejected'

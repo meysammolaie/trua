@@ -121,15 +121,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">مجموع سرمایه</CardTitle>
+                <CardTitle className="text-sm font-medium">سرمایه خالص فعال</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.totalInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${stats?.netInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
                         <p className="text-xs text-muted-foreground">
-                        مجموع سرمایه‌گذاری‌های فعال
+                          (سرمایه ناخالص: ${stats?.grossInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'})
                         </p>
                     </>
                 )}
@@ -196,7 +196,7 @@ export function Overview() {
              <Card >
               <CardHeader>
                 <CardTitle>نمای کلی پرتفوی</CardTitle>
-                 <CardDescription>نمودار رشد سرمایه‌گذاری شما در ۶ ماه گذشته.</CardDescription>
+                 <CardDescription>نمودار رشد سرمایه‌گذاری خالص شما در ۶ ماه گذشته.</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
                 {loading ? <div className="h-[250px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
