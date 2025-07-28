@@ -22,7 +22,9 @@ const TaskSchema = z.object({
   createdAt: z.string(),
 });
 export type Task = z.infer<typeof TaskSchema>;
-export type GetTasksOutput = z.infer<typeof z.array(TaskSchema)>;
+
+const GetTasksOutputSchema = z.array(TaskSchema);
+export type GetTasksOutput = z.infer<typeof GetTasksOutputSchema>;
 
 export async function getTasks(): Promise<GetTasksOutput> {
   return await getTasksFlow({});
@@ -32,7 +34,7 @@ const getTasksFlow = ai.defineFlow(
   {
     name: 'getTasksFlow',
     inputSchema: z.object({}),
-    outputSchema: z.array(TaskSchema),
+    outputSchema: GetTasksOutputSchema,
   },
   async () => {
     try {
