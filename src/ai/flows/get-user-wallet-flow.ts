@@ -63,12 +63,11 @@ const getUserWalletFlow = ai.defineFlow(
     const investmentsQuery = query(
         investmentsCollection, 
         where("userId", "==", userId),
-        where("status", "in", ["active", "pending"]) // Use 'in' for multiple statuses
+        where("status", "==", "active") // Only 'active' investments contribute to asset breakdown
     );
     const investmentsSnapshot = await getDocs(investmentsQuery);
     
     const assetsMap: Record<string, number> = {};
-    let totalAssetValue = 0;
 
     investmentsSnapshot.docs.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
@@ -79,7 +78,6 @@ const getUserWalletFlow = ai.defineFlow(
             assetsMap[fundName] = 0;
         }
         assetsMap[fundName] += assetValue;
-        totalAssetValue += assetValue;
     });
 
     const assets: Asset[] = Object.entries(assetsMap).map(([fund, value]) => ({
@@ -90,9 +88,10 @@ const getUserWalletFlow = ai.defineFlow(
     // 3. Get recent transactions from user details
     const recentTransactions = userDetails.transactions.slice(0, 5);
     
-    // 4. Use the balances from user details
+    // 4. Use the balances from user details, which is now the single source of truth
     const withdrawableBalance = userDetails.stats.walletBalance; 
-    const totalBalance = userDetails.stats.walletBalance;
+    const totalAssetValue = userDetails.stats.netInvestment; // Total Asset value is the net of active investments
+    const totalBalance = totalAssetValue + withdrawableBalance; // Total Balance is active assets + liquid wallet
 
     return {
       assets,

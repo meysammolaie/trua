@@ -8,7 +8,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs, Timestamp, runTransaction, increment } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 import { getUserDetails } from './get-user-details-flow';
 
@@ -114,23 +114,31 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 7. Create withdrawal request
+    // 7. Create withdrawal request and deduct from balance in a transaction
     try {
-        await addDoc(collection(db, 'withdrawals'), {
-            userId,
-            amount,
-            walletAddress,
-            status: 'pending', // pending, approved, rejected, completed
-            createdAt: serverTimestamp(),
-            exitFee: exitFee,
-            networkFee: networkFee,
-            netAmount: netAmount,
-        });
-
-        // 8. Deduct the amount from user's balance in Firestore
-        // **IMPORTANT**: This uses a negative increment on the gross amount requested.
         const userRef = doc(db, 'users', userId);
+
         await runTransaction(db, async (transaction) => {
+            // Verify user balance again within the transaction to prevent race conditions
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists() || (userDoc.data().walletBalance || 0) < amount) {
+                throw new Error(`موجودی کیف پول شما (${userDoc.data().walletBalance || 0}) برای برداشت مبلغ ${amount} کافی نیست.`);
+            }
+
+            // A. Create the withdrawal document
+            const withdrawalRef = doc(collection(db, 'withdrawals'));
+            transaction.set(withdrawalRef, {
+                userId,
+                amount,
+                walletAddress,
+                status: 'pending', // pending, approved, rejected, completed
+                createdAt: serverTimestamp(),
+                exitFee: exitFee,
+                networkFee: networkFee,
+                netAmount: netAmount,
+            });
+
+            // B. Deduct the amount from user's balance in Firestore
             transaction.update(userRef, { walletBalance: increment(-amount) });
         });
 
@@ -140,9 +148,10 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     } catch (e) {
         console.error("Error creating withdrawal request: ", e);
+        const errorMessage = e instanceof Error ? e.message : "خطایی در ثبت درخواست شما در پایگاه داده رخ داد.";
         return {
             success: false,
-            message: "خطایی در ثبت درخواست شما در پایگاه داده رخ داد.",
+            message: errorMessage,
         };
     }
   }

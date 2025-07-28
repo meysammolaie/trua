@@ -104,26 +104,26 @@ const getUserDetailsFlow = ai.defineFlow(
     const investmentByMonth: Record<string, number> = {};
     const allTransactions: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
 
-    investmentsSnapshot.docs.forEach(doc => {
-        const data = doc.data() as InvestmentDocument;
-        const createdAt = data.createdAt.toDate();
-        
-        // Use amountUSD for all calculations, as it's the gross investment value
-        grossInvestment += data.amountUSD;
-        
-        // Net investment considers only active/pending
-        if (data.status === 'active' || data.status === 'pending') {
-            netInvestment += data.netAmountUSD ?? data.amountUSD;
-        }
+    const activeInvestments = investmentsSnapshot.docs.filter(doc => doc.data().status === 'active');
 
-        // Chart data should consider all investments over time
+    activeInvestments.forEach(doc => {
+        const data = doc.data() as InvestmentDocument;
+        // Gross and net investment are now calculated only from 'active' investments
+        grossInvestment += data.amountUSD;
+        netInvestment += data.netAmountUSD ?? data.amountUSD;
+
         const date = data.createdAt.toDate();
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         if(!investmentByMonth[monthKey]) {
             investmentByMonth[monthKey] = 0;
         }
         investmentByMonth[monthKey] += data.amountUSD; // Use gross for chart
-        
+    });
+
+    // Process all investments for transaction history
+    investmentsSnapshot.docs.forEach(doc => {
+        const data = doc.data() as InvestmentDocument;
+        const createdAt = data.createdAt.toDate();
         allTransactions.push({
             id: doc.id,
             type: "investment",
@@ -135,6 +135,7 @@ const getUserDetailsFlow = ai.defineFlow(
             proof: data.transactionHash
         });
     });
+
 
     // 3. Process other transactions (profits, withdrawals)
     let totalProfit = 0;
@@ -182,15 +183,15 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // **NEW LOGIC**: Wallet balance is the sum of all gross investments and all profits.
-    const walletBalance = grossInvestment + totalProfit;
+    // **NEW LOGIC**: walletBalance is read directly from the database field, which is updated by other flows.
+    const walletBalance = userData.walletBalance || 0;
 
     const stats: z.infer<typeof StatsSchema> = {
-        grossInvestment: grossInvestment,
-        netInvestment: netInvestment, // Net is still based on active/pending
+        grossInvestment: grossInvestment, // Based on 'active' investments only
+        netInvestment: netInvestment, // Based on 'active' investments only
         totalProfit: totalProfit,
         lotteryTickets: Math.floor(grossInvestment / lotteryTicketRatio),
-        walletBalance: walletBalance, // This is now the calculated total asset value
+        walletBalance: walletBalance, // This is the single source of truth for withdrawable funds
     };
     
     const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);
