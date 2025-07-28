@@ -132,22 +132,14 @@ const getUserDetailsFlow = ai.defineFlow(
     let walletBalance = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
     
-    const cashTransactionTypes = ['profit_payout', 'commission', 'bonus', 'withdrawal_refund', 'principal_return'];
-
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Only sum up cash-like transactions for withdrawable balance
-        if (cashTransactionTypes.includes(data.type)) {
-             walletBalance += data.amount;
-        }
-        
-        // Sum up debiting transactions for withdrawable balance
-        if (data.type === 'withdrawal_request' && data.status !== 'rejected') {
-             walletBalance += data.amount; // amount is negative
-        }
-
+        // Sum up all transactions for the wallet balance.
+        // A withdrawal request will be a negative amount. A refund is positive.
+        // This gives the current liquid, withdrawable balance.
+        walletBalance += data.amount;
 
         let fundId = '-';
         if (data.investmentId) {

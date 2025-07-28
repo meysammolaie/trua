@@ -80,7 +80,8 @@ export default function ReportsPage() {
         "موفق": "default",
         "رد شده": "destructive",
     }
-
+    
+    const totalAssetValue = (stats?.activeInvestment ?? 0) + (stats?.walletBalance ?? 0) + (stats?.lockedBonus ?? 0);
 
   return (
     <TooltipProvider>
@@ -92,11 +93,11 @@ export default function ReportsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>ارزش کل دارایی</CardDescription>
-            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${((stats?.activeInvestment ?? 0) + (stats?.walletBalance ?? 0)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</CardTitle>}
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${(totalAssetValue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              مجموع ارزش دارایی‌های شما (سرمایه فعال + موجودی قابل برداشت)
+              مجموع دارایی‌های شما (سرمایه فعال + موجودی کیف پول + جایزه قفل شده)
             </div>
           </CardContent>
         </Card>
@@ -113,7 +114,7 @@ export default function ReportsPage() {
             </Card>
             <Card>
                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">موجودی قابل برداشت</CardTitle>
+                    <CardTitle className="text-sm font-medium">موجودی کیف پول (قابل برداشت)</CardTitle>
                     <PiggyBank className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -171,7 +172,7 @@ export default function ReportsPage() {
               ) : (
                 transactions.map((tx) => (
                     <TableRow key={tx.id}>
-                    <TableCell className="font-medium">{typeNames[tx.type] || tx.type}</TableCell>
+                    <TableCell className="font-medium">{tx.type}</TableCell>
                     <TableCell>{tx.fund}</TableCell>
                     <TableCell>
                         <Badge variant={statusColors[tx.status] || 'default'}>
