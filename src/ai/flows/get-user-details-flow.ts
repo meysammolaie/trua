@@ -142,8 +142,7 @@ const getUserDetailsFlow = ai.defineFlow(
         const createdAt = data.createdAt.toDate();
         
         // Add or subtract from balance based on the transaction amount
-        // We only consider 'completed' or 'pending' (for withdrawal requests) transactions for balance calculation.
-        if (data.status === 'completed' || data.status === 'pending') {
+        if (data.status === 'completed' || data.status === 'pending') { // Pending withdrawals are deducted
             walletBalance += data.amount;
         }
 
