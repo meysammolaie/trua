@@ -2,18 +2,14 @@
 'use server';
 /**
  * @fileOverview A flow for calculating and distributing profits to investors.
- * This is a critical flow that directly impacts user balances.
+ * This flow should be run daily. It calculates profits based on fees from
+ * investments activated on the same day.
  */
 
 import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
-
-const ai = genkit({
-  plugins: [googleAI()],
-});
+import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, collectionGroup } from 'firebase/firestore';
 
 const DistributeProfitsOutputSchema = z.object({
   success: z.boolean(),
@@ -30,6 +26,7 @@ type InvestmentDoc = {
     feesUSD: number;
     status: 'pending' | 'active' | 'completed' | 'rejected';
     createdAt: Timestamp;
+    updatedAt?: Timestamp; // Assuming there's an updatedAt field when status changes to 'active'
 }
 
 export async function distributeProfits(): Promise<z.infer<typeof DistributeProfitsOutputSchema>> {
@@ -44,36 +41,43 @@ const distributeProfitsFlow = ai.defineFlow(
   },
   async () => {
     try {
-      
+      const today = new Date();
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+      // 1. Calculate today's profit pool from investments activated today.
       const investmentsRef = collection(db, 'investments');
+      const q = query(investmentsRef, 
+        where('status', '==', 'active'),
+        where('updatedAt', '>=', startOfToday),
+        where('updatedAt', '<', endOfToday)
+      );
+
+      const todaysActivatedInvestments = await getDocs(q);
+
+      const dailyDistributablePool = todaysActivatedInvestments.docs.reduce((sum, doc) => {
+        // Assuming entry fee is the primary source for the profit pool
+        const fees = doc.data().feesUSD || 0;
+        const amount = doc.data().amountUSD || 0;
+        const platformFeeRate = 0.01;
+        const lotteryFeeRate = 0.02;
+        // This calculates the portion of fees that is the entry fee (3%)
+        const entryFee = fees - (amount * (platformFeeRate + lotteryFeeRate));
+        return sum + (entryFee > 0 ? entryFee : 0);
+      }, 0);
       
-      // Get all active investments to determine who gets profits and their share
-      const activeInvestmentsQuery = query(investmentsRef, where('status', '==', 'active'));
-      const activeInvestmentsSnapshot = await getDocs(activeInvestmentsQuery);
+      if (dailyDistributablePool <= 0) {
+         return { success: true, message: 'مبلغی برای توزیع سود امروز وجود ندارد.' };
+      }
+      
+      // 2. Get all active investments to determine who gets profits and their share
+      const allActiveInvestmentsQuery = query(collection(db, 'investments'), where('status', '==', 'active'));
+      const activeInvestmentsSnapshot = await getDocs(allActiveInvestmentsQuery);
       
       if (activeInvestmentsSnapshot.empty) {
         return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
 
-      // Calculate the total profit pool from the entry fees of ALL investments ever made
-      const allTimeInvestmentsSnapshot = await getDocs(collection(db, 'investments'));
-      let totalEntryFeePool = allTimeInvestmentsSnapshot.docs.reduce((sum, doc) => {
-          const fees = doc.data().feesUSD || 0;
-          const amount = doc.data().amountUSD || 0;
-          const platformFeeRate = 0.01;
-          const lotteryFeeRate = 0.02;
-          const entryFee = fees - (amount * (platformFeeRate + lotteryFeeRate));
-          return sum + (entryFee > 0 ? entryFee : 0);
-      }, 0);
-      
-      // Let's assume for this example, we distribute 5% of the total collected entry fees daily.
-      // A more robust system would track an "undistributed" pool and clear it daily.
-      const dailyDistributablePool = totalEntryFeePool * 0.05;
-
-      if (dailyDistributablePool <= 0) {
-         return { success: true, message: 'مبلغی برای توزیع سود وجود ندارد.' };
-      }
-      
       const activeInvestments = activeInvestmentsSnapshot.docs.map(doc => doc.data() as InvestmentDoc);
       const totalActiveInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
       
@@ -81,7 +85,7 @@ const distributeProfitsFlow = ai.defineFlow(
           return { success: true, message: 'مجموع سرمایه فعال برای محاسبه سهم سود صفر است.' };
       }
       
-      // Group investments by user to calculate total investment per user
+      // 3. Group investments by user to calculate total investment per user
       const investmentsByUser = activeInvestments.reduce((acc, inv) => {
         if (!acc[inv.userId]) {
             acc[inv.userId] = 0;
@@ -90,6 +94,7 @@ const distributeProfitsFlow = ai.defineFlow(
         return acc;
       }, {} as Record<string, number>);
 
+      // 4. Create profit payout transactions in a batch
       const batch = writeBatch(db);
       const investorCount = Object.keys(investmentsByUser).length;
 
@@ -129,5 +134,3 @@ const distributeProfitsFlow = ai.defineFlow(
     }
   }
 );
-
-    

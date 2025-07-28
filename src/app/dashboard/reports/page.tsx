@@ -66,13 +66,6 @@ export default function ReportsPage() {
         toast({ title: "کپی شد", description: "رسید تراکنش در کلیپ‌بورد کپی شد." });
     }
 
-    const typeNames: Record<string, string> = {
-        investment: "سرمایه‌گذاری",
-        profit_payout: "واریز سود",
-        withdrawal: "برداشت وجه",
-        withdrawal_request: "درخواست برداشت",
-    };
-
     const statusColors: Record<string, "secondary" | "outline" | "destructive" | "default"> = {
         "فعال": "secondary",
         "در انتظار": "outline",
@@ -215,5 +208,3 @@ export default function ReportsPage() {
     </TooltipProvider>
   );
 }
-
-    

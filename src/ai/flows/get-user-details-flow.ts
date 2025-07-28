@@ -137,17 +137,10 @@ const getUserDetailsFlow = ai.defineFlow(
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Sum up only cash-like transactions for the withdrawable balance.
-        if (cashLikeTransactionTypes.includes(data.type) || data.amount > 0) { // Include all positive transactions
-             if (data.type !== 'withdrawal_request') { // Exclude pending withdrawals from sum
-                 walletBalance += data.amount;
-             }
+        // Sum up only cash-like transactions and debits for the withdrawable balance.
+        if (cashLikeTransactionTypes.includes(data.type) || data.type === 'withdrawal_request') {
+            walletBalance += data.amount;
         }
-        // Also sum up negative withdrawal requests for locked balance
-        if(data.type === 'withdrawal_request') {
-            walletBalance += data.amount; // amount is already negative
-        }
-
 
         let fundId = '-';
         if (data.investmentId) {
@@ -213,5 +206,3 @@ const getUserDetailsFlow = ai.defineFlow(
     };
   }
 );
-
-    
