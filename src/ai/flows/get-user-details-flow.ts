@@ -11,10 +11,18 @@ import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore';
-import { GetUserDetailsInputSchema, GetUserDetailsOutputSchema, UserProfileSchema, TransactionSchema, StatsSchema, ChartDataPointSchema } from '@/ai/schemas';
+import { GetUserDetailsInputSchema, UserProfileSchema, TransactionSchema, StatsSchema, ChartDataPointSchema } from '@/ai/schemas';
 
 const ai = genkit({
   plugins: [googleAI()],
+});
+
+// Re-define the output schema locally to include totalBalance
+const GetUserDetailsOutputSchema = z.object({
+  profile: UserProfileSchema,
+  transactions: z.array(TransactionSchema),
+  stats: StatsSchema,
+  investmentChartData: z.array(ChartDataPointSchema),
 });
 
 
@@ -91,7 +99,7 @@ const getUserDetailsFlow = ai.defineFlow(
         getDoc(userDocRef),
         getDocs(investmentsQuery),
         getDocs(dbTransactionsQuery),
-        getDocs(bonusSnapshot)
+        getDocs(bonusQuery)
     ]);
     
     if (!userDoc.exists()) {
@@ -139,30 +147,15 @@ const getUserDetailsFlow = ai.defineFlow(
 
     // 2.2. Withdrawable Balance and Total Profit (Calculated from the transaction ledger)
     let withdrawableBalance = 0;
-    let totalProfit = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
 
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Add or subtract from balance based on the transaction amount and status
-        if (data.status === 'completed') {
-             // Exclude initial investment debits from withdrawable balance
-             if (data.type !== 'investment') {
-                 withdrawableBalance += data.amount;
-             }
-        }
-        // Also account for pending withdrawal requests, which should be deducted from balance
-        if (data.type === 'withdrawal_request' && data.status === 'pending') {
-            withdrawableBalance += data.amount; // This amount is already negative
-        }
+        // Accumulate all transactions to calculate the final withdrawable balance
+        withdrawableBalance += data.amount;
 
-        // Calculate total profit separately for display
-        if (data.type === 'profit_payout' && data.status === 'completed') {
-            totalProfit += data.amount;
-        }
-        
         // Find the associated investment for fund details if applicable
         let fundId = '-';
         if (data.investmentId) {
@@ -212,7 +205,7 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // NEW LOGIC
+    // Final Calculation of Stats
     // totalProfit is now the "withdrawable" balance.
     // walletBalance is now the "total net worth" (active investment + withdrawable)
     const stats: z.infer<typeof StatsSchema> = {
