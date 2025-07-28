@@ -53,7 +53,10 @@ const getAdminTicketsFlow = ai.defineFlow(
       const stats = { open: 0, in_progress: 0, closed: 0, total: 0 };
       const tickets = querySnapshot.docs.map(doc => {
         const data = doc.data();
-        stats[data.status as keyof typeof stats]++;
+        const status = data.status as keyof typeof stats;
+        if (status in stats) {
+            stats[status]++;
+        }
         stats.total++;
         return {
           id: doc.id,
