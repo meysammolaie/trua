@@ -15,6 +15,7 @@ const ai = genkit({
   plugins: [],
 });
 
+
 const DistributeProfitsOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),

@@ -349,7 +349,7 @@ export function Overview() {
                                 </div>
                             </TableCell>
                             <TableCell>
-                                <Badge className="text-xs" variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'در انتظار' ? 'outline' : 'destructive'}>
+                                <Badge className="text-xs" variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'تکمیل شده' ? 'default' : 'outline'}>
                                     {tx.status}
                                 </Badge>
                             </TableCell>
