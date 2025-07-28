@@ -13,7 +13,7 @@ const ai = genkit({
   plugins: [],
 });
 
-export const CreateTaskInputSchema = z.object({
+const CreateTaskInputSchema = z.object({
   title: z.string(),
   description: z.string(),
   rewardAmount: z.number(),
@@ -21,7 +21,7 @@ export const CreateTaskInputSchema = z.object({
 });
 export type CreateTaskInput = z.infer<typeof CreateTaskInputSchema>;
 
-export const CreateTaskOutputSchema = z.object({
+const CreateTaskOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
   taskId: z.string().optional(),

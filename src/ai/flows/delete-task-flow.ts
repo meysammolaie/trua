@@ -13,12 +13,12 @@ const ai = genkit({
   plugins: [],
 });
 
-export const DeleteTaskInputSchema = z.object({
+const DeleteTaskInputSchema = z.object({
   taskId: z.string(),
 });
 export type DeleteTaskInput = z.infer<typeof DeleteTaskInputSchema>;
 
-export const DeleteTaskOutputSchema = z.object({
+const DeleteTaskOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
