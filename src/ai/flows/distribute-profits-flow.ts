@@ -10,7 +10,6 @@ import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, runTransaction } from 'firebase/firestore';
-import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -27,6 +26,8 @@ type InvestmentDoc = {
     userId: string;
     amountUSD: number;
     netAmountUSD: number;
+    feesUSD: number;
+    status: 'pending' | 'active' | 'completed' | 'rejected';
     createdAt: Timestamp;
 }
 
@@ -42,30 +43,21 @@ const distributeProfitsFlow = ai.defineFlow(
   },
   async () => {
     try {
-      const settings = await getPlatformSettings();
+      
       const investmentsRef = collection(db, 'investments');
       const allInvestmentsQuery = query(investmentsRef);
-
       const investmentsSnapshot = await getDocs(allInvestmentsQuery);
       
-      const allInvestments = investmentsSnapshot.docs.map(doc => doc.data());
+      const allInvestments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDoc);
       const activeInvestments = allInvestments.filter(inv => inv.status === 'active');
       
       if (activeInvestments.length === 0) {
         return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
 
-      let totalFeePool = 0;
-      allInvestments.forEach(inv => {
-        if(inv.status === 'active' || inv.status === 'completed') {
-            const entryFee = inv.amountUSD * (settings.entryFee / 100);
-            totalFeePool += entryFee;
-            if (inv.status === 'completed' && inv.exitFee) { // Assuming exitFee is stored on completion
-                totalFeePool += inv.exitFee;
-            }
-        }
-      });
-      
+      // Calculate the total profit pool from all investment fees
+      let totalFeePool = allInvestments.reduce((sum, inv) => sum + (inv.feesUSD || 0), 0);
+
       const dailyDistributablePool = totalFeePool * 0.05; 
 
       if (dailyDistributablePool <= 0) {
@@ -125,4 +117,3 @@ const distributeProfitsFlow = ai.defineFlow(
     }
   }
 );
-

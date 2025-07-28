@@ -49,6 +49,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
 
     try {
         const settings = await getPlatformSettings();
+        // Use the single source of truth to get the current, accurate balance
         const userDetails = await getUserDetails({ userId });
         const currentBalance = userDetails.stats.walletBalance;
 
