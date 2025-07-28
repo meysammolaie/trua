@@ -7,14 +7,13 @@
  */
 
 import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { GetUserDetailsInputSchema, UserProfileSchema, TransactionSchema, StatsSchema, ChartDataPointSchema, GetUserDetailsOutputSchema } from '@/ai/schemas';
 
 const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [],
 });
 
 export type GetUserDetailsInput = z.infer<typeof GetUserDetailsInputSchema>;
@@ -123,26 +122,26 @@ const getUserDetailsFlow = ai.defineFlow(
     let walletBalance = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
     
-    // These are the only transaction types that constitute the liquid, withdrawable wallet balance.
-    const creditTransactionTypes = ['profit_payout', 'commission', 'principal_return', 'bonus', 'withdrawal_refund'];
-    
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Sum up cash-like credits for the withdrawable balance.
-        if (creditTransactionTypes.includes(data.type) && data.status === 'completed') {
+        // Sum up all transactions to get the final balance.
+        // Credits are positive, debits are negative.
+        if (data.status === 'completed' || data.status === 'pending') {
             walletBalance += data.amount;
-        } 
-        // Subtract pending withdrawal requests from the balance.
-        else if (data.type === 'withdrawal_request' && data.status === 'pending') {
-            walletBalance += data.amount; // amount is already negative
         }
-
+        
         let fundId = '-';
         if (data.investmentId) {
             const relatedInvestment = investmentsSnapshot.docs.find(inv => inv.id === data.investmentId)?.data();
             if (relatedInvestment) {
+                fundId = fundNames[relatedInvestment.fundId as keyof typeof fundNames] || relatedInvestment.fundId;
+            }
+        } else if (data.type === 'investment'){
+            // This is for display purposes, it's not a real transaction in the ledger
+            const relatedInvestment = investmentsSnapshot.docs.find(inv => inv.id === doc.id)?.data();
+             if (relatedInvestment) {
                 fundId = fundNames[relatedInvestment.fundId as keyof typeof fundNames] || relatedInvestment.fundId;
             }
         }

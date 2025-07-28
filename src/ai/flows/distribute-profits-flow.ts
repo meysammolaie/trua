@@ -2,8 +2,7 @@
 'use server';
 /**
  * @fileOverview A flow for calculating and distributing profits to investors.
- * This flow should be run daily. It calculates profits based on fees from
- * all active investments and then marks them as completed to avoid double-counting.
+ * This flow now uses the daily_fees ledger to ensure fees are only distributed once.
  */
 
 import {genkit} from 'genkit';
@@ -15,7 +14,6 @@ const ai = genkit({
   plugins: [],
 });
 
-
 const DistributeProfitsOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
@@ -26,12 +24,7 @@ const DistributeProfitsOutputSchema = z.object({
 type InvestmentDoc = {
     id: string;
     userId: string;
-    amountUSD: number;
     netAmountUSD: number;
-    feesUSD: number;
-    status: 'pending' | 'active' | 'completed' | 'rejected';
-    createdAt: Timestamp;
-    updatedAt?: Timestamp; 
 }
 
 export async function distributeProfits(): Promise<z.infer<typeof DistributeProfitsOutputSchema>> {
@@ -46,30 +39,35 @@ const distributeProfitsFlow = ai.defineFlow(
   },
   async () => {
     try {
-      // 1. Get all *active* investments. These are the ones that will contribute to and receive profit.
-      const allActiveInvestmentsQuery = query(collection(db, 'investments'), where('status', '==', 'active'));
-      const activeInvestmentsSnapshot = await getDocs(allActiveInvestmentsQuery);
+      // 1. Get all undistributed fees from the ledger
+      const feesToDistributeQuery = query(collection(db, 'daily_fees'), where('distributed', '==', false));
+      const feesSnapshot = await getDocs(feesToDistributeQuery);
       
-      if (activeInvestmentsSnapshot.empty) {
-        return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
+      if (feesSnapshot.empty) {
+        return { success: true, message: 'هیچ کارمزد جدیدی برای توزیع سود یافت نشد.' };
       }
       
-      // 2. Calculate the total profit pool from the fees of all active investments.
+      // 2. Calculate the total profit pool from the fee ledger.
       let dailyDistributablePool = 0;
-      const activeInvestments: (InvestmentDoc & {ref: any})[] = [];
-
-      activeInvestmentsSnapshot.docs.forEach(doc => {
-          const investment = doc.data() as InvestmentDoc;
-          // The profit pool is the sum of all fees collected from these investments.
-          dailyDistributablePool += investment.feesUSD || 0;
-          activeInvestments.push({ ...investment, id: doc.id, ref: doc.ref });
+      const feeDocsToUpdate: any[] = [];
+      feesSnapshot.forEach(doc => {
+          dailyDistributablePool += doc.data().amount || 0;
+          feeDocsToUpdate.push(doc.ref);
       });
       
       if (dailyDistributablePool <= 0) {
          return { success: true, message: 'مبلغی برای توزیع سود امروز وجود ندارد.' };
       }
       
-      // 3. Calculate the total net investment amount to determine profit shares.
+      // 3. Get all *active* investments to determine profit shares.
+      const allActiveInvestmentsQuery = query(collection(db, 'investments'), where('status', '==', 'active'));
+      const activeInvestmentsSnapshot = await getDocs(allActiveInvestmentsQuery);
+      
+      if (activeInvestmentsSnapshot.empty) {
+        return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای دریافت سود یافت نشد.' };
+      }
+      
+      const activeInvestments = activeInvestmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InvestmentDoc));
       const totalActiveInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
       
       if (totalActiveInvestmentAmount <= 0) {
@@ -107,9 +105,9 @@ const distributeProfitsFlow = ai.defineFlow(
         }
       }
 
-      // 5. IMPORTANT: Mark all processed investments as 'completed' so they are not included in the next run.
-      activeInvestments.forEach(inv => {
-          batch.update(inv.ref, { status: 'completed', updatedAt: serverTimestamp() });
+      // 5. IMPORTANT: Mark all processed fee documents as 'distributed' so they are not included in the next run.
+      feeDocsToUpdate.forEach(ref => {
+          batch.update(ref, { distributed: true });
       });
 
       await batch.commit();

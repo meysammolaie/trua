@@ -9,7 +9,6 @@
  */
 
 import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, query, where, getDocs } from 'firebase/firestore';
@@ -17,7 +16,7 @@ import { getPlatformSettings } from './platform-settings-flow';
 import { UpdateInvestmentStatusInputSchema, UpdateInvestmentStatusOutputSchema } from '@/ai/schemas';
 
 const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [],
 });
 
 export type UpdateInvestmentStatusInput = z.infer<typeof UpdateInvestmentStatusInputSchema>;
@@ -66,6 +65,17 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         transaction.update(investmentRef, updatePayload);
         
         if (newStatus === 'active') {
+
+            // Add investment fees to the daily_fees collection for profit distribution
+            if (investmentData.feesUSD && investmentData.feesUSD > 0) {
+                const feeLedgerRef = doc(collection(db, 'daily_fees'));
+                transaction.set(feeLedgerRef, {
+                    amount: investmentData.feesUSD,
+                    distributed: false,
+                    createdAt: serverTimestamp(),
+                    investmentId: investmentId,
+                });
+            }
 
             const bonusesRef = collection(db, 'bonuses');
             const userBonusQuery = query(bonusesRef, where('userId', '==', investmentData.userId));
