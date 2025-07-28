@@ -11,6 +11,7 @@ import {
   Home,
   LineChart,
   Menu,
+  MessageSquare,
   Package,
   Settings,
   Users,
@@ -37,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { ChatWidget } from "@/components/chat/chat-widget";
 import { MobileDashboardNav } from "@/components/layout/mobile-dashboard-nav";
+import { Notifications } from "@/components/dashboard/notifications";
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "داشبورد" },
@@ -45,6 +47,7 @@ const navItems = [
   { href: "/dashboard/analytics", icon: CandlestickChart, label: "تحلیل بازار" },
   { href: "/dashboard/tasks", icon: ClipboardCheck, label: "وظایف" },
   { href: "/dashboard/referrals", icon: Users, label: "معرفی‌ها" },
+  { href: "/dashboard/support", icon: MessageSquare, label: "پشتیبانی" },
   { href: "/dashboard/profile", icon: CircleUser, label: "پروفایل" },
 ];
 
@@ -121,10 +124,9 @@ export default function DashboardLayout({
               <VerdantVaultLogo className="h-6 w-6" />
               <span className="">Trusva</span>
             </Link>
-            <Button variant="ghost" size="icon" className="ml-auto h-8 w-8">
-              <Bell className="h-4 w-4" />
-              <span className="sr-only">Toggle notifications</span>
-            </Button>
+            <div className="ml-auto">
+              <Notifications />
+            </div>
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
@@ -167,9 +169,10 @@ export default function DashboardLayout({
               <h1 className="font-semibold text-lg">{getPageTitle()}</h1>
           </div>
           
-          <div className="w-full flex-1 hidden md:block">
-            {/* Can add a search bar here if needed */}
-          </div>
+          <div className="w-full flex-1 hidden md:block" />
+           <div className="md:hidden">
+              <Notifications />
+            </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
