@@ -31,11 +31,11 @@ import {
 } from "@/components/ui/select";
 import { Search, FileDown, CheckCircle, Clock, Ban, DollarSign, TrendingUp, Loader2, AlertTriangle, Eye } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
-import { TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
-import { getAllTransactionsAction } from "@/app/actions/transactions";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { InvestmentDetailsDialog } from "@/components/admin/investment-details-dialog";
+import { InvestmentWithUser } from "@/ai/flows/get-all-investments-flow";
+import { getAllInvestmentsAction } from "@/app/actions/investment";
 
 const fundNames: Record<string, string> = {
     gold: "طلا",
@@ -47,15 +47,15 @@ const fundNames: Record<string, string> = {
 const statusNames: Record<string, string> = {
     pending: "در انتظار",
     active: "فعال",
-    completed: "خاتمه یافته",
+    completed: "تکمیل شده",
     rejected: "رد شده",
 };
 
 function AdminInvestmentsPageContent() {
     const { toast } = useToast();
     const searchParams = useSearchParams();
-    const [allInvestments, setAllInvestments] = useState<TransactionWithUser[]>([]);
-    const [filteredInvestments, setFilteredInvestments] = useState<TransactionWithUser[]>([]);
+    const [allInvestments, setAllInvestments] = useState<InvestmentWithUser[]>([]);
+    const [filteredInvestments, setFilteredInvestments] = useState<InvestmentWithUser[]>([]);
     const [stats, setStats] = useState({ totalAmount: 0, pendingCount: 0, averageAmount: 0 });
     const [loading, setLoading] = useState(true);
     const [selectedInvestmentId, setSelectedInvestmentId] = useState<string | null>(null);
@@ -74,14 +74,13 @@ function AdminInvestmentsPageContent() {
 
     const fetchInvestments = useCallback(() => {
         setLoading(true);
-        getAllTransactionsAction()
+        getAllInvestmentsAction()
             .then(data => {
-                const investmentsOnly = data.transactions.filter(t => t.type === 'investment');
-                setAllInvestments(investmentsOnly);
+                setAllInvestments(data.investments);
                 
-                const activeInvestments = investmentsOnly.filter(inv => inv.status === 'active');
-                const totalAmount = activeInvestments.reduce((sum, inv) => sum + Math.abs(inv.amount), 0);
-                const pendingCount = investmentsOnly.filter(inv => inv.status === 'pending').length;
+                const activeInvestments = data.investments.filter(inv => inv.status === 'active');
+                const totalAmount = activeInvestments.reduce((sum, inv) => sum + inv.amountUSD, 0);
+                const pendingCount = data.investments.filter(inv => inv.status === 'pending').length;
                 const averageAmount = activeInvestments.length > 0 ? totalAmount / activeInvestments.length : 0;
                 setStats({ totalAmount, pendingCount, averageAmount });
             })
@@ -113,8 +112,7 @@ function AdminInvestmentsPageContent() {
         }
 
         if (fundFilter !== "all") {
-            const fundKey = Object.keys(fundNames).find(key => fundNames[key] === fundFilter);
-            result = result.filter(inv => inv.fundId === fundKey);
+            result = result.filter(inv => inv.fundId === fundFilter);
         }
         
         if (statusFilter !== "all") {
@@ -238,7 +236,7 @@ function AdminInvestmentsPageContent() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">همه صندوق‌ها</SelectItem>
-                            {Object.values(fundNames).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                            {Object.entries(fundNames).map(([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -249,7 +247,7 @@ function AdminInvestmentsPageContent() {
                             <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                             <SelectItem value="pending">در انتظار</SelectItem>
                             <SelectItem value="active">فعال</SelectItem>
-                            <SelectItem value="completed">خاتمه یافته</SelectItem>
+                            <SelectItem value="completed">تکمیل شده</SelectItem>
                             <SelectItem value="rejected">رد شده</SelectItem>
                         </SelectContent>
                     </Select>
@@ -288,28 +286,28 @@ function AdminInvestmentsPageContent() {
                             </TableRow>
                         ) : (
                             filteredInvestments.map((inv) => (
-                                <TableRow key={inv.id} className="cursor-pointer" onClick={() => setSelectedInvestmentId(inv.originalInvestmentId!)}>
+                                <TableRow key={inv.id} className="cursor-pointer" onClick={() => setSelectedInvestmentId(inv.id)}>
                                     <TableCell>
                                         <div className="font-medium">{inv.userFullName}</div>
                                         <div className="text-xs text-muted-foreground">{inv.userEmail}</div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell">{fundNames[inv.fundId!] || inv.fundId}</TableCell>
+                                    <TableCell className="hidden md:table-cell">{fundNames[inv.fundId] || inv.fundId}</TableCell>
                                     <TableCell className="text-right font-mono">
-                                        {formatCurrency(inv.amount)}
+                                        {formatCurrency(inv.amountUSD)}
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell text-center">
                                         {inv.createdAt}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={getStatusBadgeVariant(inv.status!)}>
+                                        <Badge variant={getStatusBadgeVariant(inv.status)}>
                                         <div className="flex items-center gap-2">
-                                                {getStatusIcon(inv.status!)}
-                                                <span>{statusNames[inv.status!] || inv.status}</span>
+                                                {getStatusIcon(inv.status)}
+                                                <span>{statusNames[inv.status] || inv.status}</span>
                                         </div>
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelectedInvestmentId(inv.originalInvestmentId!); }}>
+                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelectedInvestmentId(inv.id); }}>
                                             <Eye className="h-4 w-4" />
                                             <span className="sr-only">مشاهده جزئیات</span>
                                         </Button>
