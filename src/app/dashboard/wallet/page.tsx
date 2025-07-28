@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Wallet, Loader2, PiggyBank, Lock } from "lucide-react";
+import { DollarSign, Wallet, Loader2, PiggyBank, Lock, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserWalletAction } from "@/app/actions/wallet";
 import { WithdrawalDialog } from "@/components/dashboard/withdrawal-dialog";
@@ -50,9 +50,9 @@ export default function WalletPage() {
     }, [fetchWalletData]);
 
     const walletBalance = walletData?.walletBalance ?? 0;
-    const totalAssetValue = walletData?.totalAssetValue ?? 0;
+    const activeInvestment = walletData?.totalAssetValue ?? 0; // This is the active investment amount
     const lockedBonus = walletData?.lockedBonus ?? 0;
-    const totalValue = totalAssetValue + walletBalance + lockedBonus;
+    const totalValue = walletBalance + lockedBonus; // Correct calculation
 
   return (
     <>
@@ -69,7 +69,7 @@ export default function WalletPage() {
             {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
                  <div className="text-4xl font-bold font-mono text-green-400">${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             )}
-            <p className="text-xs text-muted-foreground pt-2">مجموع دارایی‌های فعال، موجودی کیف پول و جایزه قفل شده شما.</p>
+            <p className="text-xs text-muted-foreground pt-2">مجموع موجودی قابل برداشت و جایزه قفل شده شما.</p>
           </CardContent>
         </Card>
         
@@ -89,11 +89,11 @@ export default function WalletPage() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">سرمایه فعال</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-                        <div className="text-2xl font-bold font-mono">${totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold font-mono">${activeInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     )}
                     <p className="text-xs text-muted-foreground pt-1">این مبلغ پایه محاسبه سود روزانه شماست.</p>
                 </CardContent>
@@ -126,7 +126,7 @@ export default function WalletPage() {
             </CardHeader>
             <CardContent>
                 <p className="text-sm text-muted-foreground">
-                    در حال حاضر، تمام دارایی‌های فعال شما در بخش "سرمایه فعال" قرار دارد و پایه محاسبه سود روزانه است. برای نقد کردن اصل سرمایه، باید با پشتیبانی تماس بگیرید تا سرمایه‌گذاری شما به حالت "تکمیل شده" درآید و مبلغ آن به کیف پول شما بازگردانده شود.
+                    موجودی قابل برداشت شما شامل اصل سرمایه‌گذاری‌های فعال، سودهای روزانه، کمیسیون‌ها و جوایز آزاد شده است. شما می‌توانید هر زمان که بخواهید، این مبلغ را برداشت کنید.
                 </p>
             </CardContent>
         </Card>
