@@ -2,10 +2,7 @@
 'use server';
 /**
  * @fileOverview A flow for fetching all details for a single user.
- *
- * - getUserDetails - Fetches profile, stats, and transactions for a given user.
- * - GetUserDetailsInput - The input type for the getUserDetails function.
- * - GetUserDetailsOutput - The return type for the getUserDetails function.
+ * This is the single source of truth for user financial data.
  */
 
 import {genkit} from 'genkit';
@@ -27,9 +24,8 @@ type InvestmentDocument = {
   id: string;
   userId: string;
   fundId: string;
-  amount: number;
-  amountUSD: number; // Gross amount in USD
-  netAmountUSD: number; // Net amount after fees
+  amountUSD: number; 
+  netAmountUSD: number; 
   status: 'pending' | 'active' | 'completed' | 'rejected';
   createdAt: Timestamp;
   transactionHash: string;
@@ -74,19 +70,10 @@ const getUserDetailsFlow = ai.defineFlow(
   },
   async ({ userId }) => {
     
-    // 1. Fetch user profile, investments, and other transactions in parallel
+    // 1. Fetch user profile, investments, and all transactions in parallel
     const userDocRef = doc(db, "users", userId);
-    const investmentsCollection = collection(db, "investments");
-    const dbTransactionsCollection = collection(db, "transactions");
-
-    const investmentsQuery = query(
-        investmentsCollection, 
-        where("userId", "==", userId)
-    );
-     const dbTransactionsQuery = query(
-        dbTransactionsCollection, 
-        where("userId", "==", userId)
-    );
+    const investmentsQuery = query(collection(db, "investments"), where("userId", "==", userId));
+    const dbTransactionsQuery = query(collection(db, "transactions"), where("userId", "==", userId));
 
     const [userDoc, investmentsSnapshot, dbTransactionsSnapshot] = await Promise.all([
         getDoc(userDocRef),
@@ -99,7 +86,7 @@ const getUserDetailsFlow = ai.defineFlow(
     }
     const userData = userDoc.data();
     
-    // 2. Process investments and calculate stats
+    // 2. Calculate Active Investment (Net) and prepare data for charts/history
     let activeNetInvestment = 0;
     const investmentByMonth: Record<string, number> = {};
     const allTransactionsForHistory: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
@@ -107,17 +94,16 @@ const getUserDetailsFlow = ai.defineFlow(
     const activeInvestments = investmentsSnapshot.docs.filter(doc => doc.data().status === 'active');
     activeInvestments.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
-        activeNetInvestment += data.netAmountUSD; // Use NET amount for active investment value
+        activeNetInvestment += data.netAmountUSD;
 
         const date = data.createdAt.toDate();
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         if(!investmentByMonth[monthKey]) {
             investmentByMonth[monthKey] = 0;
         }
-        investmentByMonth[monthKey] += data.amountUSD; // Chart can still show gross
+        investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // 3. Process all investments for transaction history display
     investmentsSnapshot.docs.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
         const createdAt = data.createdAt.toDate();
@@ -133,8 +119,7 @@ const getUserDetailsFlow = ai.defineFlow(
         });
     });
 
-
-    // 4. Calculate REAL wallet balance and total profit from the transactions collection
+    // 3. Calculate REAL wallet balance and total profit by summing up the transactions collection
     let withdrawableBalance = 0;
     let totalProfit = 0;
 
@@ -142,17 +127,14 @@ const getUserDetailsFlow = ai.defineFlow(
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Core logic for wallet balance: sum up amounts of relevant transactions.
-        // We consider 'completed' transactions and 'pending' withdrawals.
-        if(data.status === 'completed' || data.status === 'pending') {
-            withdrawableBalance += data.amount;
-        }
+        // Sum up amounts of all relevant transactions to get the current balance
+        // Positive amounts are credits (profit), negative are debits (withdrawal requests)
+        withdrawableBalance += data.amount;
 
         if (data.type === 'profit_payout' && data.status === 'completed') {
             totalProfit += data.amount;
         }
         
-        // Add to history list for display
         allTransactionsForHistory.push({
             id: doc.id,
             type: data.type,
@@ -165,8 +147,7 @@ const getUserDetailsFlow = ai.defineFlow(
         });
     })
 
-
-    // 5. Prepare Chart Data
+    // 4. Prepare Chart Data
     const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     const investmentChartData = Object.entries(investmentByMonth)
         .sort(([a], [b]) => a.localeCompare(b))
@@ -179,8 +160,7 @@ const getUserDetailsFlow = ai.defineFlow(
             };
         });
 
-
-    // 6. Assemble final output
+    // 5. Assemble final output
     const profile: z.infer<typeof UserProfileSchema> = {
         uid: userDoc.id,
         firstName: userData.firstName,
@@ -191,11 +171,11 @@ const getUserDetailsFlow = ai.defineFlow(
     };
     
     const stats: z.infer<typeof StatsSchema> = {
-        activeInvestment: activeNetInvestment, // Net value of active investments
-        totalProfit: totalProfit, // For display purposes
+        activeInvestment: activeNetInvestment,
+        totalProfit: totalProfit,
         lotteryTickets: Math.floor(activeNetInvestment / 10),
-        walletBalance: withdrawableBalance, // Calculated free cash from transactions
-        totalBalance: activeNetInvestment + withdrawableBalance, // Total net worth
+        walletBalance: withdrawableBalance, 
+        totalBalance: activeNetInvestment + withdrawableBalance,
     };
     
     const sortedTransactions = allTransactionsForHistory.sort((a,b) => b.timestamp - a.timestamp);

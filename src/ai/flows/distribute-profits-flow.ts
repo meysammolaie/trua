@@ -8,7 +8,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
@@ -22,6 +22,13 @@ const DistributeProfitsOutputSchema = z.object({
   investorCount: z.number().optional(),
 });
 
+type InvestmentDoc = {
+    userId: string;
+    amountUSD: number;
+    netAmountUSD: number;
+    createdAt: Timestamp;
+}
+
 export async function distributeProfits(): Promise<z.infer<typeof DistributeProfitsOutputSchema>> {
   return await distributeProfitsFlow({});
 }
@@ -34,54 +41,43 @@ const distributeProfitsFlow = ai.defineFlow(
   },
   async () => {
     try {
-      // 1. Get platform settings and all active investments
       const settings = await getPlatformSettings();
       const investmentsRef = collection(db, 'investments');
       const activeInvestmentsQuery = query(investmentsRef, where('status', '==', 'active'));
 
       const investmentsSnapshot = await getDocs(activeInvestmentsQuery);
-
-      const activeInvestments = investmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const activeInvestments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDoc);
 
       if (activeInvestments.length === 0) {
         return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
 
-      // 2. Calculate total profit pool from fees of active investments.
-      // A more robust system would track fees in a separate ledger or collection.
+      // Calculate total profit pool from entry and platform fees based on ALL active investments
       let totalProfitPool = 0;
       activeInvestments.forEach(inv => {
-        const amountUSD = inv.amountUSD as number;
-        // Profit pool is generated from entry and platform fees
-        const entryFeeProfit = amountUSD * (settings.entryFee / 100);
-        const platformFeeProfit = amountUSD * (settings.platformFee / 100);
-        totalProfitPool += entryFeeProfit + platformFeeProfit;
+        const entryFeeProfit = inv.amountUSD * (settings.entryFee / 100);
+        // platformFee is for platform maintenance, not profit pool. The main driver is entry/exit fees.
+        totalProfitPool += entryFeeProfit; 
       });
 
       if (totalProfitPool <= 0) {
          return { success: true, message: 'مبلغی برای توزیع سود وجود ندارد.' };
       }
       
-      // Calculate total active investment amount to determine profit share percentages
-      const totalInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + (inv.netAmountUSD as number), 0);
+      const totalInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
       
       if (totalInvestmentAmount <= 0) {
           return { success: true, message: 'مجموع سرمایه فعال برای محاسبه سهم سود صفر است.' };
       }
       
-      // Group investments by user to calculate total investment per user
-      const investmentsByUser: Record<string, number> = {};
-      activeInvestments.forEach(inv => {
-          const userId = inv.userId as string;
-          const netAmount = inv.netAmountUSD as number;
-          if (!investmentsByUser[userId]) {
-              investmentsByUser[userId] = 0;
-          }
-          investmentsByUser[userId] += netAmount;
-      });
+      const investmentsByUser = activeInvestments.reduce((acc, inv) => {
+        if (!acc[inv.userId]) {
+            acc[inv.userId] = 0;
+        }
+        acc[inv.userId] += inv.netAmountUSD;
+        return acc;
+      }, {} as Record<string, number>);
 
-
-      // 3. Distribute profit and prepare batch write
       const batch = writeBatch(db);
       const investorCount = Object.keys(investmentsByUser).length;
 
@@ -90,7 +86,6 @@ const distributeProfitsFlow = ai.defineFlow(
         const profitShare = (userTotalInvestment / totalInvestmentAmount) * totalProfitPool;
 
         if (profitShare > 0) {
-            // Create a transaction record for the profit payout
             const transactionRef = doc(collection(db, 'transactions'));
             batch.set(transactionRef, {
                 userId,
@@ -98,12 +93,11 @@ const distributeProfitsFlow = ai.defineFlow(
                 amount: profitShare,
                 status: 'completed',
                 createdAt: serverTimestamp(),
-                details: `Profit distribution based on $${userTotalInvestment.toLocaleString()} net investment.`,
+                details: `سود روزانه بر اساس سرمایه خالص $${userTotalInvestment.toLocaleString()}`,
             });
         }
       }
 
-      // 4. Commit the batch write
       await batch.commit();
 
       return {
@@ -123,5 +117,3 @@ const distributeProfitsFlow = ai.defineFlow(
     }
   }
 );
-
-    

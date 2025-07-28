@@ -40,7 +40,6 @@ const createWithdrawalRequestFlow = ai.defineFlow(
   },
   async ({ userId, amount, walletAddress, twoFactorCode }) => {
     
-    // 1. Validate 2FA code (placeholder logic)
     if (twoFactorCode !== '123456') { // Placeholder for real 2FA validation
         return {
             success: false,
@@ -50,8 +49,6 @@ const createWithdrawalRequestFlow = ai.defineFlow(
 
     try {
         const settings = await getPlatformSettings();
-        
-        // Use the single source of truth to get the current, accurately calculated balance.
         const userDetails = await getUserDetails({ userId });
         const currentBalance = userDetails.stats.walletBalance;
 
@@ -62,7 +59,6 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             };
         }
 
-        // Check for an existing 'pending' withdrawal request
         const pendingWithdrawalsQuery = query(
             collection(db, 'withdrawals'),
             where('userId', '==', userId),
@@ -84,7 +80,6 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         }
 
         await runTransaction(db, async (transaction) => {
-            // Calculate fees and net amount
             const exitFee = amount * (settings.exitFee / 100);
             const networkFee = settings.networkFee || 0;
             const totalFees = exitFee + networkFee;
@@ -94,13 +89,12 @@ const createWithdrawalRequestFlow = ai.defineFlow(
                 throw new Error("مبلغ درخواستی پس از کسر کارمزدها باید مثبت باشد.");
             }
 
-            // A. Create the withdrawal document
             const withdrawalRef = doc(collection(db, 'withdrawals'));
             const newWithdrawal = {
                 userId,
                 amount,
                 walletAddress,
-                status: 'pending', // pending, approved, rejected, completed
+                status: 'pending', 
                 createdAt: serverTimestamp(),
                 exitFee: exitFee,
                 networkFee: networkFee,
@@ -108,17 +102,15 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             };
             transaction.set(withdrawalRef, newWithdrawal);
 
-            // B. Create a corresponding 'pending' transaction record for the user's history
-            // This is crucial for the new balance calculation logic.
             const transactionRef = doc(collection(db, 'transactions'));
             transaction.set(transactionRef, {
                 userId,
                 type: 'withdrawal_request',
-                amount: -amount, // Make it a negative value as it's a debit
+                amount: -amount, // Debit the full amount from balance immediately
                 status: 'pending',
                 createdAt: serverTimestamp(),
                 details: `درخواست برداشت به آدرس ${walletAddress}`,
-                withdrawalId: withdrawalRef.id // Link transaction to withdrawal request
+                withdrawalId: withdrawalRef.id
             });
         });
 
