@@ -93,7 +93,28 @@ const getUserDetailsFlow = ai.defineFlow(
     ]);
     
     if (!userDoc.exists()) {
-        throw new Error(`User with ID ${userId} not found.`);
+        console.warn(`User document with ID ${userId} not found. Returning empty profile.`);
+        // Return a default, empty object to prevent crashes on other parts of the system
+        return {
+            profile: {
+                uid: userId,
+                firstName: 'کاربر',
+                lastName: 'نامشخص',
+                email: 'نامشخص',
+                createdAt: '-',
+                status: 'blocked',
+            },
+            transactions: [],
+            stats: {
+                activeInvestment: 0,
+                totalProfit: 0,
+                lotteryTickets: 0,
+                walletBalance: 0,
+                totalBalance: 0,
+                lockedBonus: 0,
+            },
+            investmentChartData: [],
+        };
     }
     const userData = userDoc.data();
     
