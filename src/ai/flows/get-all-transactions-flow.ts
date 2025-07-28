@@ -78,6 +78,8 @@ type TransactionDocument = {
     createdAt: Timestamp;
     details?: string;
     fundId?: string;
+    status?: 'pending' | 'active' | 'completed' | 'failed' | 'rejected';
+    originalInvestmentId?: string;
 }
 
 type InvestmentDocument = {
@@ -141,8 +143,9 @@ const getAllTransactionsFlow = ai.defineFlow(
             fundId: tx.fundId,
             amount: tx.amount,
             type: tx.type,
-            status: 'completed', // All ledger transactions are considered complete
+            status: tx.status,
             createdAt: tx.createdAt.toDate().toLocaleDateString('fa-IR'),
+            originalInvestmentId: tx.originalInvestmentId
         };
     });
 
@@ -184,8 +187,8 @@ const getAllTransactionsFlow = ai.defineFlow(
       transactions: allTransactions,
       stats: {
         totalTransactions: allTransactions.length,
-        totalRevenue,
-        totalLotteryPool,
+        totalRevenue: totalRevenue || 0,
+        totalLotteryPool: totalLotteryPool || 0,
         fundStats: fundStatsArray,
       },
     };
