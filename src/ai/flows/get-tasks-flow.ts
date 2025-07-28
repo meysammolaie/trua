@@ -22,7 +22,7 @@ const TaskSchema = z.object({
   createdAt: z.string(),
 });
 export type Task = z.infer<typeof TaskSchema>;
-export type GetTasksOutput = z.array(TaskSchema>;
+export type GetTasksOutput = z.infer<typeof z.array(TaskSchema)>;
 
 export async function getTasks(): Promise<GetTasksOutput> {
   return await getTasksFlow({});
