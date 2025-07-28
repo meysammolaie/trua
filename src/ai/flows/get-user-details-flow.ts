@@ -41,6 +41,7 @@ type DbTransactionDocument = {
     proof?: string;
     withdrawalId?: string;
     investmentId?: string;
+    fundId?: string;
 }
 
 const fundNames: Record<string, string> = {
@@ -51,13 +52,13 @@ const fundNames: Record<string, string> = {
 };
 
 const transactionTypeNames: Record<string, string> = {
-    investment: "سرمایه‌گذاری",
-    profit_payout: "واریز سود",
-    commission: "کمیسیون",
-    principal_return: "بازگشت اصل پول",
+    investment: "سرمایه‌گذاری در صندوق",
+    profit_payout: "واریز سود روزانه",
+    commission: "کمیسیون معرفی",
+    principal_return: "بازگشت اصل سرمایه",
     withdrawal_request: "درخواست برداشت",
-    withdrawal_refund: "لغو برداشت",
-    bonus: "جایزه"
+    withdrawal_refund: "لغو برداشت و بازگشت وجه",
+    bonus: "جایزه و پاداش"
 };
 
 const transactionStatusNames: Record<string, string> = {
@@ -138,19 +139,13 @@ const getUserDetailsFlow = ai.defineFlow(
             totalProfit += data.amount;
         }
 
-        let fundId = '-';
-        if (data.investmentId) {
-            const relatedInvestment = investmentsSnapshot.docs.find(inv => inv.id === data.investmentId)?.data();
-            if (relatedInvestment) {
-                fundId = fundNames[relatedInvestment.fundId as keyof typeof fundNames] || relatedInvestment.fundId;
-            }
-        }
+        let fundId = data.fundId ? fundNames[data.fundId] : (data.details || '-');
 
         // Add all transactions for display in history
         allTransactionsForHistory.push({
             id: doc.id,
             type: transactionTypeNames[data.type as keyof typeof transactionTypeNames] || data.type,
-            fund: data.details || fundId,
+            fund: fundId,
             status: transactionStatusNames[data.status as keyof typeof transactionStatusNames] || data.status || 'تکمیل شده',
             date: createdAt.toLocaleDateString('fa-IR'),
             amount: data.amount,

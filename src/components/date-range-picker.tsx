@@ -18,13 +18,17 @@ import {
 
 interface DateRangePickerProps extends React.ComponentProps<"div"> {
     className?: string;
+    onDateChange?: (dateRange: DateRange | undefined) => void;
 }
 
-export function DateRangePicker({ className }: DateRangePickerProps) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date(),
-  })
+export function DateRangePicker({ className, onDateChange }: DateRangePickerProps) {
+  const [date, setDate] = React.useState<DateRange | undefined>()
+
+  React.useEffect(() => {
+      if(onDateChange) {
+          onDateChange(date);
+      }
+  }, [date, onDateChange]);
 
   return (
     <div className={cn("grid gap-2", className)}>

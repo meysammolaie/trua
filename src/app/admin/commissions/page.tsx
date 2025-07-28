@@ -25,6 +25,8 @@ import { Commission } from "@/ai/flows/get-commissions-flow";
 import { getCommissionsAction } from "@/app/actions/commissions";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { DateRange } from "react-day-picker";
 
 type Stats = {
     totalCommissionsPaid: number;
@@ -39,6 +41,8 @@ export default function AdminCommissionsPage() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
 
     const fetchCommissions = useCallback(() => {
         setLoading(true);
@@ -65,6 +69,7 @@ export default function AdminCommissionsPage() {
 
     useEffect(() => {
         let result = allCommissions;
+        
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
             result = result.filter(req => 
@@ -73,8 +78,19 @@ export default function AdminCommissionsPage() {
                 req.investmentId.toLowerCase().includes(lowercasedTerm)
             );
         }
+
+        if (dateRange?.from && dateRange?.to) {
+            result = result.filter(req => {
+                const reqDate = req.createdAtTimestamp;
+                // Set to to the end of the day
+                const toDate = new Date(dateRange.to!);
+                toDate.setHours(23, 59, 59, 999);
+                return reqDate >= dateRange.from!.getTime() && reqDate <= toDate.getTime();
+            });
+        }
+
         setFilteredCommissions(result);
-    }, [searchTerm, allCommissions]);
+    }, [searchTerm, dateRange, allCommissions]);
 
     const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -137,6 +153,9 @@ export default function AdminCommissionsPage() {
                             </div>
                             <Button variant="outline"><FileDown className="h-4 w-4 ml-2" />دریافت خروجی</Button>
                         </div>
+                    </div>
+                     <div className="flex flex-col md:flex-row items-center gap-2 mt-4">
+                        <DateRangePicker onDateChange={setDateRange} />
                     </div>
                 </CardHeader>
                 <CardContent>

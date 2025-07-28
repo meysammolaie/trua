@@ -26,6 +26,8 @@ import { WithdrawalRequest, GetAllWithdrawalsOutput } from "@/ai/flows/get-withd
 import { getWithdrawalRequestsAction } from "@/app/actions/withdrawals";
 import { useToast } from "@/hooks/use-toast";
 import { WithdrawalDetailsDialog } from "@/components/admin/withdrawal-details-dialog";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { DateRange } from "react-day-picker";
 
 const statusNames: Record<string, string> = {
     pending: "در انتظار",
@@ -42,6 +44,7 @@ export default function AdminWithdrawalsPage() {
     const [filteredRequests, setFilteredRequests] = useState<WithdrawalRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [selectedRequest, setSelectedRequest] = useState<WithdrawalRequest | null>(null);
 
     const fetchRequests = useCallback(async () => {
@@ -78,8 +81,18 @@ export default function AdminWithdrawalsPage() {
                 req.id.toLowerCase().includes(lowercasedTerm)
             );
         }
+        
+        if (dateRange?.from && dateRange?.to) {
+            result = result.filter(req => {
+                const reqDate = new Date(req.createdAt).getTime();
+                const toDate = new Date(dateRange.to!);
+                toDate.setHours(23, 59, 59, 999);
+                return reqDate >= dateRange.from!.getTime() && reqDate <= toDate.getTime();
+            });
+        }
+
         setFilteredRequests(result);
-    }, [searchTerm, data]);
+    }, [searchTerm, dateRange, data]);
 
     const getStatusIcon = (status: string) => {
         switch (status) {
@@ -170,6 +183,9 @@ export default function AdminWithdrawalsPage() {
                             </div>
                             <Button variant="outline"><FileDown className="h-4 w-4 ml-2" />دریافت خروجی</Button>
                         </div>
+                    </div>
+                     <div className="flex flex-col md:flex-row items-center gap-2 mt-4">
+                        <DateRangePicker onDateChange={setDateRange} />
                     </div>
                 </CardHeader>
                 <CardContent>

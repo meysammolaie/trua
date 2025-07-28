@@ -8,7 +8,7 @@
 import { genkit } from 'genkit';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, collection, serverTimestamp, runTransaction, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, collection, serverTimestamp, runTransaction, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 import { UpdateInvestmentStatusInputSchema, UpdateInvestmentStatusOutputSchema } from '@/ai/schemas';
 import { googleAI } from '@genkit-ai/googleai';
@@ -64,10 +64,10 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         transaction.update(investmentRef, updatePayload);
         
         if (newStatus === 'active') {
+            const batch = writeBatch(db);
             // 1. Credit the net amount to the user's wallet (transactions ledger)
-            // THIS IS THE KEY CHANGE: Add the principal to the withdrawable balance.
             const investmentTxRef = doc(collection(db, 'transactions'));
-            transaction.set(investmentTxRef, {
+            batch.set(investmentTxRef, {
                 userId: investmentData.userId,
                 type: 'investment',
                 amount: investmentData.netAmountUSD, // POSITIVE amount to credit the wallet
@@ -85,7 +85,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
             const platformFee = investmentData.amountUSD * (settings.platformFee / 100);
 
             if (entryFee > 0) {
-                 transaction.set(doc(feesCollectionRef), {
+                 batch.set(doc(feesCollectionRef), {
                     type: 'entry_fee',
                     amount: entryFee,
                     createdAt: serverTimestamp(),
@@ -95,7 +95,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                  });
             }
              if (lotteryFee > 0) {
-                 transaction.set(doc(feesCollectionRef), {
+                 batch.set(doc(feesCollectionRef), {
                     type: 'lottery_fee',
                     amount: lotteryFee,
                     createdAt: serverTimestamp(),
@@ -105,7 +105,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                  });
             }
              if (platformFee > 0) {
-                 transaction.set(doc(feesCollectionRef), {
+                 batch.set(doc(feesCollectionRef), {
                     type: 'platform_fee',
                     amount: platformFee,
                     createdAt: serverTimestamp(),
@@ -126,7 +126,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                 const totalBonusesSnapshot = await getDocs(totalBonusesQuery);
                 if (totalBonusesSnapshot.size < REWARD_USER_LIMIT) {
                     const bonusDocRef = doc(collection(db, 'bonuses'));
-                    transaction.set(bonusDocRef, {
+                    batch.set(bonusDocRef, {
                         userId: investmentData.userId,
                         amount: REWARD_AMOUNT,
                         status: 'locked', 
@@ -144,7 +144,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
 
             if (commissionAmount > 0) {
               const commissionDocRef = doc(collection(db, 'commissions'));
-              transaction.set(commissionDocRef, {
+              batch.set(commissionDocRef, {
                 referrerId: referrerId,
                 referredUserId: investmentData.userId,
                 investmentId: investmentId,
@@ -154,7 +154,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
               });
               
               const txRef = doc(collection(db, 'transactions'));
-              transaction.set(txRef, {
+              batch.set(txRef, {
                   userId: referrerId,
                   type: 'commission',
                   amount: commissionAmount,
@@ -164,7 +164,22 @@ const updateInvestmentStatusFlow = ai.defineFlow(
               });
             }
           }
-        } 
+          await batch.commit();
+
+        } else if (newStatus === 'completed') {
+            // New logic: Return principal to user's wallet
+            const txRef = doc(collection(db, 'transactions'));
+            transaction.set(txRef, {
+                userId: investmentData.userId,
+                type: 'principal_return',
+                amount: investmentData.netAmountUSD, // Return the net amount
+                status: 'completed',
+                createdAt: serverTimestamp(),
+                details: `بازگشت اصل سرمایه از صندوق ${investmentData.fundId}`,
+                investmentId: investmentId,
+                fundId: investmentData.fundId,
+            });
+        }
       });
 
       console.log(`Investment ${investmentId} status updated to ${newStatus}.`);
@@ -175,7 +190,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
       } else if (newStatus === 'rejected') {
         message = `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت رد شد.`;
       } else if (newStatus === 'completed') {
-        message = `سرمایه‌گذاری تکمیل شد.`;
+        message = `سرمایه‌گذاری تکمیل و اصل پول به کیف پول کاربر بازگردانده شد.`;
       }
 
       return {

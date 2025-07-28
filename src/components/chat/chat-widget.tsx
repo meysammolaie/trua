@@ -133,14 +133,12 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         recognition.onend = () => {
             setIsListening(false);
             if (isVoiceMode && !isSpeaking) {
-                // Automatically restart listening if in voice mode and bot is not speaking
-                setTimeout(() => recognitionRef.current?.start(), 100);
+                // Do not automatically restart
             }
         };
 
         recognition.onerror = (event) => {
             if (event.error === 'no-speech' || event.error === 'aborted') {
-                // Ignore these common events, as they are part of the normal flow
                 return;
             }
             console.error('Speech recognition error:', event.error);
@@ -169,10 +167,13 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
 
     const handlePlay = () => {
         setIsSpeaking(true);
-        recognitionRef.current?.abort(); // Use abort to stop listening immediately
+        recognitionRef.current?.abort();
     };
     const handleEnd = () => {
         setIsSpeaking(false);
+        if (isVoiceMode) {
+            setTimeout(() => recognitionRef.current?.start(), 100);
+        }
     };
 
     audio.addEventListener('play', handlePlay);
@@ -184,7 +185,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
       audio.removeEventListener('ended', handleEnd);
       audio.removeEventListener('pause', handleEnd);
     };
-  }, [audioRef]);
+  }, [isVoiceMode]);
 
   const openVoiceMode = () => {
     if (isSpeechSupported) {

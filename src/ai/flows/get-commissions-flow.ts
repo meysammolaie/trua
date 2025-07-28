@@ -25,6 +25,7 @@ const CommissionSchema = z.object({
   investmentAmount: z.number(),
   commissionAmount: z.number(),
   createdAt: z.string(),
+  createdAtTimestamp: z.number(),
 });
 export type Commission = z.infer<typeof CommissionSchema>;
 
@@ -46,7 +47,7 @@ type UserDocument = {
   firstName: string;
   lastName: string;
 };
-type CommissionDocument = Omit<Commission, 'id' | 'referrerFullName' | 'referredUserFullName' | 'createdAt'> & { createdAt: Timestamp };
+type CommissionDocument = Omit<Commission, 'id' | 'referrerFullName' | 'referredUserFullName' | 'createdAt' | 'createdAtTimestamp'> & { createdAt: Timestamp };
 
 export async function getCommissions(): Promise<GetAllCommissionsOutput> {
   return await getCommissionsFlow({});
@@ -89,6 +90,7 @@ const getCommissionsFlow = ai.defineFlow(
             referrerFullName: referrer ? `${referrer.firstName} ${referrer.lastName}`.trim() : 'کاربر نامشخص',
             referredUserFullName: referredUser ? `${referredUser.firstName} ${referredUser.lastName}`.trim() : 'کاربر نامشخص',
             createdAt: data.createdAt.toDate().toLocaleDateString('fa-IR'),
+            createdAtTimestamp: data.createdAt.toMillis(),
         };
     });
 

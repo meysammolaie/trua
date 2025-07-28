@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -41,15 +41,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { TransactionWithUser } from "@/ai/flows/get-all-transactions-flow";
 import { getAllTransactionsAction } from "@/app/actions/transactions";
+import Link from "next/link";
+import { DateRange } from "react-day-picker";
 
 
 const typeNames: Record<string, string> = {
     all: "همه انواع",
-    deposit: "واریز",
-    withdrawal: "برداشت",
     investment: "سرمایه‌گذاری",
-    fee: "کارمزد",
-    profit: "سود",
+    withdrawal_request: "برداشت",
+    profit_payout: "سود",
+    commission: "کمیسیون",
+    bonus: "جایزه",
+    principal_return: "بازگشت اصل پول"
 };
 
 const statusNames: Record<string, string> = {
@@ -74,6 +77,8 @@ export default function AdminTransactionsPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
 
     useEffect(() => {
         setLoading(true);
@@ -106,22 +111,24 @@ export default function AdminTransactionsPage() {
         }
 
         if (typeFilter !== "all") {
-            // Special handling for 'fee' and 'profit' as they are prefixes
-            if (typeFilter === 'fee') {
-                 result = result.filter(tx => tx.type.startsWith('fee_'));
-            } else if (typeFilter === 'profit') {
-                 result = result.filter(tx => tx.type.startsWith('profit_'));
-            } else {
-                 result = result.filter(tx => tx.type === typeFilter);
-            }
+             result = result.filter(tx => tx.type === typeFilter);
         }
         
         if (statusFilter !== "all" && statusFilter) {
             result = result.filter(tx => tx.status === statusFilter);
         }
 
+        if (dateRange?.from && dateRange?.to) {
+            result = result.filter(req => {
+                const reqDate = req.createdAtTimestamp;
+                 const toDate = new Date(dateRange.to!);
+                toDate.setHours(23, 59, 59, 999);
+                return reqDate >= dateRange.from!.getTime() && reqDate <= toDate.getTime();
+            });
+        }
+
         setFilteredTransactions(result);
-    }, [searchTerm, typeFilter, statusFilter, allTransactions]);
+    }, [searchTerm, typeFilter, statusFilter, dateRange, allTransactions]);
     
 
     const getStatusIcon = (status?: string) => {
@@ -157,8 +164,6 @@ export default function AdminTransactionsPage() {
     };
 
     const getTransactionTypeName = (type: string) => {
-        if (type.startsWith('fee_')) return 'کارمزد';
-        if (type.startsWith('profit_')) return 'سود';
         return typeNames[type] || type;
     }
 
@@ -247,11 +252,7 @@ export default function AdminTransactionsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">همه انواع</SelectItem>
-                            <SelectItem value="deposit">واریز</SelectItem>
-                            <SelectItem value="withdrawal">برداشت</SelectItem>
-                             <SelectItem value="investment">سرمایه‌گذاری</SelectItem>
-                             <SelectItem value="fee">کارمزد</SelectItem>
-                            <SelectItem value="profit">سود</SelectItem>
+                            {Object.entries(typeNames).map(([value, name]) => value !== 'all' && <SelectItem key={value} value={value}>{name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -263,7 +264,7 @@ export default function AdminTransactionsPage() {
                             {Object.entries(statusNames).map(([value, name]) => value !== 'all' && <SelectItem key={value} value={value}>{name}</SelectItem>)}
                         </SelectContent>
                     </Select>
-                    <DateRangePicker className="w-full md:w-auto" />
+                    <DateRangePicker onDateChange={setDateRange} className="w-full md:w-auto" />
                 </div>
             </CardHeader>
             <CardContent>
@@ -336,8 +337,10 @@ export default function AdminTransactionsPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                                                <DropdownMenuItem>مشاهده جزئیات تراکنش</DropdownMenuItem>
-                                                <DropdownMenuItem>مشاهده پروفایل کاربر</DropdownMenuItem>
+                                                <DropdownMenuItem disabled>مشاهده جزئیات تراکنش</DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                   <Link href={`/admin/users/${tx.userId}`}>مشاهده پروفایل کاربر</Link>
+                                                </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>

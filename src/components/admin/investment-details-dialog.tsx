@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, Ban, ArrowUpRight, Copy, Link as LinkIcon, AlertTriangle } from "lucide-react";
+import { Loader2, CheckCircle, Ban, ArrowUpRight, Copy, AlertTriangle, PackageCheck } from "lucide-react";
 import { getInvestmentDetailsAction } from "@/app/actions/investment";
 import { updateInvestmentStatusAction } from "@/app/actions/investment-status";
 import type { GetInvestmentDetailsOutput } from "@/ai/flows/get-investment-details-flow";
@@ -124,7 +124,7 @@ export function InvestmentDetailsDialog({ investmentId, open, onOpenChange, onSt
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">مبلغ دلاری (در زمان ثبت):</span>
-                            <span className="font-mono">${details.amountUSD.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                            <span className="font-mono">${details.amountUSD.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                          <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">تاریخ ثبت:</span>
@@ -170,7 +170,7 @@ export function InvestmentDetailsDialog({ investmentId, open, onOpenChange, onSt
                     <div className="text-center py-10">اطلاعاتی یافت نشد.</div>
                 )}
                 
-                <DialogFooter>
+                <DialogFooter className="gap-2">
                     {details?.status === 'pending' && !showRejectionForm && (
                         <>
                             <Button variant="destructive" onClick={() => setShowRejectionForm(true)} disabled={isUpdating}>
@@ -191,6 +191,12 @@ export function InvestmentDetailsDialog({ investmentId, open, onOpenChange, onSt
                                 ثبت رد درخواست
                             </Button>
                         </>
+                    )}
+                    {details?.status === 'active' && (
+                        <Button variant="outline" onClick={() => handleStatusUpdate('completed')} disabled={isUpdating}>
+                            {isUpdating ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <PackageCheck className="ml-2 h-4 w-4" />}
+                            تکمیل سرمایه‌گذاری
+                        </Button>
                     )}
                 </DialogFooter>
             </DialogContent>

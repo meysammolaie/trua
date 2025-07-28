@@ -13,7 +13,6 @@ import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, Timestamp, where } from 'firebase/firestore';
-import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -30,6 +29,7 @@ const TransactionWithUserSchema = z.object({
   type: z.string(),
   status: z.enum(['pending', 'active', 'completed', 'failed', 'rejected', 'refunded']).optional(),
   createdAt: z.string(),
+  createdAtTimestamp: z.number(), // For sorting
   originalInvestmentId: z.string().optional(),
 });
 export type TransactionWithUser = z.infer<typeof TransactionWithUserSchema>;
@@ -44,7 +44,7 @@ const FundStatSchema = z.object({
     name: z.string(),
     platformRevenue: z.number(),
     lotteryPool: z.number(),
-    profitPool: z.number(), // New: entry_fee + exit_fee pool
+    profitPool: z.number(), 
 });
 
 const StatsSchema = z.object({
@@ -52,7 +52,7 @@ const StatsSchema = z.object({
     totalPlatformRevenue: z.number(),
     totalLotteryPool: z.number(),
     totalProfitPool: z.number(),
-    totalPlatformWallet: z.number(), // New: Total TVL
+    totalPlatformWallet: z.number(), 
     fundStats: z.array(FundStatSchema),
 });
 export type AllTransactionsStats = z.infer<typeof StatsSchema>;
@@ -147,6 +147,7 @@ const getAllTransactionsFlow = ai.defineFlow(
             type: tx.type,
             status: tx.status,
             createdAt: tx.createdAt.toDate().toLocaleDateString('fa-IR'),
+            createdAtTimestamp: tx.createdAt.toMillis(),
             originalInvestmentId: tx.originalInvestmentId
         };
     });
