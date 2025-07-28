@@ -48,7 +48,7 @@ type InvestmentDocument = {
   userId: string;
   fundId: string;
   amount: number;
-  amountUSD: number;
+  amountUSD?: number; // Make optional to handle old documents
   status: 'pending' | 'active' | 'completed' | 'rejected';
   createdAt: Timestamp;
 };
@@ -88,7 +88,7 @@ const getAllInvestmentsFlow = ai.defineFlow(
             userEmail: user ? user.email : 'ایمیل نامشخص',
             fundId: data.fundId,
             amount: data.amount,
-            amountUSD: data.amountUSD,
+            amountUSD: data.amountUSD || 0, // Fallback to 0 if amountUSD is missing
             status: data.status,
             createdAt: data.createdAt.toDate().toLocaleDateString('fa-IR'),
         };
