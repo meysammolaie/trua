@@ -9,7 +9,7 @@
 import {genkit} from 'genkit';
 import {z} from 'zod';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 const ai = genkit({
   plugins: [],
@@ -47,7 +47,6 @@ const distributeProfitsFlow = ai.defineFlow(
   async () => {
     try {
       
-      // 1. Get all active investments to determine who gets profits and the total pool
       const allActiveInvestmentsQuery = query(collection(db, 'investments'), where('status', '==', 'active'));
       const activeInvestmentsSnapshot = await getDocs(allActiveInvestmentsQuery);
       
@@ -55,26 +54,25 @@ const distributeProfitsFlow = ai.defineFlow(
         return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
       
-      // 2. Calculate the total profit pool from ALL fees of active investments.
       let dailyDistributablePool = 0;
-      const activeInvestments = activeInvestmentsSnapshot.docs.map(doc => {
+      const activeInvestments: (InvestmentDoc & {ref: any})[] = [];
+
+      activeInvestmentsSnapshot.docs.forEach(doc => {
           const investment = doc.data() as InvestmentDoc;
           dailyDistributablePool += investment.feesUSD || 0;
-          return investment;
+          activeInvestments.push({ ...investment, id: doc.id, ref: doc.ref });
       });
       
       if (dailyDistributablePool <= 0) {
          return { success: true, message: 'مبلغی برای توزیع سود امروز وجود ندارد.' };
       }
       
-      // 3. Calculate total active investment amount for share calculation
       const totalActiveInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
       
       if (totalActiveInvestmentAmount <= 0) {
           return { success: true, message: 'مجموع سرمایه فعال برای محاسبه سهم سود صفر است.' };
       }
       
-      // 4. Group investments by user to calculate total investment per user
       const investmentsByUser = activeInvestments.reduce((acc, inv) => {
         if (!acc[inv.userId]) {
             acc[inv.userId] = 0;
@@ -83,7 +81,6 @@ const distributeProfitsFlow = ai.defineFlow(
         return acc;
       }, {} as Record<string, number>);
 
-      // 5. Create profit payout transactions in a batch
       const batch = writeBatch(db);
       const investorCount = Object.keys(investmentsByUser).length;
 
@@ -96,13 +93,18 @@ const distributeProfitsFlow = ai.defineFlow(
             batch.set(transactionRef, {
                 userId,
                 type: 'profit_payout',
-                amount: profitShare, // Positive amount for credit
+                amount: profitShare, 
                 status: 'completed',
                 createdAt: serverTimestamp(),
                 details: `سود روزانه بر اساس سرمایه خالص $${userTotalInvestment.toLocaleString()}`,
             });
         }
       }
+
+      // Mark all processed investments as 'completed' so they aren't included in the next run
+      activeInvestments.forEach(inv => {
+          batch.update(inv.ref, { status: 'completed', updatedAt: serverTimestamp() });
+      });
 
       await batch.commit();
 

@@ -122,18 +122,19 @@ const getUserDetailsFlow = ai.defineFlow(
     // 2.2. Wallet Balance (Calculated ONLY from cash-like transactions in the ledger)
     let walletBalance = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
+    
     // These are the only transaction types that constitute the liquid, withdrawable wallet balance.
-    const liquidCreditTransactionTypes = ['profit_payout', 'commission', 'principal_return', 'bonus', 'withdrawal_refund'];
-    const liquidDebitTransactionTypes = ['withdrawal_request'];
+    const creditTransactionTypes = ['profit_payout', 'commission', 'principal_return', 'bonus', 'withdrawal_refund'];
+    const debitTransactionTypes = ['withdrawal_request'];
 
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
         // Sum up cash-like credits and withdrawal debits for the withdrawable balance.
-        if (liquidCreditTransactionTypes.includes(data.type) && data.status === 'completed') {
+        if (creditTransactionTypes.includes(data.type) && data.status === 'completed') {
             walletBalance += data.amount;
-        } else if (liquidDebitTransactionTypes.includes(data.type) && data.status === 'pending') {
+        } else if (debitTransactionTypes.includes(data.type) && data.status === 'pending') {
             walletBalance += data.amount; // amount is already negative for pending requests
         }
 

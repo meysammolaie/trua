@@ -166,7 +166,7 @@ export function Overview() {
                     <>
                         <div className="text-2xl font-bold font-mono">${((stats?.activeInvestment ?? 0) + (stats?.walletBalance ?? 0) + (stats?.lockedBonus ?? 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                          سرمایه فعال + کیف پول + جایزه قفل شده
+                          سرمایه فعال + کیف پول + جایزه
                         </p>
                     </>
                 )}
