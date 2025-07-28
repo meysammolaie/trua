@@ -51,6 +51,10 @@ const statusNames: Record<string, string> = {
     rejected: "رد شده",
 };
 
+const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 function AdminInvestmentsPageContent() {
     const { toast } = useToast();
     const searchParams = useSearchParams();
@@ -152,10 +156,6 @@ function AdminInvestmentsPageContent() {
         return "default";
     }
   };
-
-  const formatCurrency = (amount: number) => {
-    return `$${Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
 
 
   return (

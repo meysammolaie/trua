@@ -77,6 +77,11 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
         form.setError("amount", { message: "مبلغ درخواستی از موجودی شما بیشتر است." });
         return;
     }
+    if (settings && values.amount < settings.minWithdrawalAmount) {
+         form.setError("amount", { message: `حداقل مبلغ برداشت ${settings.minWithdrawalAmount} دلار است.` });
+        return;
+    }
+
 
     try {
         const result = await createWithdrawalRequestAction({
@@ -111,6 +116,8 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
   const networkFee = settings ? settings.networkFee : 0;
   const totalFees = exitFee + networkFee;
   const netAmount = numericAmount - totalFees;
+  const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -139,7 +146,7 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
                             <Input type="number" step="any" {...field} />
                         </FormControl>
                         <FormDescription>
-                            موجودی قابل برداشت: ${withdrawableBalance.toLocaleString()}
+                            موجودی قابل برداشت: {formatCurrency(withdrawableBalance)}
                         </FormDescription>
                         <FormMessage />
                         </FormItem>
@@ -185,21 +192,21 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
                         <h4 className="font-medium text-sm">خلاصه برداشت</h4>
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">مبلغ درخواستی:</span>
-                            <span className="font-mono font-semibold">${numericAmount.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                            <span className="font-mono font-semibold">{formatCurrency(numericAmount)}</span>
                         </div>
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">کارمزد خروج ({settings.exitFee}%):</span>
-                            <span className={cn("font-mono font-semibold text-red-500")}>-${exitFee.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                            <span className={cn("font-mono font-semibold text-red-500")}>-{formatCurrency(exitFee)}</span>
                         </div>
                          <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">کارمزد شبکه:</span>
-                            <span className={cn("font-mono font-semibold text-red-500")}>-${networkFee.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                            <span className={cn("font-mono font-semibold text-red-500")}>-{formatCurrency(networkFee)}</span>
                         </div>
                         <hr className="my-2" />
                         <div className="flex justify-between items-center font-bold text-base">
                             <span>مبلغ دریافتی شما:</span>
                             <span className={cn("font-mono", netAmount > 0 ? "text-green-500" : "text-red-500")}>
-                                ${netAmount > 0 ? netAmount.toLocaleString('en-US', {minimumFractionDigits: 2}) : '0.00'}
+                                {netAmount > 0 ? formatCurrency(netAmount) : formatCurrency(0)}
                             </span>
                         </div>
                     </div>

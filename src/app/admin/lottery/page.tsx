@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { LotteryData } from "@/ai/flows/get-lottery-data-flow";
 import { getLotteryDataAction, runLotteryDrawAction } from "@/app/actions/lottery";
 
+const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export default function AdminLotteryPage() {
     const { toast } = useToast();
     const [isDrawing, setIsDrawing] = useState(false);
@@ -96,7 +98,7 @@ export default function AdminLotteryPage() {
           </CardHeader>
           <CardContent>
              {isLoadingData ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-                <div className="text-2xl font-bold font-mono">${lotteryData?.lotteryPool.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div className="text-2xl font-bold font-mono">{formatCurrency(lotteryData?.lotteryPool ?? 0)}</div>
             )}
             <p className="text-xs text-muted-foreground">
               مجموع کارمزد قرعه‌کشی از سرمایه‌گذاری‌ها
@@ -198,7 +200,7 @@ export default function AdminLotteryPage() {
                                 </TableCell>
                                 <TableCell>{winner.drawDate}</TableCell>
                                 <TableCell className="text-right font-mono text-green-600">
-                                    ${winner.prizeAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {formatCurrency(winner.prizeAmount)}
                                 </TableCell>
                             </TableRow>
                         ))

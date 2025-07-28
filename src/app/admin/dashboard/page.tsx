@@ -45,6 +45,8 @@ const userGrowthChartConfig = {
   },
 } satisfies ChartConfig;
 
+const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<AdminDashboardData | null>(null);
@@ -86,7 +88,7 @@ export default function AdminDashboardPage() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${data?.stats.totalTVL.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div className="text-2xl font-bold font-mono">{formatCurrency(data?.stats.totalTVL ?? 0)}</div>
                         <p className="text-xs text-muted-foreground">
                         مجموع سرمایه‌گذاری‌های فعال
                         </p>
@@ -140,7 +142,7 @@ export default function AdminDashboardPage() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${data?.stats.monthlyRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div className="text-2xl font-bold font-mono">{formatCurrency(data?.stats.monthlyRevenue ?? 0)}</div>
                         <p className="text-xs text-muted-foreground">
                         درآمد از کارمزدها در ۳۰ روز گذشته
                         </p>
@@ -196,7 +198,7 @@ export default function AdminDashboardPage() {
                          {loading ? <div className="h-[300px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
                             <ChartContainer config={{}} className="h-[300px] w-full">
                                 <PieChart>
-                                    <Tooltip formatter={(value, name) => [`$${Number(value).toLocaleString()}`, name]} />
+                                    <Tooltip formatter={(value, name) => [formatCurrency(value as number), name]} />
                                     <Legend />
                                     <Pie data={investmentByFundData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}>
                                         {investmentByFundData.map((entry) => (

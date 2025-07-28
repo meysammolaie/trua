@@ -31,6 +31,9 @@ import Link from "next/link";
 
 type UserDetails = GetUserDetailsOutput;
 
+const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+
 export default function AdminUserDetailPage() {
     const [details, setDetails] = useState<UserDetails | null>(null);
     const [loading, setLoading] = useState(true);
@@ -151,17 +154,17 @@ export default function AdminUserDetailPage() {
                     <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
                         <DollarSign className="h-6 w-6 text-muted-foreground mb-2"/>
                         <p className="text-xs text-muted-foreground">سرمایه فعال (خالص)</p>
-                        <p className="font-bold font-mono text-lg">${stats.activeInvestment.toLocaleString('en-US')}</p>
+                        <p className="font-bold font-mono text-lg">{formatCurrency(stats.activeInvestment)}</p>
                     </div>
                      <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
                         <TrendingUp className="h-6 w-6 text-muted-foreground mb-2"/>
                         <p className="text-xs text-muted-foreground">کل سود</p>
-                        <p className="font-bold font-mono text-lg">${stats.totalProfit.toLocaleString('en-US')}</p>
+                        <p className="font-bold font-mono text-lg">{formatCurrency(stats.totalProfit)}</p>
                     </div>
                     <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
                         <Wallet className="h-6 w-6 text-muted-foreground mb-2"/>
                         <p className="text-xs text-muted-foreground">موجودی کیف پول</p>
-                        <p className="font-bold font-mono text-lg">${stats.walletBalance.toLocaleString('en-US')}</p>
+                        <p className="font-bold font-mono text-lg">{formatCurrency(stats.walletBalance)}</p>
                     </div>
                     <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
                         <Ticket className="h-6 w-6 text-muted-foreground mb-2"/>
@@ -208,7 +211,7 @@ export default function AdminUserDetailPage() {
                                         <Badge variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'تکمیل شده' ? 'default' : 'outline'}>{tx.status}</Badge>
                                     </TableCell>
                                     <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        ${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        {formatCurrency(tx.amount)}
                                     </TableCell>
                                 </TableRow>
                              ))

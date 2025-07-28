@@ -58,7 +58,11 @@ const statusNames: Record<string, string> = {
     active: "فعال",
     completed: "موفق",
     failed: "ناموفق",
+    rejected: "رد شده",
+    refunded: "بازپرداخت شده",
 };
+
+const formatCurrency = (amount: number) => `$${Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function AdminTransactionsPage() {
     const { toast } = useToast();
@@ -124,10 +128,12 @@ export default function AdminTransactionsPage() {
         switch (status) {
         case "completed":
         case "active":
+        case "refunded":
             return <CheckCircle className="h-4 w-4 text-green-500" />;
         case "pending":
             return <Clock className="h-4 w-4 text-yellow-500" />;
         case "failed":
+        case "rejected":
             return <XCircle className="h-4 w-4 text-red-500" />;
         default:
             return null;
@@ -138,10 +144,12 @@ export default function AdminTransactionsPage() {
         switch (status) {
         case "completed":
         case "active":
+        case "refunded":
             return "secondary";
         case "pending":
             return "outline";
         case "failed":
+        case "rejected":
             return "destructive";
         default:
             return "default";
@@ -252,10 +260,7 @@ export default function AdminTransactionsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                            <SelectItem value="active">فعال</SelectItem>
-                            <SelectItem value="pending">در انتظار</SelectItem>
-                            <SelectItem value="completed">موفق</SelectItem>
-                            <SelectItem value="failed">ناموفق</SelectItem>
+                            {Object.entries(statusNames).map(([value, name]) => value !== 'all' && <SelectItem key={value} value={value}>{name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <DateRangePicker className="w-full md:w-auto" />
@@ -319,7 +324,7 @@ export default function AdminTransactionsPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                        {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        {tx.amount > 0 ? '+' : ''}{formatCurrency(tx.amount)}
                                     </TableCell>
                                     <TableCell>
                                         <DropdownMenu>

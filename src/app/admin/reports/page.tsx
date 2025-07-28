@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { FileDown, DollarSign, Users, Ticket, Loader2, PlayCircle, Unlock, PiggyBank, Briefcase } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { TransactionWithUser, AllTransactionsStats, FundStat } from "@/ai/flows/get-all-transactions-flow";
+import { TransactionWithUser, AllTransactionsStats } from "@/ai/flows/get-all-transactions-flow";
 import { getAllTransactionsAction } from "@/app/actions/transactions";
 import { useToast } from "@/hooks/use-toast";
 import { distributeProfitsAction, unlockBonusesAction } from "@/app/actions/reports";
@@ -321,7 +321,7 @@ export default function AdminReportsPage() {
                                     <TableCell className="text-muted-foreground">{event.userFullName}</TableCell>
                                     <TableCell>{event.createdAt}</TableCell>
                                     <TableCell className={`text-right font-mono ${event.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                        {event.amount > 0 ? '+' : ''}${Math.abs(event.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        {event.amount > 0 ? '+' : ''}{formatCurrency(event.amount)}
                                     </TableCell>
                                 </TableRow>
                             ))

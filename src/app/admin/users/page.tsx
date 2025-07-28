@@ -37,6 +37,8 @@ import { getAllUsersAction } from "@/app/actions/users";
 import { updateUserStatusAction } from "@/app/actions/user-status";
 import { useToast } from "@/hooks/use-toast";
 
+const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export default function AdminUsersPage() {
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -181,7 +183,7 @@ export default function AdminUsersPage() {
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell">{user.createdAt}</TableCell>
                                     <TableCell className="hidden md:table-cell font-mono">
-                                        ${user.totalInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        {formatCurrency(user.totalInvestment)}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={user.status === 'active' ? 'secondary' : 'destructive'}>

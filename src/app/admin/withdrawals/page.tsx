@@ -34,6 +34,8 @@ const statusNames: Record<string, string> = {
     completed: "پرداخت شده",
 };
 
+const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export default function AdminWithdrawalsPage() {
     const { toast } = useToast();
     const [data, setData] = useState<GetAllWithdrawalsOutput | null>(null);
@@ -106,8 +108,6 @@ export default function AdminWithdrawalsPage() {
                 return "default";
         }
     };
-
-    const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     const stats = data?.stats;
 

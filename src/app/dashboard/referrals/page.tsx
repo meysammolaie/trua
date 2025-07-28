@@ -29,6 +29,8 @@ import { Badge } from "@/components/ui/badge";
 
 type ReferralData = GetUserReferralsOutput;
 
+const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export default function ReferralsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -74,8 +76,6 @@ export default function ReferralsPage() {
     });
   }
   
-  const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">

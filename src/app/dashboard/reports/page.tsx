@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 type Transaction = GetUserDetailsOutput["transactions"][0];
 type Stats = GetUserDetailsOutput["stats"];
 
+const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function ReportsPage() {
     const { user } = useAuth();
@@ -86,7 +87,7 @@ export default function ReportsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>ارزش کل دارایی</CardDescription>
-            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${(totalAssetValue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</CardTitle>}
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">{formatCurrency(totalAssetValue)}</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
@@ -101,7 +102,7 @@ export default function ReportsPage() {
                     <PiggyBank className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${(stats?.walletBalance ?? 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>}
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.walletBalance ?? 0)}</div>}
                     <p className="text-xs text-muted-foreground">موجودی آزاد شامل اصل پول، سودها و کمیسیون‌ها</p>
                 </CardContent>
             </Card>
@@ -111,7 +112,7 @@ export default function ReportsPage() {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment ?? 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>}
+                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.activeInvestment ?? 0)}</div>}
                     <p className="text-xs text-muted-foreground">پایه محاسبه سود روزانه شما</p>
                 </CardContent>
             </Card>
@@ -121,7 +122,7 @@ export default function ReportsPage() {
                     <Lock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${(stats?.lockedBonus ?? 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>}
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.lockedBonus ?? 0)}</div>}
                     <p className="text-xs text-muted-foreground">این مبلغ در آینده آزاد خواهد شد</p>
                 </CardContent>
             </Card>
@@ -174,7 +175,7 @@ export default function ReportsPage() {
                     </TableCell>
                     <TableCell>{tx.date}</TableCell>
                     <TableCell className={`text-right font-mono ${tx.amount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {tx.amount >= 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {tx.amount >= 0 ? '+' : ''}{formatCurrency(tx.amount)}
                     </TableCell>
                     <TableCell className="text-center">
                         {tx.proof ? (

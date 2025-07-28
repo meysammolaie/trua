@@ -23,9 +23,9 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getPlatformAnalyticsAction } from "@/app/actions/platform-analytics";
-import type { PlatformAnalyticsData, FundStat } from "@/ai/flows/get-platform-analytics-flow";
+import type { PlatformAnalyticsData } from "@/ai/flows/get-platform-analytics-flow";
 
-const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
