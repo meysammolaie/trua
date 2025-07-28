@@ -30,7 +30,7 @@ import { VerdantVaultLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useState } from "react";
 import { Loader2, Chrome } from "lucide-react";
 
 const formSchema = z.object({
@@ -38,7 +38,12 @@ const formSchema = z.object({
   lastName: z.string().min(2, { message: "نام خانوادگی باید حداقل ۲ حرف داشته باشد." }),
   email: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." }),
   password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر داشته باشد." }),
+  confirmPassword: z.string(),
   referralCode: z.string().optional(),
+  captcha: z.string().min(1, { message: "لطفاً به سوال امنیتی پاسخ دهید." }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "رمزهای عبور یکسان نیستند.",
+  path: ["confirmPassword"],
 });
 
 
@@ -48,6 +53,15 @@ function SignupForm() {
   const { toast } = useToast();
   const { user, loading } = useAuth();
   
+  // Captcha state
+  const [num1, setNum1] = useState(0);
+  const [num2, setNum2] = useState(0);
+
+  useEffect(() => {
+    setNum1(Math.floor(Math.random() * 10) + 1);
+    setNum2(Math.floor(Math.random() * 10) + 1);
+  }, []);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -55,7 +69,9 @@ function SignupForm() {
       lastName: "",
       email: "",
       password: "",
+      confirmPassword: "",
       referralCode: "",
+      captcha: "",
     },
   });
 
@@ -77,7 +93,7 @@ function SignupForm() {
     }
   }, [user, router]);
   
-  const createUserDocument = async (userCred: UserCredential, values: z.infer<typeof formSchema>) => {
+  const createUserDocument = async (userCred: UserCredential, values: Partial<z.infer<typeof formSchema>>) => {
     const userRef = doc(db, "users", userCred.user.uid);
     const userSnap = await getDoc(userRef);
 
@@ -105,6 +121,7 @@ function SignupForm() {
         lastName: values.lastName,
         createdAt: serverTimestamp(),
         status: "active",
+        is2faEnabled: false,
         referralCode: uid.substring(0, 8), // Generate a unique referral code
         referredBy: referredBy, // Can be null
       });
@@ -117,6 +134,11 @@ function SignupForm() {
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (parseInt(values.captcha, 10) !== num1 + num2) {
+      form.setError("captcha", { message: "پاسخ سوال امنیتی اشتباه است." });
+      return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       await createUserDocument(userCredential, values);
@@ -151,8 +173,6 @@ function SignupForm() {
       await createUserDocument(userCredential, {
         firstName: nameParts[0],
         lastName: nameParts.slice(1).join(" "),
-        email: userCredential.user.email || "",
-        password: "", // Not applicable
         referralCode: referralCodeFromUrl,
       });
 
@@ -247,12 +267,25 @@ function SignupForm() {
                     </FormItem>
                   )}
                 />
-                <FormField
+                 <FormField
                   control={form.control}
                   name="password"
                   render={({ field }) => (
                     <FormItem className="text-right">
                       <FormLabel>رمز عبور</FormLabel>
+                      <FormControl>
+                        <Input type="password" dir="ltr" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem className="text-right">
+                      <FormLabel>تکرار رمز عبور</FormLabel>
                       <FormControl>
                         <Input type="password" dir="ltr" {...field} />
                       </FormControl>
@@ -268,6 +301,19 @@ function SignupForm() {
                       <FormLabel>کد معرف (اختیاری)</FormLabel>
                       <FormControl>
                         <Input placeholder="کد معرف خود را وارد کنید" dir="ltr" {...field} disabled={!!searchParams.get('ref')}/>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="captcha"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>سوال امنیتی: {num1} + {num2} = ؟</FormLabel>
+                      <FormControl>
+                        <Input type="number" dir="ltr" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

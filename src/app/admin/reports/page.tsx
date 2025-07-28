@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/date-range-picker";
-import { FileDown, DollarSign, Users, Ticket, Loader2, PlayCircle, Unlock } from "lucide-react";
+import { FileDown, DollarSign, Users, Ticket, Loader2, PlayCircle, Unlock, PiggyBank, Briefcase } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TransactionWithUser, AllTransactionsStats, FundStat } from "@/ai/flows/get-all-transactions-flow";
 import { getAllTransactionsAction } from "@/app/actions/transactions";
@@ -133,18 +133,46 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
-       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">موجودی کل پلتفرم (TVL)</CardTitle>
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? <Loader2 className="h-6 w-6 animate-spin"/> :
+                <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalPlatformWallet ?? 0)}</div>
+            }
+            <p className="text-xs text-muted-foreground">
+              مجموع سرمایه خالص و فعال کاربران
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">استخر سود (آماده توزیع)</CardTitle>
+            <PiggyBank className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? <Loader2 className="h-6 w-6 animate-spin"/> :
+                <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalProfitPool ?? 0)}</div>
+            }
+            <p className="text-xs text-muted-foreground">
+              مجموع کارمزدهای ورود و خروج
+            </p>
+          </CardContent>
+        </Card>
+         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">مجموع درآمد پلتفرم</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? <Loader2 className="h-6 w-6 animate-spin"/> :
-                <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalRevenue ?? 0)}</div>
+                <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalPlatformRevenue ?? 0)}</div>
             }
             <p className="text-xs text-muted-foreground">
-              از کارمزدهای ورود و پلتفرم
+              فقط از محل کارمزد ۱٪ پلتفرم
             </p>
           </CardContent>
         </Card>
@@ -162,20 +190,6 @@ export default function AdminReportsPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">تعداد کل تراکنش‌ها</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? <Loader2 className="h-6 w-6 animate-spin"/> :
-                <div className="text-2xl font-bold">{stats?.totalTransactions.toLocaleString()}</div>
-            }
-            <p className="text-xs text-muted-foreground">
-              تمام رویدادهای مالی ثبت شده
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
@@ -185,13 +199,17 @@ export default function AdminReportsPage() {
                     <CardTitle className="text-base">صندوق {fund.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm space-y-2">
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">درآمد پلتفرم:</span>
-                        <span className="font-mono">{formatCurrency(fund.revenue)}</span>
+                     <div className="flex justify-between">
+                        <span className="text-muted-foreground">استخر سود روزانه:</span>
+                        <span className="font-mono">{formatCurrency(fund.profitPool)}</span>
                     </div>
                      <div className="flex justify-between">
                         <span className="text-muted-foreground">موجودی قرعه‌کشی:</span>
                         <span className="font-mono">{formatCurrency(fund.lotteryPool)}</span>
+                    </div>
+                     <div className="flex justify-between">
+                        <span className="text-muted-foreground">درآمد پلتفرم:</span>
+                        <span className="font-mono">{formatCurrency(fund.platformRevenue)}</span>
                     </div>
                 </CardContent>
             </Card>

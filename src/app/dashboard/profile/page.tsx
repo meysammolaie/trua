@@ -368,13 +368,12 @@ export default function ProfilePage() {
              <div className="flex items-center justify-between rounded-lg border p-4">
                 <div>
                     <h3 className="font-medium">احراز هویت دو مرحله‌ای (2FA)</h3>
-                    <p className="text-sm text-muted-foreground">یک لایه امنیتی بیشتر به حساب خود اضافه کنید (بزودی).</p>
+                    <p className="text-sm text-muted-foreground">یک لایه امنیتی بیشتر به حساب خود اضافه کنید.</p>
                 </div>
                 <Switch 
                     checked={is2faEnabled}
                     onCheckedChange={handle2faToggle}
                     aria-label="Toggle 2FA" 
-                    disabled={true}
                 />
              </div>
           </CardContent>

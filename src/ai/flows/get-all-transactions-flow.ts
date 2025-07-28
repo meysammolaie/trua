@@ -28,7 +28,7 @@ const TransactionWithUserSchema = z.object({
   fundId: z.string().optional(),
   amount: z.number(),
   type: z.string(),
-  status: z.enum(['pending', 'active', 'completed', 'failed', 'rejected']).optional(),
+  status: z.enum(['pending', 'active', 'completed', 'failed', 'rejected', 'refunded']).optional(),
   createdAt: z.string(),
   originalInvestmentId: z.string().optional(),
 });
@@ -42,14 +42,17 @@ const ChartDataPointSchema = z.object({
 const FundStatSchema = z.object({
     id: z.string(),
     name: z.string(),
-    revenue: z.number(),
+    platformRevenue: z.number(),
     lotteryPool: z.number(),
+    profitPool: z.number(), // New: entry_fee + exit_fee pool
 });
 
 const StatsSchema = z.object({
     totalTransactions: z.number(),
-    totalRevenue: z.number(),
+    totalPlatformRevenue: z.number(),
     totalLotteryPool: z.number(),
+    totalProfitPool: z.number(),
+    totalPlatformWallet: z.number(), // New: Total TVL
     fundStats: z.array(FundStatSchema),
 });
 export type AllTransactionsStats = z.infer<typeof StatsSchema>;
@@ -78,20 +81,17 @@ type TransactionDocument = {
     createdAt: Timestamp;
     details?: string;
     fundId?: string;
-    status?: 'pending' | 'active' | 'completed' | 'failed' | 'rejected';
+    status?: 'pending' | 'active' | 'completed' | 'failed' | 'rejected' | 'refunded';
     originalInvestmentId?: string;
 }
 
-type InvestmentDocument = {
-  id: string;
-  userId: string;
-  fundId: string;
-  amount: number;
-  amountUSD: number;
-  feesUSD: number;
-  status: 'pending' | 'active' | 'completed' | 'rejected';
-  createdAt: Timestamp;
-};
+type DailyFeeDocument = {
+    id: string;
+    type: 'entry_fee' | 'exit_fee' | 'lottery_fee' | 'platform_fee';
+    amount: number;
+    distributed: boolean;
+    fundId: string;
+}
 
 const fundNames: Record<string, string> = {
     gold: "طلا",
@@ -113,22 +113,24 @@ const getAllTransactionsFlow = ai.defineFlow(
   },
   async () => {
     const usersCollection = collection(db, "users");
-    const investmentsCollection = collection(db, "investments");
     const dbTransactionsQuery = query(collection(db, "transactions"), orderBy("createdAt", "desc"));
-    const settingsPromise = getPlatformSettings();
+    const feesQuery = query(collection(db, "daily_fees"));
+    const investmentsQuery = query(collection(db, "investments"), where('status', '==', 'active'));
 
-    const [usersSnapshot, investmentsSnapshot, dbTransactionsSnapshot, settings] = await Promise.all([
+    const [usersSnapshot, dbTransactionsSnapshot, feesSnapshot, investmentsSnapshot] = await Promise.all([
       getDocs(query(usersCollection)),
-      getDocs(query(investmentsCollection)),
       getDocs(dbTransactionsQuery),
-      settingsPromise
+      getDocs(feesQuery),
+      getDocs(investmentsQuery)
     ]);
 
     const usersData = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...(doc.data() as UserDocument) }));
     const usersMap = new Map(usersData.map(user => [user.uid, user]));
     
-    const investments = investmentsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as InvestmentDocument) }));
     const dbTransactions = dbTransactionsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as TransactionDocument) }));
+    const allFees = feesSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as DailyFeeDocument));
+    const activeInvestments = investmentsSnapshot.docs.map(doc => doc.data());
+
 
     const allTransactions: TransactionWithUser[] = dbTransactions.map(tx => {
         const user = usersMap.get(tx.userId);
@@ -149,46 +151,45 @@ const getAllTransactionsFlow = ai.defineFlow(
         };
     });
 
-    // Calculate stats based on all investments
-    let totalRevenue = 0;
-    let totalLotteryPool = 0;
-    const fundStats: Record<string, { revenue: number, lotteryPool: number }> = {
-        gold: { revenue: 0, lotteryPool: 0 },
-        silver: { revenue: 0, lotteryPool: 0 },
-        usdt: { revenue: 0, lotteryPool: 0 },
-        bitcoin: { revenue: 0, lotteryPool: 0 },
+    const fundStats: Record<string, { platformRevenue: number, lotteryPool: number, profitPool: number }> = {
+        gold: { platformRevenue: 0, lotteryPool: 0, profitPool: 0 },
+        silver: { platformRevenue: 0, lotteryPool: 0, profitPool: 0 },
+        usdt: { platformRevenue: 0, lotteryPool: 0, profitPool: 0 },
+        bitcoin: { platformRevenue: 0, lotteryPool: 0, profitPool: 0 },
     };
 
-    investments.forEach(inv => {
-        if (inv.status === 'active' || inv.status === 'completed') {
-            const entryFee = inv.amountUSD * (settings.entryFee / 100);
-            const lotteryFee = inv.amountUSD * (settings.lotteryFee / 100);
-            const platformFee = inv.amountUSD * (settings.platformFee / 100);
-
-            const investmentRevenue = entryFee + platformFee; // Revenue for platform is entry and platform fees
-            totalRevenue += investmentRevenue;
-            totalLotteryPool += lotteryFee;
-
-            if (fundStats[inv.fundId]) {
-                fundStats[inv.fundId].revenue += investmentRevenue;
-                fundStats[inv.fundId].lotteryPool += lotteryFee;
+    allFees.forEach(fee => {
+        if (fundStats[fee.fundId]) {
+            if (fee.type === 'platform_fee') {
+                fundStats[fee.fundId].platformRevenue += fee.amount;
+            } else if (fee.type === 'lottery_fee') {
+                fundStats[fee.fundId].lotteryPool += fee.amount;
+            } else if ((fee.type === 'entry_fee' || fee.type === 'exit_fee') && !fee.distributed) {
+                fundStats[fee.fundId].profitPool += fee.amount;
             }
         }
     });
-
+    
     const fundStatsArray = Object.entries(fundStats).map(([id, data]) => ({
         id,
         name: fundNames[id],
         ...data,
     }));
+    
+    const totalPlatformRevenue = fundStatsArray.reduce((sum, fund) => sum + fund.platformRevenue, 0);
+    const totalLotteryPool = fundStatsArray.reduce((sum, fund) => sum + fund.lotteryPool, 0);
+    const totalProfitPool = fundStatsArray.reduce((sum, fund) => sum + fund.profitPool, 0);
+    const totalPlatformWallet = activeInvestments.reduce((sum, inv) => sum + (inv.netAmountUSD || 0), 0);
 
 
     return {
       transactions: allTransactions,
       stats: {
         totalTransactions: allTransactions.length,
-        totalRevenue: totalRevenue || 0,
-        totalLotteryPool: totalLotteryPool || 0,
+        totalPlatformRevenue: totalPlatformRevenue,
+        totalLotteryPool: totalLotteryPool,
+        totalProfitPool: totalProfitPool,
+        totalPlatformWallet: totalPlatformWallet,
         fundStats: fundStatsArray,
       },
     };
