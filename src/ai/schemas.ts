@@ -74,6 +74,7 @@ export const TransactionSchema = z.object({
 export const StatsSchema = z.object({
   activeInvestment: z.number(),
   walletBalance: z.number(), 
+  totalProfit: z.number(),
   lockedBonus: z.number(),
   lotteryTickets: z.number(),
 });
@@ -107,3 +108,5 @@ export const GetUserWalletOutputSchema = z.object({
   walletBalance: z.number(), 
   lockedBonus: z.number(),
 });
+
+    

@@ -117,20 +117,26 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // 2.2. Wallet Balance (Calculated ONLY from the transaction ledger)
+    // 2.2. Wallet Balance & Total Profit (Calculated ONLY from the transaction ledger)
     let walletBalance = 0;
+    let totalProfit = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
     
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Sum up ALL completed transactions (positive or negative) to get the final withdrawable balance.
-        // Pending withdrawals are also subtracted to block the funds.
+        // Sum up ONLY cash-equivalent transactions to get the final withdrawable balance.
+        // 'investment' transactions are NOT cash, they are the base for profit.
         if (data.status === 'completed' || data.status === 'pending') {
-             if (['investment', 'profit_payout', 'commission', 'principal_return', 'withdrawal_refund', 'bonus', 'withdrawal_request'].includes(data.type)) {
+             if (['profit_payout', 'commission', 'principal_return', 'withdrawal_refund', 'bonus', 'withdrawal_request'].includes(data.type)) {
                 walletBalance += data.amount;
             }
+        }
+        
+        // Calculate total profit separately
+        if (data.type === 'profit_payout' && data.status === 'completed') {
+            totalProfit += data.amount;
         }
 
         let fundId = '-';
@@ -184,6 +190,7 @@ const getUserDetailsFlow = ai.defineFlow(
     const stats: z.infer<typeof StatsSchema> = {
         activeInvestment: activeNetInvestment,
         walletBalance: walletBalance, 
+        totalProfit: totalProfit,
         lockedBonus: lockedBonus,
         lotteryTickets: Math.floor(activeNetInvestment / 10),
     };
@@ -198,3 +205,5 @@ const getUserDetailsFlow = ai.defineFlow(
     };
   }
 );
+
+    

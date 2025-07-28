@@ -14,6 +14,7 @@ import {
   Lock,
   Medal,
   PiggyBank,
+  TrendingUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -206,7 +207,7 @@ export function Overview() {
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">سرمایه فعال</CardTitle>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
@@ -367,3 +368,5 @@ export function Overview() {
     </>
   );
 }
+
+    
