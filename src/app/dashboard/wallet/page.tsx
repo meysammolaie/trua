@@ -62,8 +62,8 @@ export default function WalletPage() {
         {/* Total Balance Card */}
         <Card className="lg:col-span-2 xl:col-span-1">
           <CardHeader>
-            <CardTitle>موجودی کل</CardTitle>
-            <CardDescription>مجموع ارزش دارایی‌های شما در کیف پول.</CardDescription>
+            <CardTitle>موجودی کل / قابل برداشت</CardTitle>
+            <CardDescription>مجموع دارایی‌های قابل برداشت شما.</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -72,10 +72,7 @@ export default function WalletPage() {
                 <>
                 <div className="text-4xl font-bold font-mono">${walletData?.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                  <div className="text-xs text-muted-foreground mt-2">
-                    (سرمایه فعال: ${walletData?.totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                </div>
-                 <div className="text-xs text-muted-foreground">
-                    (قابل برداشت: ${walletData?.withdrawableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                    (شامل سرمایه فعال: ${walletData?.totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                 </div>
                 </>
             )}

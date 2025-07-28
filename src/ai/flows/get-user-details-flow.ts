@@ -183,8 +183,9 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // **NEW LOGIC**: walletBalance is read directly from the database field, which is updated by other flows.
-    const walletBalance = userData.walletBalance || 0;
+    // **NEW LOGIC**: walletBalance is now the user's total withdrawable assets
+    // Defined as: Total Active Gross Investment + Total Profits Received
+    const walletBalance = grossInvestment + totalProfit;
 
     const stats: z.infer<typeof StatsSchema> = {
         grossInvestment: grossInvestment, // Based on 'active' investments only

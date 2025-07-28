@@ -72,7 +72,7 @@ const getUserWalletFlow = ai.defineFlow(
     investmentsSnapshot.docs.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
         const fundName = fundNames[data.fundId as keyof typeof fundNames] || data.fundId;
-        const assetValue = data.netAmountUSD || 0; // Asset value is based on net investment
+        const assetValue = data.amountUSD || 0; // Asset value is based on gross investment
 
         if (!assetsMap[fundName]) {
             assetsMap[fundName] = 0;
@@ -89,9 +89,9 @@ const getUserWalletFlow = ai.defineFlow(
     const recentTransactions = userDetails.transactions.slice(0, 5);
     
     // 4. Use the balances from user details, which is now the single source of truth
-    const withdrawableBalance = userDetails.stats.walletBalance; 
-    const totalAssetValue = userDetails.stats.netInvestment; // Total Asset value is the net of active investments
-    const totalBalance = totalAssetValue + withdrawableBalance; // Total Balance is active assets + liquid wallet
+    const totalBalance = userDetails.stats.walletBalance; 
+    const withdrawableBalance = userDetails.stats.walletBalance; // Defined to be the same as total balance
+    const totalAssetValue = userDetails.stats.grossInvestment; // Total Asset value is the gross of active investments
 
     return {
       assets,
