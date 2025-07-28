@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Wallet, Loader2 } from "lucide-react";
+import { DollarSign, Wallet, Loader2, PiggyBank } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserWalletAction } from "@/app/actions/wallet";
 import { WithdrawalDialog } from "@/components/dashboard/withdrawal-dialog";
@@ -50,50 +50,65 @@ export default function WalletPage() {
         fetchWalletData();
     }, [user, fetchWalletData]);
 
-    const walletBalance = walletData?.walletBalance ?? 0;
+    const withdrawableBalance = walletData?.withdrawableBalance ?? 0;
     const totalAssetValue = walletData?.totalAssetValue ?? 0;
+    const totalBalance = totalAssetValue + withdrawableBalance;
 
   return (
     <>
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl">کیف پول</h1>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-8">
+      <div className="grid gap-4 md:gap-8">
         <Card className="lg:col-span-2 xl:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">موجودی کیف پول</CardTitle>
+            <CardTitle className="text-sm font-medium">ارزش کل دارایی</CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
-                 <div className="text-4xl font-bold font-mono text-green-400">${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                 <div className="text-4xl font-bold font-mono text-green-400">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             )}
-            <p className="text-xs text-muted-foreground pt-2">این مبلغ شامل سودها، کمیسیون‌ها و جوایز شماست و قابل برداشت است.</p>
+            <p className="text-xs text-muted-foreground pt-2">مجموع دارایی‌های فعال و موجودی قابل برداشت شما.</p>
           </CardContent>
         </Card>
         
-        <Card className="lg:col-span-2 xl:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">مجموع دارایی‌های فعال</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-             {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
-                 <div className="text-4xl font-bold font-mono">${totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            )}
-            <p className="text-xs text-muted-foreground pt-2">ارزش خالص سرمایه‌گذاری‌های شما در صندوق‌ها.</p>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 md:grid-cols-2">
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">موجودی قابل برداشت</CardTitle>
+                    <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                        <div className="text-2xl font-bold font-mono">${withdrawableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    )}
+                    <p className="text-xs text-muted-foreground pt-1">این مبلغ شامل سودها، کمیسیون‌ها و جوایز شماست.</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">مجموع دارایی‌های فعال</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                        <div className="text-2xl font-bold font-mono">${totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    )}
+                    <p className="text-xs text-muted-foreground pt-1">ارزش خالص سرمایه‌گذاری‌های شما در صندوق‌ها.</p>
+                </CardContent>
+            </Card>
+        </div>
       </div>
 
        <Card>
             <CardHeader className="flex flex-row justify-between items-start">
                 <div>
-                    <CardTitle>دارایی‌ها و برداشت</CardTitle>
+                    <CardTitle>دارایی‌های فعال و برداشت</CardTitle>
                     <CardDescription>موجودی خود را مدیریت کرده و درخواست برداشت ثبت کنید.</CardDescription>
                 </div>
                 <WithdrawalDialog 
-                    walletBalance={walletBalance}
+                    withdrawableBalance={withdrawableBalance}
                     onWithdrawalSuccess={fetchWalletData}
                 />
             </CardHeader>

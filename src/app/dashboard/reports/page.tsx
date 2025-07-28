@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Copy, DollarSign, Wallet } from "lucide-react";
+import { Loader2, Copy, DollarSign, Wallet, PiggyBank } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
 import { getUserDetailsAction } from "@/app/actions/user-details";
@@ -86,31 +86,42 @@ export default function ReportsPage() {
     <TooltipProvider>
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">گزارش‌ها</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">گزارش‌ها و تاریخچه مالی</h1>
       </div>
-       <div className="grid gap-4 md:grid-cols-2">
+       <div className="grid gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>سرمایه فعال (خالص)</CardDescription>
-            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.activeInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
+            <CardDescription>ارزش کل دارایی</CardDescription>
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.walletBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              مجموع ارزش خالص دارایی‌های شما در صندوق‌ها
+              مجموع ارزش دارایی‌های شما (سرمایه فعال + موجودی قابل برداشت)
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>موجودی کیف پول (قابل برداشت)</CardDescription>
-             {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.walletBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-muted-foreground">
-              موجودی آزاد شامل سودها و جوایز
-            </div>
-          </CardContent>
-        </Card>
+         <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">سرمایه فعال</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${stats?.activeInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</div>}
+                    <p className="text-xs text-muted-foreground">ارزش خالص دارایی‌های شما در صندوق‌ها</p>
+                </CardContent>
+            </Card>
+            <Card>
+                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">موجودی قابل برداشت</CardTitle>
+                    <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${stats?.totalProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</div>}
+                    <p className="text-xs text-muted-foreground">موجودی آزاد شامل سودها و جوایز</p>
+                </CardContent>
+            </Card>
+         </div>
       </div>
       <Card>
         <CardHeader>

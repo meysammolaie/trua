@@ -72,9 +72,9 @@ export const TransactionSchema = z.object({
 
 export const StatsSchema = z.object({
   activeInvestment: z.number(),
-  totalProfit: z.number(),
+  totalProfit: z.number(), // This now represents the "withdrawable" balance.
   lotteryTickets: z.number(),
-  walletBalance: z.number(), // This is the main liquid/cash balance
+  walletBalance: z.number(), // This is the new "Total Balance" (activeInvestment + totalProfit)
   lockedBonus: z.number().optional(),
 });
 
@@ -103,6 +103,6 @@ export const AssetSchema = z.object({
 export const GetUserWalletOutputSchema = z.object({
   assets: z.array(AssetSchema),
   recentTransactions: z.array(TransactionSchema),
-  totalAssetValue: z.number(),
-  walletBalance: z.number(),
+  totalAssetValue: z.number(), // Represents active investments
+  withdrawableBalance: z.number(), // Represents liquid cash (profits, bonuses)
 });

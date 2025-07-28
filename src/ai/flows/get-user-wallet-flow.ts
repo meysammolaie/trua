@@ -89,14 +89,14 @@ const getUserWalletFlow = ai.defineFlow(
     const recentTransactions = userDetails.transactions.slice(0, 5);
     
     // 4. Use the balances from user details, which is now the single source of truth
-    const walletBalance = userDetails.stats.walletBalance; 
+    const withdrawableBalance = userDetails.stats.totalProfit; 
     const totalAssetValue = userDetails.stats.activeInvestment; 
 
     return {
       assets,
       recentTransactions,
-      totalAssetValue,
-      walletBalance,
+      totalAssetValue, // active investments
+      withdrawableBalance, // liquid cash
     };
   }
 );

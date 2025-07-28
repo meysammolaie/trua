@@ -41,11 +41,11 @@ const withdrawalSchema = z.object({
 });
 
 interface WithdrawalDialogProps {
-  walletBalance: number;
+  withdrawableBalance: number;
   onWithdrawalSuccess: () => void;
 }
 
-export function WithdrawalDialog({ walletBalance, onWithdrawalSuccess }: WithdrawalDialogProps) {
+export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: WithdrawalDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -73,7 +73,7 @@ export function WithdrawalDialog({ walletBalance, onWithdrawalSuccess }: Withdra
         toast({ variant: "destructive", title: "خطا", description: "برای ثبت درخواست باید وارد شوید." });
         return;
     }
-     if (values.amount > walletBalance) {
+     if (values.amount > withdrawableBalance) {
         form.setError("amount", { message: "مبلغ درخواستی از موجودی شما بیشتر است." });
         return;
     }
@@ -115,7 +115,7 @@ export function WithdrawalDialog({ walletBalance, onWithdrawalSuccess }: Withdra
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full md:w-auto" disabled={walletBalance <= 0}>
+        <Button className="w-full md:w-auto" disabled={withdrawableBalance <= 0}>
             <MinusCircle className="ml-2 h-4 w-4" />
             ثبت درخواست برداشت
         </Button>
@@ -139,7 +139,7 @@ export function WithdrawalDialog({ walletBalance, onWithdrawalSuccess }: Withdra
                             <Input type="number" step="any" {...field} />
                         </FormControl>
                         <FormDescription>
-                            موجودی قابل برداشت: ${walletBalance.toLocaleString()}
+                            موجودی قابل برداشت: ${withdrawableBalance.toLocaleString()}
                         </FormDescription>
                         <FormMessage />
                         </FormItem>

@@ -91,7 +91,7 @@ const getUserDetailsFlow = ai.defineFlow(
         getDoc(userDocRef),
         getDocs(investmentsQuery),
         getDocs(dbTransactionsQuery),
-        getDocs(bonusQuery)
+        getDocs(bonusSnapshot)
     ]);
     
     if (!userDoc.exists()) {
@@ -137,8 +137,8 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // 2.2. Wallet Balance and Total Profit (Calculated from the transaction ledger)
-    let walletBalance = 0;
+    // 2.2. Withdrawable Balance and Total Profit (Calculated from the transaction ledger)
+    let withdrawableBalance = 0;
     let totalProfit = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
 
@@ -148,11 +148,14 @@ const getUserDetailsFlow = ai.defineFlow(
         
         // Add or subtract from balance based on the transaction amount and status
         if (data.status === 'completed') {
-             walletBalance += data.amount;
+             // Exclude initial investment debits from withdrawable balance
+             if (data.type !== 'investment') {
+                 withdrawableBalance += data.amount;
+             }
         }
         // Also account for pending withdrawal requests, which should be deducted from balance
         if (data.type === 'withdrawal_request' && data.status === 'pending') {
-            walletBalance += data.amount;
+            withdrawableBalance += data.amount; // This amount is already negative
         }
 
         // Calculate total profit separately for display
@@ -198,7 +201,7 @@ const getUserDetailsFlow = ai.defineFlow(
                 investment: value,
             };
         });
-
+        
     // 4. Assemble Final Output
     const profile: z.infer<typeof UserProfileSchema> = {
         uid: userDoc.id,
@@ -209,11 +212,14 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
+    // NEW LOGIC
+    // totalProfit is now the "withdrawable" balance.
+    // walletBalance is now the "total net worth" (active investment + withdrawable)
     const stats: z.infer<typeof StatsSchema> = {
         activeInvestment: activeNetInvestment,
-        totalProfit: totalProfit,
+        totalProfit: withdrawableBalance, 
         lotteryTickets: Math.floor(activeNetInvestment / 10),
-        walletBalance: walletBalance, 
+        walletBalance: activeNetInvestment + withdrawableBalance, 
         lockedBonus: lockedBonus,
     };
     
