@@ -71,7 +71,6 @@ export const TransactionSchema = z.object({
 
 export const StatsSchema = z.object({
   grossInvestment: z.number(),
-  netInvestment: z.number(),
   totalProfit: z.number(),
   lotteryTickets: z.number(),
   walletBalance: z.number(),

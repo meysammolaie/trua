@@ -44,6 +44,7 @@ type DbTransactionDocument = {
     createdAt: Timestamp;
     details?: string;
     proof?: string;
+    withdrawalId?: string;
 }
 
 const fundNames: Record<string, string> = {
@@ -182,13 +183,11 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // This is the source of truth for the user's available balance.
-    // It's the sum of their active investments and their received profits.
+    // Wallet balance is the sum of active gross investment and total profits earned.
     const walletBalance = grossInvestment + totalProfit;
 
     const stats: z.infer<typeof StatsSchema> = {
-        grossInvestment: grossInvestment, // Based on 'active' investments only
-        netInvestment: 0, // This is deprecated, can be removed later
+        grossInvestment: grossInvestment,
         totalProfit: totalProfit,
         lotteryTickets: Math.floor(grossInvestment / 10),
         walletBalance: walletBalance, 
