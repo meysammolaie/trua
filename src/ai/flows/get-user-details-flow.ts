@@ -30,6 +30,7 @@ type InvestmentDocument = {
   status: 'pending' | 'active' | 'completed' | 'rejected';
   createdAt: Timestamp;
   transactionHash: string;
+  investmentId?: string;
 };
 
 type DbTransactionDocument = {
@@ -42,6 +43,7 @@ type DbTransactionDocument = {
     details?: string;
     proof?: string;
     withdrawalId?: string;
+    investmentId?: string;
 }
 
 const fundNames: Record<string, string> = {
@@ -93,14 +95,13 @@ const getUserDetailsFlow = ai.defineFlow(
     ]);
     
     if (!userDoc.exists()) {
-        console.warn(`User document with ID ${userId} not found. Returning empty profile.`);
-        // Return a default, empty object to prevent crashes on other parts of the system
+        const safeUserId = userId.substring(0, 8);
         return {
             profile: {
                 uid: userId,
                 firstName: 'کاربر',
                 lastName: 'نامشخص',
-                email: `unknown-${userId.substring(0,8)}@example.com`,
+                email: `unknown-${safeUserId}@example.com`,
                 createdAt: '-',
                 status: 'blocked',
             },
@@ -122,7 +123,6 @@ const getUserDetailsFlow = ai.defineFlow(
     // 2.1. Active Investment (Net amount)
     let activeNetInvestment = 0;
     const investmentByMonth: Record<string, number> = {};
-    const allTransactionsForHistory: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
 
     const activeInvestments = investmentsSnapshot.docs.filter(doc => doc.data().status === 'active');
     activeInvestments.forEach(doc => {
@@ -137,25 +137,10 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // Add investment records to the combined history for display
-    investmentsSnapshot.docs.forEach(doc => {
-        const data = doc.data() as InvestmentDocument;
-        const createdAt = data.createdAt.toDate();
-        allTransactionsForHistory.push({
-            id: doc.id,
-            type: transactionTypeNames["investment"],
-            fund: fundNames[data.fundId as keyof typeof fundNames] || data.fundId,
-            status: transactionStatusNames[data.status as keyof typeof transactionStatusNames] || data.status,
-            date: createdAt.toLocaleDateString('fa-IR'),
-            amount: -Math.abs(data.amountUSD), // Investments are shown as debits in history
-            timestamp: createdAt.getTime(),
-            proof: data.transactionHash
-        });
-    });
-
     // 2.2. Wallet Balance and Total Profit (Calculated from the transaction ledger)
     let walletBalance = 0;
     let totalProfit = 0;
+    const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
 
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
@@ -175,11 +160,21 @@ const getUserDetailsFlow = ai.defineFlow(
             totalProfit += data.amount;
         }
         
+        // Find the associated investment for fund details if applicable
+        let fundId = '-';
+        if (data.investmentId) {
+            const relatedInvestment = investmentsSnapshot.docs.find(inv => inv.id === data.investmentId)?.data();
+            if (relatedInvestment) {
+                fundId = fundNames[relatedInvestment.fundId as keyof typeof fundNames] || relatedInvestment.fundId;
+            }
+        }
+
+
         // Add DB transactions to the combined history for display
         allTransactionsForHistory.push({
             id: doc.id,
             type: transactionTypeNames[data.type as keyof typeof transactionTypeNames] || data.type,
-            fund: data.details || '-',
+            fund: data.details || fundId,
             status: transactionStatusNames[data.status as keyof typeof transactionStatusNames] || data.status || 'تکمیل شده',
             date: createdAt.toLocaleDateString('fa-IR'),
             amount: data.amount,

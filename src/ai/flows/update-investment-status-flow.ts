@@ -12,7 +12,7 @@ import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, increment, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, query, where, getDocs } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 import { UpdateInvestmentStatusInputSchema, UpdateInvestmentStatusOutputSchema } from '@/ai/schemas';
 
@@ -68,6 +68,22 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         
         // Handle different statuses
         if (newStatus === 'active') {
+
+            // Create the main transaction record for the investment itself
+            const investmentTxRef = doc(collection(db, 'transactions'));
+            transaction.set(investmentTxRef, {
+                userId: investmentData.userId,
+                type: 'investment',
+                // This is a debit from the user's overall financial picture
+                amount: -Math.abs(investmentData.amountUSD),
+                status: 'completed',
+                createdAt: serverTimestamp(),
+                details: `سرمایه‌گذاری در صندوق ${investmentData.fundId}`,
+                proof: investmentData.transactionHash,
+                investmentId: investmentId,
+            });
+
+
             // Check for and award the initial bonus
             const bonusesRef = collection(db, 'bonuses');
             const userBonusQuery = query(bonusesRef, where('userId', '==', investmentData.userId));
@@ -84,6 +100,18 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                         status: 'locked',
                         awardedAt: serverTimestamp(),
                         reason: 'First 5000 users bonus'
+                    });
+
+                    // IMPORTANT: Also create a transaction to credit the user's wallet
+                    const bonusTxRef = doc(collection(db, 'transactions'));
+                    transaction.set(bonusTxRef, {
+                        userId: investmentData.userId,
+                        type: 'bonus',
+                        amount: REWARD_AMOUNT, // Credit the user's balance
+                        status: 'completed',
+                        createdAt: serverTimestamp(),
+                        details: `جایزه ${REWARD_USER_LIMIT} کاربر اول`,
+                        bonusId: bonusDocRef.id
                     });
                 }
             }
@@ -105,6 +133,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                 createdAt: serverTimestamp(),
               });
               
+              // Create transaction for the REFERRER
               const txRef = doc(collection(db, 'transactions'));
               transaction.set(txRef, {
                   userId: referrerId,
@@ -140,7 +169,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
       } else if (newStatus === 'rejected') {
         message = `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت رد شد.`;
       } else if (newStatus === 'completed') {
-        message = `سرمایه‌گذاری با شناسه ${investmentId} تکمیل شد و اصل پول به کیف پول کاربر بازگردانده شد.`;
+        message = `سرمایه‌گذاری تکمیل شد و اصل پول به کیف پول کاربر بازگردانده شد.`;
       }
 
       return {

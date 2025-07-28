@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,9 +18,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Wallet, MinusCircle, Loader2 } from "lucide-react";
+import { DollarSign, Wallet, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { Asset, Transaction } from "@/ai/flows/get-user-wallet-flow";
 import { getUserWalletAction } from "@/app/actions/wallet";
 import { WithdrawalDialog } from "@/components/dashboard/withdrawal-dialog";
 import { GetUserWalletOutput } from "@/ai/flows/get-user-wallet-flow";
@@ -63,14 +61,14 @@ export default function WalletPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-8">
         <Card className="lg:col-span-2 xl:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">موجودی کیف پول (قابل برداشت)</CardTitle>
+            <CardTitle className="text-sm font-medium">موجودی کیف پول</CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
                  <div className="text-4xl font-bold font-mono text-green-400">${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             )}
-            <p className="text-xs text-muted-foreground pt-2">این مبلغ شامل سودها و کمیسیون‌های شماست.</p>
+            <p className="text-xs text-muted-foreground pt-2">این مبلغ شامل سودها، کمیسیون‌ها و جوایز شماست و قابل برداشت است.</p>
           </CardContent>
         </Card>
         
