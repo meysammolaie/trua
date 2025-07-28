@@ -45,10 +45,11 @@ const distributeProfitsFlow = ai.defineFlow(
     try {
       
       const investmentsRef = collection(db, 'investments');
+      // We need all investments to calculate the total fee pool
       const allInvestmentsQuery = query(investmentsRef);
-      const investmentsSnapshot = await getDocs(allInvestmentsQuery);
+      const allInvestmentsSnapshot = await getDocs(allInvestmentsQuery);
       
-      const allInvestments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDoc);
+      const allInvestments = allInvestmentsSnapshot.docs.map(doc => doc.data() as InvestmentDoc);
       const activeInvestments = allInvestments.filter(inv => inv.status === 'active');
       
       if (activeInvestments.length === 0) {
@@ -57,7 +58,10 @@ const distributeProfitsFlow = ai.defineFlow(
 
       // Calculate the total profit pool from all investment fees
       let totalFeePool = allInvestments.reduce((sum, inv) => sum + (inv.feesUSD || 0), 0);
-
+      
+      // Let's assume we distribute 5% of the total collected fees daily.
+      // In a real scenario, you'd likely track the "undistributed" fee pool and draw from that.
+      // This is a simplified model for daily distribution.
       const dailyDistributablePool = totalFeePool * 0.05; 
 
       if (dailyDistributablePool <= 0) {
@@ -70,6 +74,7 @@ const distributeProfitsFlow = ai.defineFlow(
           return { success: true, message: 'مجموع سرمایه فعال برای محاسبه سهم سود صفر است.' };
       }
       
+      // Group investments by user to calculate their total active investment
       const investmentsByUser = activeInvestments.reduce((acc, inv) => {
         if (!acc[inv.userId]) {
             acc[inv.userId] = 0;
@@ -85,12 +90,13 @@ const distributeProfitsFlow = ai.defineFlow(
         const userTotalInvestment = investmentsByUser[userId];
         const profitShare = (userTotalInvestment / totalActiveInvestmentAmount) * dailyDistributablePool;
 
+        // Only create a transaction if there's profit to distribute
         if (profitShare > 0) {
             const transactionRef = doc(collection(db, 'transactions'));
             batch.set(transactionRef, {
                 userId,
                 type: 'profit_payout',
-                amount: profitShare,
+                amount: profitShare, // Positive amount for credit
                 status: 'completed',
                 createdAt: serverTimestamp(),
                 details: `سود روزانه بر اساس سرمایه خالص $${userTotalInvestment.toLocaleString()}`,

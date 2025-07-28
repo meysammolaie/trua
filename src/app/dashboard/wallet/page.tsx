@@ -173,7 +173,7 @@ export default function WalletPage() {
                                 <TableCell className="font-mono" title={tx.id}>{tx.id.substring(0,8)}...</TableCell>
                                 <TableCell className="font-medium">{tx.type}</TableCell>
                                 <TableCell>
-                                    <Badge variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'در انتظار' ? 'outline' : 'destructive'}>
+                                    <Badge variant={tx.status === 'تکمیل شده' || tx.status === 'فعال' ? 'secondary' : tx.status === 'در انتظار' ? 'outline' : 'destructive'}>
                                         {tx.status}
                                     </Badge>
                                 </TableCell>
