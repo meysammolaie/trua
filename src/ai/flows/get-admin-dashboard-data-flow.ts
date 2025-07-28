@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching all data required for the admin dashboard.
@@ -75,7 +76,7 @@ type InvestmentDocument = {
 const fundNames: Record<string, string> = {
     gold: "طلا",
     silver: "نقره",
-    dollar: "دلار",
+    usdt: "تتر",
     bitcoin: "بیت‌کوین"
 };
 
