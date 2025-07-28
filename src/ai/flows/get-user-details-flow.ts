@@ -141,7 +141,7 @@ const getUserDetailsFlow = ai.defineFlow(
         // Exclude investment transactions as they are handled above
         if(data.type.includes('investment')) return;
 
-        if (data.type === 'profit_payout') {
+        if (data.type === 'profit_payout' && data.status === 'completed') {
             totalProfit += data.amount;
         }
 
@@ -182,9 +182,9 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // walletBalance is the source of truth for withdrawable funds.
-    // It's maintained directly in the user document.
-    const walletBalance = userData.walletBalance || 0;
+    // This is the source of truth for the user's available balance.
+    // It's the sum of their active investments and their received profits.
+    const walletBalance = grossInvestment + totalProfit;
 
     const stats: z.infer<typeof StatsSchema> = {
         grossInvestment: grossInvestment, // Based on 'active' investments only
