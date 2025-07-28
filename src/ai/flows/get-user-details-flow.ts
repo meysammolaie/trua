@@ -118,20 +118,25 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // 2.2. Wallet Balance (Calculated ONLY from the transaction ledger)
+    // 2.2. Wallet Balance (Calculated ONLY from the transaction ledger for cash-like events)
     let walletBalance = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
+    const cashLikeTransactionTypes = ['profit_payout', 'commission', 'bonus', 'principal_return', 'withdrawal_refund'];
     
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Sum up all transactions to get the final balance.
-        // Credits are positive, debits are negative.
-        if (data.status === 'completed' || data.status === 'pending') {
+        // Sum up ONLY cash-like transactions to get the final withdrawable balance.
+        if (cashLikeTransactionTypes.includes(data.type) && data.status === 'completed') {
             walletBalance += data.amount;
         }
         
+        // Subtract pending withdrawals from balance
+        if (data.type === 'withdrawal_request' && data.status === 'pending') {
+             walletBalance += data.amount; // amount is already negative
+        }
+
         let fundId = '-';
         if (data.investmentId) {
             const relatedInvestment = investmentsSnapshot.docs.find(inv => inv.id === data.investmentId)?.data();
@@ -139,13 +144,13 @@ const getUserDetailsFlow = ai.defineFlow(
                 fundId = fundNames[relatedInvestment.fundId as keyof typeof fundNames] || relatedInvestment.fundId;
             }
         } else if (data.type === 'investment'){
-            // This is for display purposes, it's not a real transaction in the ledger
             const relatedInvestment = investmentsSnapshot.docs.find(inv => inv.id === doc.id)?.data();
              if (relatedInvestment) {
                 fundId = fundNames[relatedInvestment.fundId as keyof typeof fundNames] || relatedInvestment.fundId;
             }
         }
 
+        // Add all transactions for display in history
         allTransactionsForHistory.push({
             id: doc.id,
             type: transactionTypeNames[data.type as keyof typeof transactionTypeNames] || data.type,
