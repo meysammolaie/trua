@@ -100,14 +100,14 @@ const getUserDetailsFlow = ai.defineFlow(
     const userData = userDoc.data();
     
     // 2. Process investments and calculate stats
-    let grossInvestment = 0;
+    let activeNetInvestment = 0;
     const investmentByMonth: Record<string, number> = {};
     const allTransactions: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
 
     const activeInvestments = investmentsSnapshot.docs.filter(doc => doc.data().status === 'active');
     activeInvestments.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
-        grossInvestment += data.netAmountUSD; // Use NET amount for active investment value
+        activeNetInvestment += data.netAmountUSD; // Use NET amount for active investment value
 
         const date = data.createdAt.toDate();
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -185,13 +185,14 @@ const getUserDetailsFlow = ai.defineFlow(
     };
     
     // Wallet balance is the sum of active NET investment and total profits earned.
-    const walletBalanceFromDB = userData.walletBalance || 0;
+    const freeWalletBalance = userData.walletBalance || 0;
 
     const stats: z.infer<typeof StatsSchema> = {
-        grossInvestment: grossInvestment,
+        activeInvestment: activeNetInvestment, // Net value of active investments
         totalProfit: totalProfit,
-        lotteryTickets: Math.floor(grossInvestment / 10),
-        walletBalance: walletBalanceFromDB, 
+        lotteryTickets: Math.floor(activeNetInvestment / 10),
+        walletBalance: freeWalletBalance, // Free cash, withdrawable
+        totalBalance: activeNetInvestment + freeWalletBalance, // Total net worth
     };
     
     const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);

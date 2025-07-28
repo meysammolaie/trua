@@ -121,13 +121,13 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">سرمایه فعال (ناخالص)</CardTitle>
+                <CardTitle className="text-sm font-medium">سرمایه فعال (خالص)</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.grossInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${stats?.activeInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
                         <p className="text-xs text-muted-foreground">
                           سرمایه‌گذاری تایید شده شما
                         </p>
@@ -157,7 +157,7 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">موجودی کیف پول</CardTitle>
+                <CardTitle className="text-sm font-medium">موجودی کیف پول (قابل برداشت)</CardTitle>
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -165,7 +165,7 @@ export function Overview() {
                     <>
                         <div className="text-2xl font-bold font-mono">${stats?.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
                         <p className="text-xs text-muted-foreground">
-                          موجودی قابل برداشت شما
+                          موجودی آزاد شما
                         </p>
                     </>
                  )}

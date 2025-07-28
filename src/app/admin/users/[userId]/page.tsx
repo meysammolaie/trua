@@ -22,7 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ArrowUpRight, DollarSign, Ticket, UserX, UserCheck, ArrowRight } from "lucide-react";
+import { Loader2, ArrowUpRight, DollarSign, Ticket, UserX, UserCheck, ArrowRight, Wallet, TrendingUp } from "lucide-react";
 import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
 import { getUserDetailsAction } from "@/app/actions/user-details";
 import { updateUserStatusAction } from "@/app/actions/user-status";
@@ -119,8 +119,8 @@ export default function AdminUserDetailPage() {
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                 <Card className="col-span-1 lg:col-span-2">
+            <div className="grid gap-4 lg:grid-cols-3">
+                 <Card className="lg:col-span-1">
                     <CardHeader className="flex flex-row items-center gap-4">
                         <Avatar className="h-16 w-16">
                             <AvatarImage src={`https://i.pravatar.cc/80?u=${profile.uid}`} />
@@ -147,33 +147,35 @@ export default function AdminUserDetailPage() {
                          </Button>
                     </CardFooter>
                 </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">کل سرمایه‌گذاری</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold font-mono">${stats.totalInvestment.toLocaleString('en-US')}</div>
-                        <p className="text-xs text-muted-foreground">مجموع سرمایه‌گذاری‌های فعال</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">تیکت‌های قرعه‌کشی</CardTitle>
-                        <Ticket className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.lotteryTickets.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">برای قرعه‌کشی این دوره</p>
-                    </CardContent>
+                <Card className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4 p-4">
+                    <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
+                        <DollarSign className="h-6 w-6 text-muted-foreground mb-2"/>
+                        <p className="text-xs text-muted-foreground">سرمایه فعال (خالص)</p>
+                        <p className="font-bold font-mono text-lg">${stats.activeInvestment.toLocaleString('en-US')}</p>
+                    </div>
+                     <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
+                        <TrendingUp className="h-6 w-6 text-muted-foreground mb-2"/>
+                        <p className="text-xs text-muted-foreground">کل سود</p>
+                        <p className="font-bold font-mono text-lg">${stats.totalProfit.toLocaleString('en-US')}</p>
+                    </div>
+                    <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
+                        <Wallet className="h-6 w-6 text-muted-foreground mb-2"/>
+                        <p className="text-xs text-muted-foreground">موجودی کیف پول</p>
+                        <p className="font-bold font-mono text-lg">${stats.walletBalance.toLocaleString('en-US')}</p>
+                    </div>
+                    <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
+                        <Ticket className="h-6 w-6 text-muted-foreground mb-2"/>
+                        <p className="text-xs text-muted-foreground">تیکت قرعه‌کشی</p>
+                        <p className="font-bold font-mono text-lg">{stats.lotteryTickets.toLocaleString()}</p>
+                    </div>
                 </Card>
             </div>
             
              <Card className="mt-6">
                 <CardHeader>
-                    <CardTitle>تاریخچه سرمایه‌گذاری‌ها</CardTitle>
+                    <CardTitle>تاریخچه تراکنش‌ها</CardTitle>
                     <CardDescription>
-                        لیست تمام سرمایه‌گذاری‌های ثبت‌شده توسط این کاربر.
+                        لیست تمام فعالیت‌های مالی ثبت‌شده توسط این کاربر.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -181,7 +183,8 @@ export default function AdminUserDetailPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>شناسه</TableHead>
-                                <TableHead>صندوق</TableHead>
+                                <TableHead>نوع</TableHead>
+                                <TableHead>صندوق/جزئیات</TableHead>
                                 <TableHead>تاریخ</TableHead>
                                 <TableHead>وضعیت</TableHead>
                                 <TableHead className="text-right">مبلغ</TableHead>
@@ -190,21 +193,22 @@ export default function AdminUserDetailPage() {
                         <TableBody>
                            {transactions.length === 0 ? (
                              <TableRow>
-                                <TableCell colSpan={5} className="text-center py-10">
-                                    این کاربر هنوز هیچ سرمایه‌گذاری ثبت نکرده است.
+                                <TableCell colSpan={6} className="text-center py-10">
+                                    این کاربر هنوز هیچ تراکنشی ثبت نکرده است.
                                 </TableCell>
                             </TableRow>
                            ) : (
                              transactions.map((tx) => (
                                 <TableRow key={tx.id}>
                                     <TableCell className="font-mono">{tx.id.substring(0, 8)}...</TableCell>
+                                    <TableCell>{tx.type}</TableCell>
                                     <TableCell>{tx.fund}</TableCell>
                                     <TableCell>{tx.date}</TableCell>
                                     <TableCell>
-                                        <Badge variant={tx.status === 'فعال' ? 'secondary' : 'outline'}>{tx.status}</Badge>
+                                        <Badge variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'تکمیل شده' ? 'default' : 'outline'}>{tx.status}</Badge>
                                     </TableCell>
-                                    <TableCell className="text-right font-mono text-red-500">
-                                        ${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        ${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                     </TableCell>
                                 </TableRow>
                              ))

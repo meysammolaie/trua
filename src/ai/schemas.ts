@@ -1,3 +1,4 @@
+
 import { z } from 'genkit';
 
 export const PlatformSettingsSchema = z.object({
@@ -70,10 +71,11 @@ export const TransactionSchema = z.object({
 });
 
 export const StatsSchema = z.object({
-  grossInvestment: z.number(),
+  activeInvestment: z.number(),
   totalProfit: z.number(),
   lotteryTickets: z.number(),
-  walletBalance: z.number(),
+  walletBalance: z.number(), // Free, withdrawable cash
+  totalBalance: z.number(), // activeInvestment + walletBalance
 });
 
 export const ChartDataPointSchema = z.object({

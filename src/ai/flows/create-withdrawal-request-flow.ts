@@ -8,7 +8,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs, Timestamp, runTransaction, increment } from 'firebase/firestore';
+import { collection, doc, getDoc, query, where, getDocs, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
@@ -47,48 +47,9 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 2. Get platform settings
-    const settings = await getPlatformSettings();
-    
-    // 3. Check for an existing 'pending' withdrawal request
-    const pendingWithdrawalsQuery = query(
-        collection(db, 'withdrawals'),
-        where('userId', '==', userId),
-        where('status', '==', 'pending')
-    );
-    const pendingSnapshot = await getDocs(pendingWithdrawalsQuery);
-
-    if (!pendingSnapshot.empty) {
-        return {
-            success: false,
-            message: 'شما از قبل یک درخواست برداشت در انتظار بررسی دارید. لطفاً تا زمان پردازش آن صبر کنید.',
-        };
-    }
-
-    // 4. Check withdrawal rules
-    if (amount < settings.minWithdrawalAmount) {
-        return {
-            success: false,
-            message: `حداقل مبلغ برای برداشت ${settings.minWithdrawalAmount} دلار است.`,
-        };
-    }
-    
-    // 5. Calculate fees and net amount
-    const exitFee = amount * (settings.exitFee / 100);
-    const networkFee = settings.networkFee || 0;
-    const totalFees = exitFee + networkFee;
-    const netAmount = amount - totalFees;
-
-     if (netAmount <= 0) {
-        return {
-            success: false,
-            message: "مبلغ درخواستی پس از کسر کارمزدها باید مثبت باشد.",
-        };
-    }
-
-    // 6. Create withdrawal request and deduct from balance in a transaction
     try {
         const userRef = doc(db, 'users', userId);
+        const settings = await getPlatformSettings();
 
         await runTransaction(db, async (transaction) => {
             // Re-verify user balance within the transaction to prevent race conditions
@@ -96,10 +57,35 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             if (!userDoc.exists()) {
                  throw new Error("کاربر یافت نشد.");
             }
-            const remoteBalance = userDoc.data().walletBalance || 0;
+            const currentBalance = userDoc.data().walletBalance || 0;
 
-            if (remoteBalance < amount) {
-                throw new Error(`موجودی کیف پول شما (${remoteBalance.toLocaleString()}$) برای برداشت مبلغ ${amount.toLocaleString()}$ کافی نیست.`);
+            if (currentBalance < amount) {
+                throw new Error(`موجودی کیف پول شما (${currentBalance.toLocaleString()}$) برای برداشت مبلغ ${amount.toLocaleString()}$ کافی نیست.`);
+            }
+
+            // Check for an existing 'pending' withdrawal request
+            const pendingWithdrawalsQuery = query(
+                collection(db, 'withdrawals'),
+                where('userId', '==', userId),
+                where('status', '==', 'pending')
+            );
+            const pendingSnapshot = await getDocs(pendingWithdrawalsQuery);
+
+            if (!pendingSnapshot.empty) {
+                throw new Error('شما از قبل یک درخواست برداشت در انتظار بررسی دارید. لطفاً تا زمان پردازش آن صبر کنید.');
+            }
+             if (amount < settings.minWithdrawalAmount) {
+                throw new Error(`حداقل مبلغ برای برداشت ${settings.minWithdrawalAmount} دلار است.`);
+            }
+
+            // Calculate fees and net amount
+            const exitFee = amount * (settings.exitFee / 100);
+            const networkFee = settings.networkFee || 0;
+            const totalFees = exitFee + networkFee;
+            const netAmount = amount - totalFees;
+
+            if (netAmount <= 0) {
+                throw new Error("مبلغ درخواستی پس از کسر کارمزدها باید مثبت باشد.");
             }
 
             // A. Create the withdrawal document

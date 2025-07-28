@@ -62,8 +62,8 @@ export default function WalletPage() {
         {/* Total Balance Card */}
         <Card className="lg:col-span-2 xl:col-span-1">
           <CardHeader>
-            <CardTitle>موجودی کل / قابل برداشت</CardTitle>
-            <CardDescription>مجموع دارایی‌های قابل برداشت شما.</CardDescription>
+            <CardTitle>موجودی کل</CardTitle>
+            <CardDescription>مجموع دارایی‌های شما (فعال + قابل برداشت).</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -77,19 +77,24 @@ export default function WalletPage() {
                 </>
             )}
           </CardContent>
-          <CardFooter className="flex gap-2">
-            <WithdrawalDialog 
-                totalBalance={walletData?.withdrawableBalance ?? 0}
-                onWithdrawalSuccess={fetchWalletData}
-            />
-          </CardFooter>
+           <CardFooter>
+            <div className="text-sm">
+                موجودی قابل برداشت شما: <span className="font-bold font-mono text-green-400">${walletData?.withdrawableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+           </CardFooter>
         </Card>
 
         {/* Asset Breakdown Card */}
         <Card className="lg:col-span-3 xl:col-span-3">
-            <CardHeader>
-                <CardTitle>تفکیک دارایی‌های فعال</CardTitle>
-                <CardDescription>موجودی شما در هر یک از صندوق‌های سرمایه‌گذاری.</CardDescription>
+            <CardHeader className="flex flex-row justify-between items-start">
+                <div>
+                    <CardTitle>تفکیک دارایی‌های فعال</CardTitle>
+                    <CardDescription>موجودی شما در هر یک از صندوق‌های سرمایه‌گذاری.</CardDescription>
+                </div>
+                <WithdrawalDialog 
+                    totalBalance={walletData?.withdrawableBalance ?? 0}
+                    onWithdrawalSuccess={fetchWalletData}
+                />
             </CardHeader>
             <CardContent>
                 <Table>

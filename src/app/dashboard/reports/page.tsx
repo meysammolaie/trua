@@ -91,34 +91,34 @@ export default function ReportsPage() {
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>سرمایه فعال (ناخالص)</CardDescription>
-            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.grossInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
+            <CardDescription>موجودی کل</CardDescription>
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.totalBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              مجموع سرمایه‌گذاری‌های تایید شده
+              مجموع دارایی‌های شما
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>موجودی کیف پول</CardDescription>
-            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.walletBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
+            <CardDescription>سرمایه فعال (خالص)</CardDescription>
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.activeInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              موجودی قابل برداشت شما
+              سرمایه‌گذاری‌های تایید شده
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>سود خالص</CardDescription>
-             {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.totalProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
+            <CardDescription>موجودی قابل برداشت</CardDescription>
+             {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.walletBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              از تمام فعالیت‌های شما
+              موجودی آزاد در کیف پول شما
             </div>
           </CardContent>
         </Card>
