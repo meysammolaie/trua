@@ -110,7 +110,6 @@ const getUserDetailsFlow = ai.defineFlow(
                 totalProfit: 0,
                 lotteryTickets: 0,
                 walletBalance: 0,
-                totalBalance: 0,
                 lockedBonus: 0,
             },
             investmentChartData: [],
@@ -163,7 +162,11 @@ const getUserDetailsFlow = ai.defineFlow(
         const createdAt = data.createdAt.toDate();
         
         // Add or subtract from balance based on the transaction amount and status
-        if (data.status === 'completed' || data.type === 'withdrawal_request' && data.status === 'pending') {
+        if (data.status === 'completed') {
+             walletBalance += data.amount;
+        }
+        // Also account for pending withdrawal requests, which should be deducted from balance
+        if (data.type === 'withdrawal_request' && data.status === 'pending') {
             walletBalance += data.amount;
         }
 
@@ -216,7 +219,6 @@ const getUserDetailsFlow = ai.defineFlow(
         totalProfit: totalProfit,
         lotteryTickets: Math.floor(activeNetInvestment / 10),
         walletBalance: walletBalance, 
-        totalBalance: activeNetInvestment + walletBalance,
         lockedBonus: lockedBonus,
     };
     

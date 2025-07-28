@@ -74,8 +74,7 @@ export const StatsSchema = z.object({
   activeInvestment: z.number(),
   totalProfit: z.number(),
   lotteryTickets: z.number(),
-  walletBalance: z.number(), // Free, withdrawable cash
-  totalBalance: z.number(), // activeInvestment + walletBalance
+  walletBalance: z.number(), // This is the main liquid/cash balance
   lockedBonus: z.number().optional(),
 });
 
@@ -105,6 +104,5 @@ export const GetUserWalletOutputSchema = z.object({
   assets: z.array(AssetSchema),
   recentTransactions: z.array(TransactionSchema),
   totalAssetValue: z.number(),
-  withdrawableBalance: z.number(),
-  totalBalance: z.number(),
+  walletBalance: z.number(),
 });

@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -20,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MinusCircle, Loader2 } from "lucide-react";
+import { DollarSign, Wallet, MinusCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Asset, Transaction } from "@/ai/flows/get-user-wallet-flow";
 import { getUserWalletAction } from "@/app/actions/wallet";
@@ -53,46 +52,50 @@ export default function WalletPage() {
         fetchWalletData();
     }, [user, fetchWalletData]);
 
+    const walletBalance = walletData?.walletBalance ?? 0;
+    const totalAssetValue = walletData?.totalAssetValue ?? 0;
+
   return (
     <>
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl">کیف پول</h1>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-8">
-        {/* Total Balance Card */}
-        <Card className="lg:col-span-2 xl:col-span-1">
-          <CardHeader>
-            <CardTitle>موجودی کل</CardTitle>
-            <CardDescription>مجموع دارایی‌های شما (فعال + قابل برداشت).</CardDescription>
+        <Card className="lg:col-span-2 xl:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">موجودی کیف پول (قابل برداشت)</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-                <Loader2 className="h-8 w-8 animate-spin" />
-            ) : (
-                <>
-                <div className="text-4xl font-bold font-mono">${walletData?.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                 <div className="text-xs text-muted-foreground mt-2">
-                    (شامل سرمایه فعال: ${walletData?.totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                </div>
-                </>
+            {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
+                 <div className="text-4xl font-bold font-mono text-green-400">${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             )}
+            <p className="text-xs text-muted-foreground pt-2">این مبلغ شامل سودها و کمیسیون‌های شماست.</p>
           </CardContent>
-           <CardFooter>
-            <div className="text-sm">
-                موجودی قابل برداشت شما: <span className="font-bold font-mono text-green-400">${walletData?.withdrawableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-           </CardFooter>
         </Card>
+        
+        <Card className="lg:col-span-2 xl:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">مجموع دارایی‌های فعال</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+             {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
+                 <div className="text-4xl font-bold font-mono">${totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            )}
+            <p className="text-xs text-muted-foreground pt-2">ارزش خالص سرمایه‌گذاری‌های شما در صندوق‌ها.</p>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Asset Breakdown Card */}
-        <Card className="lg:col-span-3 xl:col-span-3">
+       <Card>
             <CardHeader className="flex flex-row justify-between items-start">
                 <div>
-                    <CardTitle>تفکیک دارایی‌های فعال</CardTitle>
-                    <CardDescription>موجودی شما در هر یک از صندوق‌های سرمایه‌گذاری.</CardDescription>
+                    <CardTitle>دارایی‌ها و برداشت</CardTitle>
+                    <CardDescription>موجودی خود را مدیریت کرده و درخواست برداشت ثبت کنید.</CardDescription>
                 </div>
                 <WithdrawalDialog 
-                    totalBalance={walletData?.withdrawableBalance ?? 0}
+                    walletBalance={walletBalance}
                     onWithdrawalSuccess={fetchWalletData}
                 />
             </CardHeader>
@@ -132,9 +135,7 @@ export default function WalletPage() {
                 </Table>
             </CardContent>
         </Card>
-      </div>
 
-       {/* Transaction History Card */}
       <Card>
         <CardHeader>
             <CardTitle>تاریخچه تراکنش‌های اخیر</CardTitle>
