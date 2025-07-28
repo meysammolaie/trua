@@ -13,6 +13,7 @@ import {
   Loader2,
   Lock,
   Medal,
+  PiggyBank,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,9 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
 import { getUserDetailsAction } from "@/app/actions/user-details";
+import { getPlatformSettingsAction } from "@/app/actions/platform-settings";
+import { getAllTransactionsAction } from "@/app/actions/transactions";
+import { Progress } from "@/components/ui/progress";
 
 
 type UserDetails = GetUserDetailsOutput;
@@ -95,24 +99,34 @@ export function Overview() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [chartData, setChartData] = useState<ChartData>([]);
     const [loading, setLoading] = useState(true);
+    const [platformTvl, setPlatformTvl] = useState(0);
+    const [bonusUnlockTarget, setBonusUnlockTarget] = useState(1000000);
+
 
     useEffect(() => {
         if (user) {
             setLoading(true);
-            getUserDetailsAction({ userId: user.uid })
-                .then(response => {
-                    setTransactions(response.transactions.slice(0, 5));
-                    setStats(response.stats);
-                    setChartData(response.investmentChartData);
-                })
-                .catch(error => {
-                    console.error("Failed to fetch user details:", error);
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
+            Promise.all([
+                getUserDetailsAction({ userId: user.uid }),
+                getAllTransactionsAction(),
+                getPlatformSettingsAction()
+            ]).then(([userDetails, allTransactions, settings]) => {
+                setTransactions(userDetails.transactions.slice(0, 5));
+                setStats(userDetails.stats);
+                setChartData(userDetails.investmentChartData);
+                const activeInvestments = allTransactions.transactions.filter(t => t.type === 'investment' && t.status === 'active');
+                const totalTvl = activeInvestments.reduce((sum, inv) => sum + Math.abs(inv.amount), 0);
+                setPlatformTvl(totalTvl);
+                setBonusUnlockTarget(settings.bonusUnlockTarget);
+            }).catch(error => {
+                console.error("Failed to fetch dashboard data:", error);
+            }).finally(() => {
+                setLoading(false);
+            });
         }
     }, [user]);
+
+    const bonusProgress = Math.min((platformTvl / bonusUnlockTarget) * 100, 100);
 
   return (
     <>
@@ -122,13 +136,19 @@ export function Overview() {
        {stats?.lockedBonus && stats.lockedBonus > 0 && (
          <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
              <Card className="bg-primary/10 border-primary/40">
-                <CardHeader className="flex flex-row items-center gap-4">
-                    <Gift className="w-8 h-8 text-primary" />
-                    <div>
-                        <CardTitle>شما یک جایزه ویژه دارید!</CardTitle>
-                        <CardDescription className="text-foreground/80">
-                            مبلغ <span className="font-bold text-yellow-400">${stats.lockedBonus.toLocaleString()}</span> جایزه به شما تعلق گرفته است که پس از رسیدن حجم کل سرمایه پلتفرم به حد نصاب، آزاد خواهد شد.
+                <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                    <Gift className="w-12 h-12 text-primary flex-shrink-0" />
+                    <div className="flex-grow">
+                        <CardTitle>شما یک جایزه ۱۰۰ دلاری دارید!</CardTitle>
+                        <CardDescription className="text-foreground/80 mt-1">
+                            این جایزه با رسیدن حجم کل سرمایه پلتفرم به ${bonusUnlockTarget.toLocaleString()} آزاد خواهد شد.
                         </CardDescription>
+                        <div className="mt-3">
+                            <Progress value={bonusProgress} className="w-full h-2" />
+                            <p className="text-xs text-muted-foreground mt-1 text-left">
+                                ${platformTvl.toLocaleString()} / ${bonusUnlockTarget.toLocaleString()}
+                            </p>
+                        </div>
                     </div>
                 </CardHeader>
              </Card>
@@ -138,15 +158,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">سرمایه فعال (خالص)</CardTitle>
+                <CardTitle className="text-sm font-medium">ارزش کل دارایی</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.activeInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment! + stats?.walletBalance! + stats?.lockedBonus!).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
                         <p className="text-xs text-muted-foreground">
-                          سرمایه‌گذاری تایید شده شما
+                          سرمایه فعال + کیف پول + جایزه
                         </p>
                     </>
                 )}
@@ -156,15 +176,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">سود کل</CardTitle>
+                <CardTitle className="text-sm font-medium">سرمایه فعال</CardTitle>
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${stats?.activeInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
                         <p className="text-xs text-muted-foreground">
-                        +۰٪ نسبت به ماه گذشته (بزودی)
+                        دارایی شما در صندوق‌ها
                         </p>
                     </>
                  )}
@@ -174,15 +194,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">موجودی کیف پول</CardTitle>
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">موجودی قابل برداشت</CardTitle>
+                <PiggyBank className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
                         <div className="text-2xl font-bold font-mono">${stats?.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
                         <p className="text-xs text-muted-foreground">
-                          موجودی آزاد شما
+                          سودها و کمیسیون‌ها
                         </p>
                     </>
                  )}
@@ -277,7 +297,7 @@ export function Overview() {
                     </CardDescription>
                 </div>
                 <Button asChild size="sm" className="ml-auto gap-1">
-                <Link href="/dashboard/wallet">
+                <Link href="/dashboard/reports">
                     مشاهده همه
                     <ArrowUpRight className="h-4 w-4" />
                 </Link>

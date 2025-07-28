@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Wallet, Loader2, PiggyBank } from "lucide-react";
+import { DollarSign, Wallet, Loader2, PiggyBank, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserWalletAction } from "@/app/actions/wallet";
 import { WithdrawalDialog } from "@/components/dashboard/withdrawal-dialog";
@@ -50,9 +50,10 @@ export default function WalletPage() {
         fetchWalletData();
     }, [user, fetchWalletData]);
 
-    const withdrawableBalance = walletData?.withdrawableBalance ?? 0;
+    const walletBalance = walletData?.walletBalance ?? 0;
     const totalAssetValue = walletData?.totalAssetValue ?? 0;
-    const totalBalance = totalAssetValue + withdrawableBalance;
+    const lockedBonus = walletData?.lockedBonus ?? 0;
+    const totalValue = totalAssetValue + walletBalance + lockedBonus;
 
   return (
     <>
@@ -67,13 +68,13 @@ export default function WalletPage() {
           </CardHeader>
           <CardContent>
             {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
-                 <div className="text-4xl font-bold font-mono text-green-400">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                 <div className="text-4xl font-bold font-mono text-green-400">${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             )}
-            <p className="text-xs text-muted-foreground pt-2">مجموع دارایی‌های فعال و موجودی قابل برداشت شما.</p>
+            <p className="text-xs text-muted-foreground pt-2">مجموع دارایی‌های فعال، موجودی قابل برداشت و جوایز قفل‌شده شما.</p>
           </CardContent>
         </Card>
         
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">موجودی قابل برداشت</CardTitle>
@@ -81,9 +82,9 @@ export default function WalletPage() {
                 </CardHeader>
                 <CardContent>
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-                        <div className="text-2xl font-bold font-mono">${withdrawableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold font-mono">${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     )}
-                    <p className="text-xs text-muted-foreground pt-1">این مبلغ شامل سودها، کمیسیون‌ها و جوایز شماست.</p>
+                    <p className="text-xs text-muted-foreground pt-1">این مبلغ شامل سودها و کمیسیون‌هاست.</p>
                 </CardContent>
             </Card>
             <Card>
@@ -98,6 +99,18 @@ export default function WalletPage() {
                     <p className="text-xs text-muted-foreground pt-1">ارزش خالص سرمایه‌گذاری‌های شما در صندوق‌ها.</p>
                 </CardContent>
             </Card>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">جایزه قفل‌شده</CardTitle>
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                        <div className="text-2xl font-bold font-mono">${lockedBonus.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    )}
+                    <p className="text-xs text-muted-foreground pt-1">این مبلغ در آینده برای شما آزاد خواهد شد.</p>
+                </CardContent>
+            </Card>
         </div>
       </div>
 
@@ -108,7 +121,7 @@ export default function WalletPage() {
                     <CardDescription>موجودی خود را مدیریت کرده و درخواست برداشت ثبت کنید.</CardDescription>
                 </div>
                 <WithdrawalDialog 
-                    withdrawableBalance={withdrawableBalance}
+                    withdrawableBalance={walletBalance}
                     onWithdrawalSuccess={fetchWalletData}
                 />
             </CardHeader>

@@ -14,6 +14,7 @@ export const PlatformSettingsSchema = z.object({
   bitcoinWalletAddress: z.string(),
   minWithdrawalAmount: z.coerce.number().min(0).default(10),
   withdrawalDay: z.enum(['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday']).default('saturday'),
+  bonusUnlockTarget: z.coerce.number().positive().default(1000000), // New field for bonus unlock
 });
 
 export const GetInvestmentDetailsInputSchema = z.object({
@@ -72,10 +73,9 @@ export const TransactionSchema = z.object({
 
 export const StatsSchema = z.object({
   activeInvestment: z.number(),
-  totalProfit: z.number(), // This now represents the "withdrawable" balance.
+  walletBalance: z.number(), 
+  lockedBonus: z.number(),
   lotteryTickets: z.number(),
-  walletBalance: z.number(), // This is the new "Total Balance" (activeInvestment + totalProfit)
-  lockedBonus: z.number().optional(),
 });
 
 export const ChartDataPointSchema = z.object({
@@ -103,6 +103,7 @@ export const AssetSchema = z.object({
 export const GetUserWalletOutputSchema = z.object({
   assets: z.array(AssetSchema),
   recentTransactions: z.array(TransactionSchema),
-  totalAssetValue: z.number(), // Represents active investments
-  withdrawableBalance: z.number(), // Represents liquid cash (profits, bonuses)
+  totalAssetValue: z.number(),
+  walletBalance: z.number(), 
+  lockedBonus: z.number(),
 });

@@ -116,10 +116,9 @@ const getUserDetailsFlow = ai.defineFlow(
             transactions: [],
             stats: {
                 activeInvestment: 0,
-                totalProfit: 0,
-                lotteryTickets: 0,
                 walletBalance: 0,
                 lockedBonus: 0,
+                lotteryTickets: 0,
             },
             investmentChartData: [],
         };
@@ -145,16 +144,16 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // 2.2. Withdrawable Balance and Total Profit (Calculated from the transaction ledger)
-    let withdrawableBalance = 0;
+    // 2.2. Wallet Balance (Calculated from the transaction ledger)
+    let walletBalance = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
 
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Accumulate all transactions to calculate the final withdrawable balance
-        withdrawableBalance += data.amount;
+        // Accumulate all transactions to calculate the final wallet balance
+        walletBalance += data.amount;
 
         // Find the associated investment for fund details if applicable
         let fundId = '-';
@@ -206,14 +205,11 @@ const getUserDetailsFlow = ai.defineFlow(
     };
     
     // Final Calculation of Stats
-    // totalProfit is now the "withdrawable" balance.
-    // walletBalance is now the "total net worth" (active investment + withdrawable)
     const stats: z.infer<typeof StatsSchema> = {
         activeInvestment: activeNetInvestment,
-        totalProfit: withdrawableBalance, 
-        lotteryTickets: Math.floor(activeNetInvestment / 10),
-        walletBalance: activeNetInvestment + withdrawableBalance, 
+        walletBalance: walletBalance, 
         lockedBonus: lockedBonus,
+        lotteryTickets: Math.floor(activeNetInvestment / 10),
     };
     
     // Sort combined history by date
