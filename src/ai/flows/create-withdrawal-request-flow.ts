@@ -48,7 +48,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 2. Get platform settings and user details (for wallet balance) in parallel
+    // 2. Get platform settings and user details in parallel
     const [settings, userDetails] = await Promise.all([
         getPlatformSettings(),
         getUserDetails({ userId }),
@@ -69,7 +69,6 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-
     // 4. Check withdrawal rules
     if (amount < settings.minWithdrawalAmount) {
         return {
@@ -77,10 +76,8 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             message: `حداقل مبلغ برای برداشت ${settings.minWithdrawalAmount} دلار است.`,
         };
     }
-
-    // 5. Check user balance from the unified getUserDetails flow
-    const userBalance = userDetails.stats.walletBalance;
     
+    const userBalance = userDetails.stats.walletBalance;
     if (amount > userBalance) {
         return {
             success: false,
@@ -88,7 +85,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 6. Calculate fees and net amount
+    // 5. Calculate fees and net amount
     const exitFee = amount * (settings.exitFee / 100);
     const networkFee = settings.networkFee || 0;
     const totalFees = exitFee + networkFee;
@@ -101,20 +98,22 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 7. Create withdrawal request and deduct from balance in a transaction
+    // 6. Create withdrawal request and deduct from balance in a transaction
     try {
         const userRef = doc(db, 'users', userId);
 
         await runTransaction(db, async (transaction) => {
-            // Verify user balance again within the transaction to prevent race conditions
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists() || (userDoc.data().walletBalance || 0) < amount) {
-                throw new Error(`موجودی کیف پول شما (${userDoc.data().walletBalance || 0}) برای برداشت مبلغ ${amount} کافی نیست.`);
+            // Re-verify user balance within the transaction to prevent race conditions
+            const remoteUserDetails = await getUserDetails({userId});
+            const remoteBalance = remoteUserDetails.stats.walletBalance;
+
+            if (remoteBalance < amount) {
+                throw new Error(`موجودی کیف پول شما (${remoteBalance.toLocaleString()}$) برای برداشت مبلغ ${amount} کافی نیست.`);
             }
 
             // A. Create the withdrawal document
             const withdrawalRef = doc(collection(db, 'withdrawals'));
-            transaction.set(withdrawalRef, {
+            const newWithdrawal = {
                 userId,
                 amount,
                 walletAddress,
@@ -123,9 +122,22 @@ const createWithdrawalRequestFlow = ai.defineFlow(
                 exitFee: exitFee,
                 networkFee: networkFee,
                 netAmount: netAmount,
+            };
+            transaction.set(withdrawalRef, newWithdrawal);
+
+            // B. Create a corresponding 'pending' transaction record for the user's history
+            const transactionRef = doc(collection(db, 'transactions'));
+            transaction.set(transactionRef, {
+                userId,
+                type: 'withdrawal_request',
+                amount: -amount,
+                status: 'pending',
+                createdAt: serverTimestamp(),
+                details: `درخواست برداشت به آدرس ${walletAddress}`,
+                withdrawalId: withdrawalRef.id // Link transaction to withdrawal request
             });
 
-            // B. Deduct the amount from user's balance in Firestore
+            // C. Deduct the amount from user's walletBalance
             transaction.update(userRef, { walletBalance: increment(-amount) });
         });
 

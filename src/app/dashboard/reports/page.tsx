@@ -20,15 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { DateRangePicker } from "@/components/date-range-picker";
-import { Download, Search, Loader2, Receipt, ArrowUpRight, Copy } from "lucide-react";
+import { Loader2, Copy } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
 import { getUserDetailsAction } from "@/app/actions/user-details";
@@ -41,7 +33,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 
-type Transaction = GetUserDetailsOutput["transactions"][0] & { proof?: string };
+type Transaction = GetUserDetailsOutput["transactions"][0];
 type Stats = GetUserDetailsOutput["stats"];
 
 
@@ -78,6 +70,7 @@ export default function ReportsPage() {
         investment: "سرمایه‌گذاری",
         profit_payout: "واریز سود",
         withdrawal: "برداشت وجه",
+        withdrawal_request: "درخواست برداشت",
     };
 
     const statusColors: Record<string, "secondary" | "outline" | "destructive" | "default"> = {
@@ -85,6 +78,7 @@ export default function ReportsPage() {
         "در انتظار": "outline",
         "تکمیل شده": "default",
         "موفق": "default",
+        "رد شده": "destructive",
     }
 
 
@@ -97,12 +91,12 @@ export default function ReportsPage() {
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>سرمایه فعال (خالص)</CardDescription>
-            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.netInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
+            <CardDescription>سرمایه فعال (ناخالص)</CardDescription>
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${stats?.grossInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              سرمایه ناخالص: ${stats?.grossInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}
+              مجموع سرمایه‌گذاری‌های تایید شده
             </div>
           </CardContent>
         </Card>
@@ -186,8 +180,8 @@ export default function ReportsPage() {
                         </Badge>
                     </TableCell>
                     <TableCell>{tx.date}</TableCell>
-                    <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <TableCell className={`text-right font-mono ${tx.amount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {tx.amount >= 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell className="text-center">
                         {tx.proof ? (

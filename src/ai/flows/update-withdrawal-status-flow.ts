@@ -8,7 +8,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, runTransaction, increment, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, runTransaction, increment, addDoc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -49,8 +49,17 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
           throw new Error(`درخواست برداشت با شناسه ${withdrawalId} یافت نشد.`);
         }
         const withdrawalData = withdrawalDoc.data();
+        if (withdrawalData.status !== 'pending') {
+            throw new Error('این درخواست قبلاً پردازش شده است.');
+        }
+
         const userId = withdrawalData.userId;
         const userRef = doc(db, 'users', userId);
+
+        // Find the associated transaction record to update its status
+        const txQuery = query(collection(db, 'transactions'), where('withdrawalId', '==', withdrawalId), where('userId', '==', userId));
+        const txSnapshot = await getDocs(txQuery);
+        const txDocRef = txSnapshot.docs.length > 0 ? txSnapshot.docs[0].ref : null;
 
         const updatePayload: Record<string, any> = { status: newStatus };
 
@@ -58,30 +67,30 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
           if (!adminTransactionProof) {
             throw new Error('برای تایید برداشت، ارائه رسید تراکنش الزامی است.');
           }
-          // The amount has already been deducted from the walletBalance when the request was created.
-          // Now we just log the completed transaction.
-          const transactionRef = doc(collection(db, 'transactions'));
-          transaction.set(transactionRef, {
-            userId,
-            type: 'withdrawal',
-            amount: -withdrawalData.netAmount,
-            status: 'completed',
-            createdAt: serverTimestamp(),
-            details: `Withdrawal to ${withdrawalData.walletAddress}. Admin proof: ${adminTransactionProof}`,
-            proof: adminTransactionProof
-          });
-          
+          // The amount was already deducted from the user's wallet when the request was created.
+          // Now we just update the status to 'completed' and log the admin proof.
           updatePayload.adminTransactionProof = adminTransactionProof;
-          updatePayload.status = 'completed'; // Move directly to completed status
+          updatePayload.status = 'completed'; 
           transaction.update(withdrawalRef, updatePayload);
+
+          if (txDocRef) {
+              transaction.update(txDocRef, {
+                  status: 'completed',
+                  details: `برداشت موفق به ${withdrawalData.walletAddress}`,
+                  proof: adminTransactionProof
+              });
+          }
 
         } else { // If 'rejected'
           // We need to return the deducted amount back to the user's wallet.
           transaction.update(userRef, {
               walletBalance: increment(withdrawalData.amount) // Return the gross amount
           });
-          // And update the status.
-          transaction.update(withdrawalRef, updatePayload);
+          // And update the withdrawal and transaction status.
+          transaction.update(withdrawalRef, { status: 'rejected' });
+          if(txDocRef) {
+              transaction.update(txDocRef, { status: 'rejected', details: 'درخواست برداشت توسط مدیر رد شد.' });
+          }
         }
       });
 

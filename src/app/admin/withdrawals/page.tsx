@@ -21,20 +21,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-    DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, FileDown, CheckCircle, Clock, Ban, Loader2, AlertTriangle, Check, DollarSign } from "lucide-react";
-import { WithdrawalRequest } from "@/ai/flows/get-withdrawal-requests-flow";
-import { getWithdrawalRequestsAction, updateWithdrawalStatusAction } from "@/app/actions/withdrawals";
+import { Search, FileDown, CheckCircle, Clock, Ban, Loader2, AlertTriangle, Check, DollarSign } from "lucide-react";
+import { WithdrawalRequest, GetAllWithdrawalsOutput } from "@/ai/flows/get-withdrawal-requests-flow";
+import { getWithdrawalRequestsAction } from "@/app/actions/withdrawals";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
-import { getAllTransactionsAction } from "@/app/actions/transactions";
 import { WithdrawalDetailsDialog } from "@/components/admin/withdrawal-details-dialog";
 
 const statusNames: Record<string, string> = {
@@ -46,9 +36,8 @@ const statusNames: Record<string, string> = {
 
 export default function AdminWithdrawalsPage() {
     const { toast } = useToast();
-    const [allRequests, setAllRequests] = useState<WithdrawalRequest[]>([]);
+    const [data, setData] = useState<GetAllWithdrawalsOutput | null>(null);
     const [filteredRequests, setFilteredRequests] = useState<WithdrawalRequest[]>([]);
-    const [stats, setStats] = useState({ totalPending: 0, totalApproved: 0, pendingCount: 0, platformWallet: 0 });
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedRequest, setSelectedRequest] = useState<WithdrawalRequest | null>(null);
@@ -56,23 +45,9 @@ export default function AdminWithdrawalsPage() {
     const fetchRequests = useCallback(async () => {
         setLoading(true);
         try {
-            const [requestsData, transactionsData] = await Promise.all([
-                getWithdrawalRequestsAction(),
-                getAllTransactionsAction()
-            ]);
-
-            setAllRequests(requestsData.requests);
+            const requestsData = await getWithdrawalRequestsAction();
+            setData(requestsData);
             setFilteredRequests(requestsData.requests);
-            
-            const totalPending = requestsData.requests.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0);
-            const totalApproved = requestsData.requests.filter(r => r.status === 'approved' || r.status === 'completed').reduce((sum, r) => sum + r.amount, 0);
-            const pendingCount = requestsData.requests.filter(r => r.status === 'pending').length;
-            
-            // Calculate platform wallet balance from all active investments
-            const activeInvestments = transactionsData.transactions.filter(t => t.type === 'investment' && t.status === 'active');
-            const platformWallet = activeInvestments.reduce((sum, inv) => sum + Math.abs(inv.amount), 0);
-
-            setStats({ totalPending, totalApproved, pendingCount, platformWallet });
         } catch(error) {
             console.error("Error fetching withdrawal requests:", error);
             toast({
@@ -90,18 +65,19 @@ export default function AdminWithdrawalsPage() {
     }, [fetchRequests]);
 
     useEffect(() => {
-        let result = allRequests;
+        if (!data) return;
+        let result = data.requests;
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
             result = result.filter(req => 
                 req.userFullName.toLowerCase().includes(lowercasedTerm) || 
                 req.userEmail.toLowerCase().includes(lowercasedTerm) ||
-                req.walletAddress.toLowerCase().includes(lowercasedTerm) ||
+                (req.walletAddress && req.walletAddress.toLowerCase().includes(lowercasedTerm)) ||
                 req.id.toLowerCase().includes(lowercasedTerm)
             );
         }
         setFilteredRequests(result);
-    }, [searchTerm, allRequests]);
+    }, [searchTerm, data]);
 
     const getStatusIcon = (status: string) => {
         switch (status) {
@@ -133,6 +109,8 @@ export default function AdminWithdrawalsPage() {
 
     const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+    const stats = data?.stats;
+
     return (
         <>
             <div className="flex items-center justify-between">
@@ -146,8 +124,8 @@ export default function AdminWithdrawalsPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats.platformWallet)}</div>}
-                        <p className="text-xs text-muted-foreground">مجموع سرمایه‌گذاری‌های فعال</p>
+                        {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.platformWallet ?? 0)}</div>}
+                        <p className="text-xs text-muted-foreground">موجودی دارایی‌های فعال</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -156,8 +134,8 @@ export default function AdminWithdrawalsPage() {
                         <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats.totalPending)}</div>}
-                        <p className="text-xs text-muted-foreground">در {stats.pendingCount.toLocaleString()} درخواست</p>
+                        {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalPending ?? 0)}</div>}
+                        <p className="text-xs text-muted-foreground">در {stats?.pendingCount.toLocaleString() ?? 0} درخواست</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -166,7 +144,7 @@ export default function AdminWithdrawalsPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats.platformWallet - stats.totalPending)}</div>}
+                        {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency((stats?.platformWallet ?? 0) - (stats?.totalPending ?? 0))}</div>}
                         <p className="text-xs text-muted-foreground">موجودی پلتفرم با کسر درخواست‌های در انتظار</p>
                     </CardContent>
                 </Card>
@@ -236,7 +214,7 @@ export default function AdminWithdrawalsPage() {
                     </Table>
                 </CardContent>
                 <CardFooter>
-                    <div className="text-xs text-muted-foreground">نمایش <strong>{filteredRequests.length}</strong> از <strong>{allRequests.length}</strong> درخواست</div>
+                    <div className="text-xs text-muted-foreground">نمایش <strong>{filteredRequests.length}</strong> از <strong>{data?.requests.length ?? 0}</strong> درخواست</div>
                 </CardFooter>
             </Card>
             

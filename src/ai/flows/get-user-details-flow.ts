@@ -40,7 +40,7 @@ type DbTransactionDocument = {
     userId: string;
     type: string;
     amount: number;
-    status: 'completed';
+    status: 'completed' | 'pending' | 'rejected';
     createdAt: Timestamp;
     details?: string;
     proof?: string;
@@ -99,28 +99,23 @@ const getUserDetailsFlow = ai.defineFlow(
     
     // 2. Process investments and calculate stats
     let grossInvestment = 0;
-    let netInvestment = 0;
-    const lotteryTicketRatio = 10; // $10 for 1 ticket
     const investmentByMonth: Record<string, number> = {};
     const allTransactions: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
 
     const activeInvestments = investmentsSnapshot.docs.filter(doc => doc.data().status === 'active');
-
     activeInvestments.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
-        // Gross and net investment are now calculated only from 'active' investments
         grossInvestment += data.amountUSD;
-        netInvestment += data.netAmountUSD ?? data.amountUSD;
 
         const date = data.createdAt.toDate();
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         if(!investmentByMonth[monthKey]) {
             investmentByMonth[monthKey] = 0;
         }
-        investmentByMonth[monthKey] += data.amountUSD; // Use gross for chart
+        investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // Process all investments for transaction history
+    // 3. Process all investments for transaction history
     investmentsSnapshot.docs.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
         const createdAt = data.createdAt.toDate();
@@ -130,18 +125,22 @@ const getUserDetailsFlow = ai.defineFlow(
             fund: fundNames[data.fundId as keyof typeof fundNames] || data.fundId,
             status: statusNames[data.status as keyof typeof statusNames] || data.status,
             date: createdAt.toLocaleDateString('fa-IR'),
-            amount: -Math.abs(data.amountUSD), // Show gross amount
+            amount: -Math.abs(data.amountUSD),
             timestamp: createdAt.getTime(),
             proof: data.transactionHash
         });
     });
 
 
-    // 3. Process other transactions (profits, withdrawals)
+    // 4. Process other transactions (profits, withdrawals)
     let totalProfit = 0;
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
+        
+        // Exclude investment transactions as they are handled above
+        if(data.type.includes('investment')) return;
+
         if (data.type === 'profit_payout') {
             totalProfit += data.amount;
         }
@@ -150,7 +149,7 @@ const getUserDetailsFlow = ai.defineFlow(
             id: doc.id,
             type: data.type,
             fund: data.details || '-',
-            status: 'تکمیل شده',
+            status: statusNames[data.status] || data.status || 'تکمیل شده',
             date: createdAt.toLocaleDateString('fa-IR'),
             amount: data.amount,
             timestamp: createdAt.getTime(),
@@ -159,7 +158,7 @@ const getUserDetailsFlow = ai.defineFlow(
     })
 
 
-    // 4. Prepare Chart Data
+    // 5. Prepare Chart Data
     const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     const investmentChartData = Object.entries(investmentByMonth)
         .sort(([a], [b]) => a.localeCompare(b))
@@ -173,7 +172,7 @@ const getUserDetailsFlow = ai.defineFlow(
         });
 
 
-    // 5. Assemble final output
+    // 6. Assemble final output
     const profile: z.infer<typeof UserProfileSchema> = {
         uid: userDoc.id,
         firstName: userData.firstName,
@@ -183,23 +182,23 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // **NEW LOGIC**: walletBalance is now the user's total withdrawable assets
-    // Defined as: Total Active Gross Investment + Total Profits Received
-    const walletBalance = grossInvestment + totalProfit;
+    // walletBalance is the source of truth for withdrawable funds.
+    // It's maintained directly in the user document.
+    const walletBalance = userData.walletBalance || 0;
 
     const stats: z.infer<typeof StatsSchema> = {
         grossInvestment: grossInvestment, // Based on 'active' investments only
-        netInvestment: netInvestment, // Based on 'active' investments only
+        netInvestment: 0, // This is deprecated, can be removed later
         totalProfit: totalProfit,
-        lotteryTickets: Math.floor(grossInvestment / lotteryTicketRatio),
-        walletBalance: walletBalance, // This is the single source of truth for withdrawable funds
+        lotteryTickets: Math.floor(grossInvestment / 10),
+        walletBalance: walletBalance, 
     };
     
     const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);
 
     return {
       profile,
-      transactions: sortedTransactions.map(({timestamp, ...rest}) => rest), // remove timestamp before returning
+      transactions: sortedTransactions.map(({timestamp, ...rest}) => rest),
       stats: stats,
       investmentChartData,
     };
