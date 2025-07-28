@@ -32,6 +32,12 @@ const statusVariantMap: Record<string, "secondary" | "outline" | "default"> = {
     closed: "default"
 }
 
+const priorityVariantMap: Record<string, "destructive" | "secondary" | "default"> = {
+    high: "destructive",
+    medium: "secondary",
+    low: "default"
+}
+
 export default function UserSupportPage() {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -98,7 +104,7 @@ export default function UserSupportPage() {
                                             <Badge variant={statusVariantMap[ticket.status]}>{ticket.status}</Badge>
                                         </TableCell>
                                          <TableCell>
-                                            <Badge variant={ticket.priority === 'high' ? 'destructive' : 'default'}>{ticket.priority}</Badge>
+                                            <Badge variant={priorityVariantMap[ticket.priority]}>{ticket.priority}</Badge>
                                         </TableCell>
                                         <TableCell>{ticket.updatedAt}</TableCell>
                                         <TableCell>
