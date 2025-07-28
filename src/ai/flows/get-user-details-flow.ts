@@ -127,9 +127,8 @@ const getUserDetailsFlow = ai.defineFlow(
         const createdAt = data.createdAt.toDate();
         
         // Sum up ONLY cash-equivalent transactions to get the final withdrawable balance.
-        // 'investment' transactions are NOT cash, they are the base for profit.
         if (data.status === 'completed' || data.status === 'pending') {
-             if (['profit_payout', 'commission', 'principal_return', 'withdrawal_refund', 'bonus', 'withdrawal_request'].includes(data.type)) {
+             if (['investment', 'profit_payout', 'commission', 'principal_return', 'withdrawal_refund', 'bonus', 'withdrawal_request'].includes(data.type)) {
                 walletBalance += data.amount;
             }
         }
@@ -205,5 +204,3 @@ const getUserDetailsFlow = ai.defineFlow(
     };
   }
 );
-
-    
