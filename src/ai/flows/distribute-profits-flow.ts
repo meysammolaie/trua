@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview A flow for calculating and distributing profits to investors.
- * This flow now uses the daily_fees ledger to ensure fees are only distributed once.
+ * This flow now calculates the profit pool from all active investments' fees and distributes it.
  */
 
 import {genkit} from 'genkit';
@@ -14,6 +14,7 @@ const ai = genkit({
   plugins: [],
 });
 
+
 const DistributeProfitsOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
@@ -24,8 +25,9 @@ const DistributeProfitsOutputSchema = z.object({
 type InvestmentDoc = {
     id: string;
     userId: string;
-    netAmountUSD: number;
-}
+    netAmountUSD: number; // Net investment after entry fees
+    feesUSD: number; // Total fees collected from this investment
+};
 
 export async function distributeProfits(): Promise<z.infer<typeof DistributeProfitsOutputSchema>> {
   return await distributeProfitsFlow({});
@@ -39,35 +41,24 @@ const distributeProfitsFlow = ai.defineFlow(
   },
   async () => {
     try {
-      // 1. Get all undistributed fees from the ledger
-      const feesToDistributeQuery = query(collection(db, 'daily_fees'), where('distributed', '==', false));
-      const feesSnapshot = await getDocs(feesToDistributeQuery);
-      
-      if (feesSnapshot.empty) {
-        return { success: true, message: 'هیچ کارمزد جدیدی برای توزیع سود یافت نشد.' };
-      }
-      
-      // 2. Calculate the total profit pool from the fee ledger.
-      let dailyDistributablePool = 0;
-      const feeDocsToUpdate: any[] = [];
-      feesSnapshot.forEach(doc => {
-          dailyDistributablePool += doc.data().amount || 0;
-          feeDocsToUpdate.push(doc.ref);
-      });
-      
-      if (dailyDistributablePool <= 0) {
-         return { success: true, message: 'مبلغی برای توزیع سود امروز وجود ندارد.' };
-      }
-      
-      // 3. Get all *active* investments to determine profit shares.
+      // 1. Get all *active* investments to determine the profit pool and profit shares.
       const allActiveInvestmentsQuery = query(collection(db, 'investments'), where('status', '==', 'active'));
       const activeInvestmentsSnapshot = await getDocs(allActiveInvestmentsQuery);
       
       if (activeInvestmentsSnapshot.empty) {
-        return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای دریافت سود یافت نشد.' };
+        return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
       
       const activeInvestments = activeInvestmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InvestmentDoc));
+      
+      // 2. Calculate the total profit pool from all fees of active investments.
+      const totalProfitPool = activeInvestments.reduce((sum, inv) => sum + (inv.feesUSD || 0), 0);
+      
+      if (totalProfitPool <= 0) {
+         return { success: true, message: 'مبلغی برای توزیع سود امروز وجود ندارد.' };
+      }
+
+      // 3. Calculate the total active investment amount to determine shares.
       const totalActiveInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
       
       if (totalActiveInvestmentAmount <= 0) {
@@ -89,11 +80,11 @@ const distributeProfitsFlow = ai.defineFlow(
       // 4. Distribute profits to each user based on their share.
       for (const userId in investmentsByUser) {
         const userTotalInvestment = investmentsByUser[userId].totalInvestment;
-        const profitShare = (userTotalInvestment / totalActiveInvestmentAmount) * dailyDistributablePool;
+        const profitShare = (userTotalInvestment / totalActiveInvestmentAmount) * totalProfitPool;
 
         if (profitShare > 0) {
             const transactionRef = doc(collection(db, 'transactions'));
-            // Create a transaction record for this profit payout. This will increase the user's withdrawable balance.
+            // This transaction increases the user's withdrawable balance.
             batch.set(transactionRef, {
                 userId,
                 type: 'profit_payout',
@@ -104,18 +95,21 @@ const distributeProfitsFlow = ai.defineFlow(
             });
         }
       }
-
-      // 5. IMPORTANT: Mark all processed fee documents as 'distributed' so they are not included in the next run.
-      feeDocsToUpdate.forEach(ref => {
-          batch.update(ref, { distributed: true });
+      
+      // Mark all investments as 'completed' so their fees are not re-distributed.
+      // This is a critical step to prevent double-counting fees.
+      activeInvestments.forEach(inv => {
+          const invRef = doc(db, 'investments', inv.id);
+          batch.update(invRef, { status: 'completed', updatedAt: serverTimestamp() });
       });
+
 
       await batch.commit();
 
       return {
         success: true,
-        message: `مبلغ ${dailyDistributablePool.toLocaleString('en-US', {style: 'currency', currency: 'USD'})} با موفقیت بین ${investorCount} سرمایه‌گذار توزیع شد.`,
-        distributedAmount: dailyDistributablePool,
+        message: `مبلغ ${totalProfitPool.toLocaleString('en-US', {style: 'currency', currency: 'USD'})} با موفقیت بین ${investorCount} سرمایه‌گذار توزیع شد.`,
+        distributedAmount: totalProfitPool,
         investorCount: investorCount,
       };
 

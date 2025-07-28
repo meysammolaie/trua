@@ -68,32 +68,33 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         transaction.update(investmentRef, updatePayload);
         
         if (newStatus === 'active') {
+            // Add a transaction to credit the user's wallet with the net investment amount
+            const investmentTxRef = doc(collection(db, 'transactions'));
+            transaction.set(investmentTxRef, {
+                userId: investmentData.userId,
+                type: 'investment',
+                amount: investmentData.netAmountUSD, // Positive amount credited to wallet
+                status: 'completed',
+                createdAt: serverTimestamp(),
+                details: `سرمایه‌گذاری در صندوق ${investmentData.fundId}`,
+                investmentId: investmentId,
+            });
 
-            // Add investment fees to the daily_fees collection for profit distribution
-            if (investmentData.feesUSD && investmentData.feesUSD > 0) {
-                const feeLedgerRef = doc(collection(db, 'daily_fees'));
-                transaction.set(feeLedgerRef, {
-                    amount: investmentData.feesUSD,
-                    distributed: false,
-                    createdAt: serverTimestamp(),
-                    investmentId: investmentId,
-                });
-            }
-
+            // Check for and award the signup bonus if eligible
             const bonusesRef = collection(db, 'bonuses');
             const userBonusQuery = query(bonusesRef, where('userId', '==', investmentData.userId));
-            const userBonusSnapshot = await transaction.get(userBonusQuery);
+            const userBonusSnapshot = await getDocs(userBonusQuery); // Use getDocs, not transaction.get
 
             if (userBonusSnapshot.empty) {
                 const totalBonusesQuery = query(bonusesRef);
-                const totalBonusesSnapshot = await transaction.get(totalBonusesQuery);
+                const totalBonusesSnapshot = await getDocs(totalBonusesQuery); // Use getDocs
                 if (totalBonusesSnapshot.size < REWARD_USER_LIMIT) {
                     const bonusDocRef = doc(collection(db, 'bonuses'));
-                    // ONLY create the locked bonus record. Do NOT create a cash transaction.
+                    // ONLY create the locked bonus record. Do NOT create a cash transaction here.
                     transaction.set(bonusDocRef, {
                         userId: investmentData.userId,
                         amount: REWARD_AMOUNT,
-                        status: 'locked', // Status is 'locked', not 'completed'
+                        status: 'locked', 
                         awardedAt: serverTimestamp(),
                         reason: `First ${REWARD_USER_LIMIT} users bonus`
                     });
@@ -101,6 +102,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
             }
 
 
+          // Handle referral commission
           if (userDoc.exists() && userDoc.data()?.referredBy) {
             const referrerId = userDoc.data()!.referredBy;
             const commissionAmount = investmentData.amountUSD * (settings.entryFee * 2/3 / 100); 
@@ -127,31 +129,18 @@ const updateInvestmentStatusFlow = ai.defineFlow(
               });
             }
           }
-        } else if (newStatus === 'completed') {
-            const amountToReturn = investmentData.netAmountUSD || 0;
-            if (amountToReturn > 0) {
-                const txRef = doc(collection(db, 'transactions'));
-                transaction.set(txRef, {
-                    userId: investmentData.userId,
-                    type: 'principal_return',
-                    amount: amountToReturn,
-                    status: 'completed',
-                    createdAt: serverTimestamp(),
-                    details: `Return of principal from investment ${investmentId.substring(0,6)}`,
-                });
-            }
-        }
+        } 
       });
 
       console.log(`Investment ${investmentId} status updated to ${newStatus}.`);
 
       let message = '';
       if (newStatus === 'active') {
-        message = `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت تایید و فعال شد.`;
+        message = `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت تایید و به موجودی کاربر اضافه شد.`;
       } else if (newStatus === 'rejected') {
         message = `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت رد شد.`;
       } else if (newStatus === 'completed') {
-        message = `سرمایه‌گذاری تکمیل شد و اصل پول به کیف پول کاربر بازگردانده شد.`;
+        message = `سرمایه‌گذاری تکمیل شد.`;
       }
 
       return {

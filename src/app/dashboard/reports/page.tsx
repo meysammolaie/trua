@@ -102,7 +102,7 @@ export default function ReportsPage() {
                 </CardHeader>
                 <CardContent>
                      {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment ?? 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>}
-                    <p className="text-xs text-muted-foreground">ارزش خالص دارایی‌های شما در صندوق‌ها</p>
+                    <p className="text-xs text-muted-foreground">پایه محاسبه سود روزانه شما</p>
                 </CardContent>
             </Card>
             <Card>
@@ -112,7 +112,7 @@ export default function ReportsPage() {
                 </CardHeader>
                 <CardContent>
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${(stats?.walletBalance ?? 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>}
-                    <p className="text-xs text-muted-foreground">موجودی آزاد شامل سودها و کمیسیون‌ها</p>
+                    <p className="text-xs text-muted-foreground">موجودی آزاد شامل اصل پول، سودها و کمیسیون‌ها</p>
                 </CardContent>
             </Card>
             <Card>

@@ -28,7 +28,6 @@ type InvestmentDocument = {
   status: 'pending' | 'active' | 'completed' | 'rejected';
   createdAt: Timestamp;
   transactionHash: string;
-  investmentId?: string;
 };
 
 type DbTransactionDocument = {
@@ -118,34 +117,24 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // 2.2. Wallet Balance (Calculated ONLY from the transaction ledger for cash-like events)
+    // 2.2. Wallet Balance (Calculated ONLY from the transaction ledger)
     let walletBalance = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
-    const cashLikeTransactionTypes = ['profit_payout', 'commission', 'bonus', 'principal_return', 'withdrawal_refund'];
     
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Sum up ONLY cash-like transactions to get the final withdrawable balance.
-        if (cashLikeTransactionTypes.includes(data.type) && data.status === 'completed') {
+        // Sum up ALL completed transactions (positive or negative) to get the final withdrawable balance.
+        // Pending withdrawals are also subtracted to block the funds.
+        if (data.status === 'completed' || data.status === 'pending') {
             walletBalance += data.amount;
-        }
-        
-        // Subtract pending withdrawals from balance
-        if (data.type === 'withdrawal_request' && data.status === 'pending') {
-             walletBalance += data.amount; // amount is already negative
         }
 
         let fundId = '-';
         if (data.investmentId) {
             const relatedInvestment = investmentsSnapshot.docs.find(inv => inv.id === data.investmentId)?.data();
             if (relatedInvestment) {
-                fundId = fundNames[relatedInvestment.fundId as keyof typeof fundNames] || relatedInvestment.fundId;
-            }
-        } else if (data.type === 'investment'){
-            const relatedInvestment = investmentsSnapshot.docs.find(inv => inv.id === doc.id)?.data();
-             if (relatedInvestment) {
                 fundId = fundNames[relatedInvestment.fundId as keyof typeof fundNames] || relatedInvestment.fundId;
             }
         }

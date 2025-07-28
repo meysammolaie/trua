@@ -83,19 +83,19 @@ export default function WalletPage() {
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                         <div className="text-2xl font-bold font-mono">${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     )}
-                    <p className="text-xs text-muted-foreground pt-1">این مبلغ شامل سودها، جوایز و کمیسیون‌هاست.</p>
+                    <p className="text-xs text-muted-foreground pt-1">این مبلغ شامل اصل پول، سودها، جوایز و کمیسیون‌هاست.</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">مجموع دارایی‌های فعال</CardTitle>
+                    <CardTitle className="text-sm font-medium">سرمایه فعال</CardTitle>
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                         <div className="text-2xl font-bold font-mono">${totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     )}
-                    <p className="text-xs text-muted-foreground pt-1">ارزش خالص سرمایه‌گذاری‌های شما در صندوق‌ها.</p>
+                    <p className="text-xs text-muted-foreground pt-1">این مبلغ پایه محاسبه سود روزانه شماست.</p>
                 </CardContent>
             </Card>
              <Card>
@@ -116,7 +116,7 @@ export default function WalletPage() {
        <Card>
             <CardHeader className="flex flex-row justify-between items-start">
                 <div>
-                    <CardTitle>دارایی‌های فعال و برداشت</CardTitle>
+                    <CardTitle>برداشت از کیف پول</CardTitle>
                     <CardDescription>موجودی کیف پول خود را مدیریت کرده و درخواست برداشت ثبت کنید.</CardDescription>
                 </div>
                 <WithdrawalDialog 
@@ -125,39 +125,9 @@ export default function WalletPage() {
                 />
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>صندوق</TableHead>
-                            <TableHead className="text-right">ارزش (دلار)</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                       {loading ? (
-                             <TableRow>
-                                <TableCell colSpan={2} className="text-center py-10">
-                                    <div className="flex justify-center items-center gap-2">
-                                        <Loader2 className="h-5 w-5 animate-spin"/>
-                                        <span>در حال بارگذاری دارایی‌ها...</span>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                       ) : walletData?.assets.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={2} className="text-center py-10">
-                                    شما در حال حاضر هیچ دارایی فعالی ندارید.
-                                </TableCell>
-                            </TableRow>
-                       ) : (
-                            walletData?.assets.map((asset) => (
-                                <TableRow key={asset.fund}>
-                                    <TableCell className="font-medium flex items-center">{asset.fund}</TableCell>
-                                    <TableCell className="text-right font-mono">${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                </TableRow>
-                            ))
-                       )}
-                    </TableBody>
-                </Table>
+                <p className="text-sm text-muted-foreground">
+                    در حال حاضر، تمام دارایی‌های فعال شما در بخش "سرمایه فعال" قرار دارد و پایه محاسبه سود روزانه است. برای نقد کردن اصل سرمایه، باید با پشتیبانی تماس بگیرید تا سرمایه‌گذاری شما به حالت "تکمیل شده" درآید و مبلغ آن به کیف پول شما بازگردانده شود.
+                </p>
             </CardContent>
         </Card>
 
