@@ -41,7 +41,6 @@ const updateInvestmentStatusFlow = ai.defineFlow(
       const investmentRef = doc(db, 'investments', investmentId);
       
       await runTransaction(db, async (transaction) => {
-        // ========== ALL READS FIRST ==========
         const settings = await getPlatformSettings();
         const investmentDoc = await transaction.get(investmentRef);
         
@@ -57,24 +56,19 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         const userRef = doc(db, 'users', investmentData.userId);
         const userDoc = await transaction.get(userRef);
 
-        // ========== ALL WRITES LAST ==========
-        
-        // 1. Always update the investment status
         const updatePayload: { status: string, rejectionReason?: string } = { status: newStatus };
         if (newStatus === 'rejected' && rejectionReason) {
           updatePayload.rejectionReason = rejectionReason;
         }
         transaction.update(investmentRef, updatePayload);
         
-        // Handle different statuses
         if (newStatus === 'active') {
 
-            // Check for and award the initial bonus
             const bonusesRef = collection(db, 'bonuses');
             const userBonusQuery = query(bonusesRef, where('userId', '==', investmentData.userId));
             const userBonusSnapshot = await getDocs(userBonusQuery);
 
-            if (userBonusSnapshot.empty) { // If user has no bonus yet
+            if (userBonusSnapshot.empty) {
                 const totalBonusesQuery = query(bonusesRef);
                 const totalBonusesSnapshot = await getDocs(totalBonusesQuery);
                 if (totalBonusesSnapshot.size < REWARD_USER_LIMIT) {
@@ -84,17 +78,23 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                         amount: REWARD_AMOUNT,
                         status: 'locked',
                         awardedAt: serverTimestamp(),
-                        reason: 'First 5000 users bonus'
+                        reason: `First ${REWARD_USER_LIMIT} users bonus`
                     });
 
-                    // IMPORTANT: Also create a transaction to credit the user's wallet
-                    // This is no longer a "bonus" that adds to the balance, it's a locked amount
-                    // so we do not create a transaction here anymore. The bonus is tracked separately.
+                    // Create a transaction to credit the user's WALLET for the bonus
+                    const txRef = doc(collection(db, 'transactions'));
+                     transaction.set(txRef, {
+                        userId: investmentData.userId,
+                        type: 'bonus',
+                        amount: REWARD_AMOUNT,
+                        status: 'completed',
+                        createdAt: serverTimestamp(),
+                        details: `جایزه برای ${REWARD_USER_LIMIT} کاربر اول`,
+                    });
                 }
             }
 
 
-          // Handle referral commission if the user was referred
           if (userDoc.exists() && userDoc.data()?.referredBy) {
             const referrerId = userDoc.data()!.referredBy;
             const commissionAmount = investmentData.amountUSD * (settings.entryFee * 2/3 / 100); 
@@ -110,7 +110,6 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                 createdAt: serverTimestamp(),
               });
               
-              // Create transaction for the REFERRER
               const txRef = doc(collection(db, 'transactions'));
               transaction.set(txRef, {
                   userId: referrerId,

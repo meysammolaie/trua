@@ -67,6 +67,7 @@ const transactionTypeNames: Record<string, string> = {
     commission: "کمیسیون",
     principal_return: "بازگشت اصل پول",
     withdrawal_request: "درخواست برداشت",
+    withdrawal_refund: "لغو برداشت",
     bonus: "جایزه"
 };
 
@@ -93,7 +94,7 @@ const getUserDetailsFlow = ai.defineFlow(
     const userDocRef = doc(db, "users", userId);
     const investmentsQuery = query(collection(db, "investments"), where("userId", "==", userId));
     const dbTransactionsQuery = query(collection(db, "transactions"), where("userId", "==", userId));
-    const bonusQuery = query(collection(db, "bonuses"), where("userId", "==", userId), where("status", "==", "locked"));
+    const bonusQuery = query(collection(db, "bonuses"), where("userId", "==", userId));
 
     const [userDoc, investmentsSnapshot, dbTransactionsSnapshot, bonusSnapshot] = await Promise.all([
         getDoc(userDocRef),
@@ -104,30 +105,13 @@ const getUserDetailsFlow = ai.defineFlow(
     
     if (!userDoc.exists()) {
         const safeUserId = userId.substring(0, 8);
-        return {
-            profile: {
-                uid: userId,
-                firstName: 'کاربر',
-                lastName: 'نامشخص',
-                email: `unknown-${safeUserId}@example.com`,
-                createdAt: '-',
-                status: 'blocked',
-            },
-            transactions: [],
-            stats: {
-                activeInvestment: 0,
-                walletBalance: 0,
-                lockedBonus: 0,
-                lotteryTickets: 0,
-            },
-            investmentChartData: [],
-        };
+        throw new Error(`User with ID ${safeUserId} not found.`);
     }
     const userData = userDoc.data();
     
     // 2. Calculate Stats
     
-    // 2.1. Active Investment (Net amount)
+    // 2.1. Active Investment (Net amount from 'investments' collection with status 'active')
     let activeNetInvestment = 0;
     const investmentByMonth: Record<string, number> = {};
 
@@ -144,7 +128,7 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // 2.2. Wallet Balance (Calculated from the transaction ledger)
+    // 2.2. Wallet Balance (Calculated ONLY from the transaction ledger)
     let walletBalance = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
 
@@ -152,10 +136,8 @@ const getUserDetailsFlow = ai.defineFlow(
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Accumulate all transactions to calculate the final wallet balance
         walletBalance += data.amount;
 
-        // Find the associated investment for fund details if applicable
         let fundId = '-';
         if (data.investmentId) {
             const relatedInvestment = investmentsSnapshot.docs.find(inv => inv.id === data.investmentId)?.data();
@@ -164,8 +146,6 @@ const getUserDetailsFlow = ai.defineFlow(
             }
         }
 
-
-        // Add DB transactions to the combined history for display
         allTransactionsForHistory.push({
             id: doc.id,
             type: transactionTypeNames[data.type as keyof typeof transactionTypeNames] || data.type,
@@ -178,7 +158,7 @@ const getUserDetailsFlow = ai.defineFlow(
         });
     })
     
-    // 2.3. Locked Bonus
+    // 2.3. Locked Bonus (total amount from 'bonuses' collection, independent of wallet)
     const lockedBonus = bonusSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
 
     // 3. Prepare Chart Data
@@ -212,7 +192,6 @@ const getUserDetailsFlow = ai.defineFlow(
         lotteryTickets: Math.floor(activeNetInvestment / 10),
     };
     
-    // Sort combined history by date
     const sortedTransactions = allTransactionsForHistory.sort((a,b) => b.timestamp - a.timestamp);
 
     return {

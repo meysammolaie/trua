@@ -92,11 +92,11 @@ export default function ReportsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>ارزش کل دارایی</CardDescription>
-            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${(stats?.activeInvestment! + stats?.walletBalance! + stats?.lockedBonus!).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</CardTitle>}
+            {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">${((stats?.activeInvestment ?? 0) + (stats?.walletBalance ?? 0)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              مجموع ارزش دارایی‌های شما (سرمایه فعال + کیف پول + جایزه)
+              مجموع ارزش دارایی‌های شما (سرمایه فعال + موجودی قابل برداشت)
             </div>
           </CardContent>
         </Card>
@@ -107,7 +107,7 @@ export default function ReportsPage() {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${stats?.activeInvestment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</div>}
+                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment ?? 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>}
                     <p className="text-xs text-muted-foreground">ارزش خالص دارایی‌های شما در صندوق‌ها</p>
                 </CardContent>
             </Card>
@@ -117,7 +117,7 @@ export default function ReportsPage() {
                     <PiggyBank className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${stats?.walletBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</div>}
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${(stats?.walletBalance ?? 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>}
                     <p className="text-xs text-muted-foreground">موجودی آزاد شامل سودها و کمیسیون‌ها</p>
                 </CardContent>
             </Card>
@@ -127,7 +127,7 @@ export default function ReportsPage() {
                     <Lock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${stats?.lockedBonus.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) ?? '0.00'}</div>}
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">${(stats?.lockedBonus ?? 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>}
                     <p className="text-xs text-muted-foreground">این مبلغ در آینده آزاد خواهد شد</p>
                 </CardContent>
             </Card>

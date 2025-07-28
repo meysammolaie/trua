@@ -164,9 +164,9 @@ export function Overview() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment! + stats?.walletBalance! + stats?.lockedBonus!).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${((stats?.activeInvestment ?? 0) + (stats?.walletBalance ?? 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                          سرمایه فعال + کیف پول + جایزه
+                          سرمایه فعال + کیف پول
                         </p>
                     </>
                 )}
@@ -182,7 +182,7 @@ export function Overview() {
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.activeInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
                         دارایی شما در صندوق‌ها
                         </p>
@@ -200,7 +200,7 @@ export function Overview() {
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${(stats?.walletBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
                           سودها و کمیسیون‌ها
                         </p>
@@ -218,7 +218,7 @@ export function Overview() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold">{stats?.lotteryTickets.toLocaleString() ?? 0}</div>
+                        <div className="text-2xl font-bold">{(stats?.lotteryTickets ?? 0).toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">
                          برای قرعه‌کشی این ماه
                         </p>
@@ -293,7 +293,7 @@ export function Overview() {
                 <div className="grid gap-2">
                     <CardTitle>تراکنش‌های اخیر</CardTitle>
                     <CardDescription>
-                        لیست واریز و برداشت‌های اخیر شما.
+                        لیست آخرین رویدادهای مالی شما.
                     </CardDescription>
                 </div>
                 <Button asChild size="sm" className="ml-auto gap-1">

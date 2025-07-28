@@ -8,7 +8,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { doc, runTransaction, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, runTransaction, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -52,15 +52,14 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
             throw new Error('این درخواست قبلاً پردازش شده است.');
         }
 
-        // Find the associated transaction record to update its status
         const txQuery = query(collection(db, 'transactions'), where('withdrawalId', '==', withdrawalId));
-        const txSnapshot = await getDocs(txQuery); // This query does not need transaction
+        const txSnapshot = await getDocs(txQuery);
         const txDocRef = txSnapshot.docs.length > 0 ? txSnapshot.docs[0].ref : null;
 
         if (!txDocRef) {
             throw new Error(`تراکنش مرتبط با این برداشت یافت نشد. شناسه: ${withdrawalId}`);
         }
-
+        
         const updatePayload: Record<string, any> = { status: newStatus === 'approved' ? 'completed' : 'rejected' };
         
         if (newStatus === 'approved') {
@@ -69,9 +68,7 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
           }
           updatePayload.adminTransactionProof = adminTransactionProof;
           
-          // Update withdrawal document status
           transaction.update(withdrawalRef, updatePayload);
-          // Update the corresponding transaction status
           transaction.update(txDocRef, {
               status: 'completed',
               details: `برداشت موفق به ${withdrawalData.walletAddress}`,
@@ -79,14 +76,19 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
           });
 
         } else { // If 'rejected'
-          // Update withdrawal document status
           transaction.update(withdrawalRef, { status: 'rejected' });
-          // Update the corresponding transaction status and refund the amount to the user's balance.
-          // The original transaction amount was negative, so we add its absolute value back.
-          transaction.update(txDocRef, {
-              status: 'rejected',
-              details: 'درخواست برداشت توسط مدیر رد شد.',
-              amount: 0 // Nullify the effect of this transaction on the balance
+          transaction.update(txDocRef, { status: 'rejected' });
+          
+          // Create a NEW transaction to refund the amount.
+          const refundTxRef = doc(collection(db, 'transactions'));
+          transaction.set(refundTxRef, {
+              userId: withdrawalData.userId,
+              type: 'withdrawal_refund',
+              amount: Math.abs(withdrawalData.amount), // Add the positive amount back
+              status: 'completed',
+              createdAt: serverTimestamp(),
+              details: `لغو درخواست برداشت به ${withdrawalData.walletAddress}`,
+              withdrawalId: withdrawalId,
           });
         }
       });

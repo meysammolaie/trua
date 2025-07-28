@@ -38,7 +38,6 @@ export default function WalletPage() {
                 })
                 .catch(error => {
                     console.error("Failed to fetch wallet data:", error);
-                    // Handle error state
                 })
                 .finally(() => {
                     setLoading(false);
@@ -48,12 +47,12 @@ export default function WalletPage() {
 
     useEffect(() => {
         fetchWalletData();
-    }, [user, fetchWalletData]);
+    }, [fetchWalletData]);
 
     const walletBalance = walletData?.walletBalance ?? 0;
     const totalAssetValue = walletData?.totalAssetValue ?? 0;
     const lockedBonus = walletData?.lockedBonus ?? 0;
-    const totalValue = totalAssetValue + walletBalance + lockedBonus;
+    const totalValue = totalAssetValue + walletBalance;
 
   return (
     <>
@@ -70,7 +69,7 @@ export default function WalletPage() {
             {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : (
                  <div className="text-4xl font-bold font-mono text-green-400">${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             )}
-            <p className="text-xs text-muted-foreground pt-2">مجموع دارایی‌های فعال، موجودی قابل برداشت و جوایز قفل‌شده شما.</p>
+            <p className="text-xs text-muted-foreground pt-2">مجموع دارایی‌های فعال و موجودی قابل برداشت شما.</p>
           </CardContent>
         </Card>
         

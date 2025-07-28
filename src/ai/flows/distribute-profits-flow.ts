@@ -23,6 +23,7 @@ const DistributeProfitsOutputSchema = z.object({
 });
 
 type InvestmentDoc = {
+    id: string;
     userId: string;
     amountUSD: number;
     netAmountUSD: number;
@@ -45,36 +46,32 @@ const distributeProfitsFlow = ai.defineFlow(
     try {
       
       const investmentsRef = collection(db, 'investments');
-      // We need all investments to calculate the total fee pool
-      const allInvestmentsQuery = query(investmentsRef);
-      const allInvestmentsSnapshot = await getDocs(allInvestmentsQuery);
+      const allInvestmentsQuery = query(investmentsRef, where('status', '==', 'active'));
+      const activeInvestmentsSnapshot = await getDocs(allInvestmentsQuery);
       
-      const allInvestments = allInvestmentsSnapshot.docs.map(doc => doc.data() as InvestmentDoc);
-      const activeInvestments = allInvestments.filter(inv => inv.status === 'active');
-      
-      if (activeInvestments.length === 0) {
+      if (activeInvestmentsSnapshot.empty) {
         return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
 
-      // Calculate the total profit pool from all investment fees
-      let totalFeePool = allInvestments.reduce((sum, inv) => sum + (inv.feesUSD || 0), 0);
+      // Calculate the total profit pool from the fees of ALL investments ever made
+      const allTimeInvestmentsSnapshot = await getDocs(collection(db, 'investments'));
+      let totalFeePool = allTimeInvestmentsSnapshot.docs.reduce((sum, doc) => sum + (doc.data().feesUSD || 0), 0);
       
-      // Let's assume we distribute 5% of the total collected fees daily.
-      // In a real scenario, you'd likely track the "undistributed" fee pool and draw from that.
-      // This is a simplified model for daily distribution.
+      // Assume we distribute 5% of the total collected fees daily.
+      // This is a simplified model. A real system would track the "undistributed" fee pool.
       const dailyDistributablePool = totalFeePool * 0.05; 
 
       if (dailyDistributablePool <= 0) {
          return { success: true, message: 'مبلغی برای توزیع سود وجود ندارد.' };
       }
       
+      const activeInvestments = activeInvestmentsSnapshot.docs.map(doc => doc.data() as InvestmentDoc);
       const totalActiveInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
       
       if (totalActiveInvestmentAmount <= 0) {
           return { success: true, message: 'مجموع سرمایه فعال برای محاسبه سهم سود صفر است.' };
       }
       
-      // Group investments by user to calculate their total active investment
       const investmentsByUser = activeInvestments.reduce((acc, inv) => {
         if (!acc[inv.userId]) {
             acc[inv.userId] = 0;
@@ -90,7 +87,6 @@ const distributeProfitsFlow = ai.defineFlow(
         const userTotalInvestment = investmentsByUser[userId];
         const profitShare = (userTotalInvestment / totalActiveInvestmentAmount) * dailyDistributablePool;
 
-        // Only create a transaction if there's profit to distribute
         if (profitShare > 0) {
             const transactionRef = doc(collection(db, 'transactions'));
             batch.set(transactionRef, {
