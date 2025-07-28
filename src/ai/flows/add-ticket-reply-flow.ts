@@ -13,7 +13,7 @@ const ai = genkit({
   plugins: [],
 });
 
-export const AddTicketReplyInputSchema = z.object({
+const AddTicketReplyInputSchema = z.object({
   ticketId: z.string(),
   senderId: z.string(),
   message: z.string().min(1, "Message cannot be empty."),
@@ -21,7 +21,7 @@ export const AddTicketReplyInputSchema = z.object({
 });
 export type AddTicketReplyInput = z.infer<typeof AddTicketReplyInputSchema>;
 
-export const AddTicketReplyOutputSchema = z.object({
+const AddTicketReplyOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });

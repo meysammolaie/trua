@@ -13,13 +13,13 @@ const ai = genkit({
   plugins: [],
 });
 
-export const UpdateTicketStatusInputSchema = z.object({
+const UpdateTicketStatusInputSchema = z.object({
   ticketId: z.string(),
   newStatus: z.enum(['open', 'in_progress', 'closed']),
 });
 export type UpdateTicketStatusInput = z.infer<typeof UpdateTicketStatusInputSchema>;
 
-export const UpdateTicketStatusOutputSchema = z.object({
+const UpdateTicketStatusOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });

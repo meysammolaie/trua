@@ -13,7 +13,7 @@ const ai = genkit({
   plugins: [],
 });
 
-export const CreateTicketInputSchema = z.object({
+const CreateTicketInputSchema = z.object({
   userId: z.string(),
   subject: z.string().min(5, "Subject must be at least 5 characters long."),
   department: z.enum(['technical', 'financial', 'general']),
@@ -22,7 +22,7 @@ export const CreateTicketInputSchema = z.object({
 });
 export type CreateTicketInput = z.infer<typeof CreateTicketInputSchema>;
 
-export const CreateTicketOutputSchema = z.object({
+const CreateTicketOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
   ticketId: z.string().optional(),

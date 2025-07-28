@@ -13,7 +13,7 @@ const ai = genkit({
   plugins: [],
 });
 
-export const AdminTicketSchema = z.object({
+const AdminTicketSchema = z.object({
   id: z.string(),
   subject: z.string(),
   userFullName: z.string(),
@@ -23,7 +23,7 @@ export const AdminTicketSchema = z.object({
 });
 export type AdminTicket = z.infer<typeof AdminTicketSchema>;
 
-export const GetAdminTicketsOutputSchema = z.object({
+const GetAdminTicketsOutputSchema = z.object({
     tickets: z.array(AdminTicketSchema),
     stats: z.object({
         open: z.number(),

@@ -13,7 +13,7 @@ const ai = genkit({
   plugins: [],
 });
 
-export const GetUserNotificationsInputSchema = z.object({
+const GetUserNotificationsInputSchema = z.object({
   userId: z.string(),
   count: z.number().optional().default(10),
 });
@@ -28,7 +28,7 @@ const NotificationSchema = z.object({
 });
 export type Notification = z.infer<typeof NotificationSchema>;
 
-export const GetUserNotificationsOutputSchema = z.object({
+const GetUserNotificationsOutputSchema = z.object({
     notifications: z.array(NotificationSchema),
     unreadCount: z.number(),
 });

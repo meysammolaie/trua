@@ -7,13 +7,13 @@
 import { genkit } from 'genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, writeBatch, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, writeBatch, getDocs, doc } from 'firebase/firestore';
 
 const ai = genkit({
   plugins: [],
 });
 
-export const CreateNotificationInputSchema = z.object({
+const CreateNotificationInputSchema = z.object({
   title: z.string().min(1, 'Title is required.'),
   message: z.string().min(1, 'Message is required.'),
   target: z.enum(['all', 'specific']),
@@ -21,7 +21,7 @@ export const CreateNotificationInputSchema = z.object({
 });
 export type CreateNotificationInput = z.infer<typeof CreateNotificationInputSchema>;
 
-export const CreateNotificationOutputSchema = z.object({
+const CreateNotificationOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
@@ -66,6 +66,9 @@ const createNotificationFlow = ai.defineFlow(
         return { success: true, message: `Notification sent to all ${usersSnapshot.size} users.` };
 
       } else if (target === 'specific') {
+         if (!userId) {
+            throw new Error("User ID is required for specific notification.");
+        }
         const notificationsCollection = collection(db, `users/${userId}/notifications`);
         await addDoc(notificationsCollection, notificationData);
         return { success: true, message: 'Notification sent successfully.' };

@@ -13,12 +13,12 @@ const ai = genkit({
   plugins: [],
 });
 
-export const GetUserTicketsInputSchema = z.object({
+const GetUserTicketsInputSchema = z.object({
   userId: z.string(),
 });
 export type GetUserTicketsInput = z.infer<typeof GetUserTicketsInputSchema>;
 
-export const TicketSchema = z.object({
+const TicketSchema = z.object({
   id: z.string(),
   subject: z.string(),
   status: z.string(),
@@ -27,7 +27,7 @@ export const TicketSchema = z.object({
 });
 export type Ticket = z.infer<typeof TicketSchema>;
 
-export const GetUserTicketsOutputSchema = z.array(TicketSchema);
+const GetUserTicketsOutputSchema = z.array(TicketSchema);
 export type GetUserTicketsOutput = z.infer<typeof GetUserTicketsOutputSchema>;
 
 export async function getUserTickets(input: GetUserTicketsInput): Promise<GetUserTicketsOutput> {

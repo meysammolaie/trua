@@ -13,7 +13,7 @@ const ai = genkit({
   plugins: [],
 });
 
-export const GetTicketDetailsInputSchema = z.object({
+const GetTicketDetailsInputSchema = z.object({
   ticketId: z.string(),
 });
 export type GetTicketDetailsInput = z.infer<typeof GetTicketDetailsInputSchema>;
@@ -25,7 +25,7 @@ const TicketMessageSchema = z.object({
     createdAt: z.string(),
 });
 
-export const GetTicketDetailsOutputSchema = z.object({
+const GetTicketDetailsOutputSchema = z.object({
     id: z.string(),
     subject: z.string(),
     status: z.string(),

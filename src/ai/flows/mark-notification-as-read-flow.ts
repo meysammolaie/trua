@@ -13,13 +13,13 @@ const ai = genkit({
   plugins: [],
 });
 
-export const MarkNotificationAsReadInputSchema = z.object({
+const MarkNotificationAsReadInputSchema = z.object({
   userId: z.string(),
   notificationId: z.string(),
 });
 export type MarkNotificationAsReadInput = z.infer<typeof MarkNotificationAsReadInputSchema>;
 
-export const MarkNotificationAsReadOutputSchema = z.object({
+const MarkNotificationAsReadOutputSchema = z.object({
   success: z.boolean(),
 });
 export type MarkNotificationAsReadOutput = z.infer<typeof MarkNotificationAsReadOutputSchema>;
