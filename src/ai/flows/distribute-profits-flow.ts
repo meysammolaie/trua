@@ -10,11 +10,11 @@ import {genkit} from 'genkit';
 import {z} from 'zod';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, collectionGroup } from 'firebase/firestore';
-import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
   plugins: [],
 });
+
 
 const DistributeProfitsOutputSchema = z.object({
   success: z.boolean(),
@@ -46,47 +46,35 @@ const distributeProfitsFlow = ai.defineFlow(
   },
   async () => {
     try {
-      const today = new Date();
-      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-
-      // 1. Calculate today's profit pool from investments activated today.
-      const investmentsRef = collection(db, 'investments');
-      const q = query(investmentsRef, 
-        where('status', '==', 'active'),
-        where('updatedAt', '>=', Timestamp.fromDate(startOfToday)),
-        where('updatedAt', '<', Timestamp.fromDate(endOfToday))
-      );
-
-      const todaysActivatedInvestments = await getDocs(q);
       
-      let dailyDistributablePool = 0;
-      // The profit pool is the sum of entry fees from today's activated investments.
-      todaysActivatedInvestments.forEach(doc => {
-          const investment = doc.data() as InvestmentDoc;
-          dailyDistributablePool += investment.feesUSD || 0;
-      });
-      
-      if (dailyDistributablePool <= 0) {
-         return { success: true, message: 'مبلغی برای توزیع سود امروز وجود ندارد.' };
-      }
-      
-      // 2. Get all active investments to determine who gets profits and their share
+      // 1. Get all active investments to determine who gets profits and the total pool
       const allActiveInvestmentsQuery = query(collection(db, 'investments'), where('status', '==', 'active'));
       const activeInvestmentsSnapshot = await getDocs(allActiveInvestmentsQuery);
       
       if (activeInvestmentsSnapshot.empty) {
         return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
-
-      const activeInvestments = activeInvestmentsSnapshot.docs.map(doc => doc.data() as InvestmentDoc);
+      
+      // 2. Calculate the total profit pool from ALL fees of active investments.
+      let dailyDistributablePool = 0;
+      const activeInvestments = activeInvestmentsSnapshot.docs.map(doc => {
+          const investment = doc.data() as InvestmentDoc;
+          dailyDistributablePool += investment.feesUSD || 0;
+          return investment;
+      });
+      
+      if (dailyDistributablePool <= 0) {
+         return { success: true, message: 'مبلغی برای توزیع سود امروز وجود ندارد.' };
+      }
+      
+      // 3. Calculate total active investment amount for share calculation
       const totalActiveInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
       
       if (totalActiveInvestmentAmount <= 0) {
           return { success: true, message: 'مجموع سرمایه فعال برای محاسبه سهم سود صفر است.' };
       }
       
-      // 3. Group investments by user to calculate total investment per user
+      // 4. Group investments by user to calculate total investment per user
       const investmentsByUser = activeInvestments.reduce((acc, inv) => {
         if (!acc[inv.userId]) {
             acc[inv.userId] = 0;
@@ -95,7 +83,7 @@ const distributeProfitsFlow = ai.defineFlow(
         return acc;
       }, {} as Record<string, number>);
 
-      // 4. Create profit payout transactions in a batch
+      // 5. Create profit payout transactions in a batch
       const batch = writeBatch(db);
       const investorCount = Object.keys(investmentsByUser).length;
 

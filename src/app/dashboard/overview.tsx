@@ -141,7 +141,7 @@ export function Overview() {
                     <div className="flex-grow">
                         <CardTitle>شما یک جایزه ۱۰۰ دلاری قفل‌شده دارید!</CardTitle>
                         <CardDescription className="text-foreground/80 mt-1">
-                            این جایزه با رسیدن حجم کل سرمایه پلتفرم به ${bonusUnlockTarget.toLocaleString()} آزاد شده و به موجودی قابل برداشت شما اضافه خواهد شد.
+                             این مبلغ ${stats.lockedBonus.toLocaleString()} پس از رسیدن حجم کل سرمایه پلتفرم به ${bonusUnlockTarget.toLocaleString()} آزاد شده و به موجودی قابل برداشت شما اضافه خواهد شد.
                         </CardDescription>
                         <div className="mt-3">
                             <Progress value={bonusProgress} className="w-full h-2" />
@@ -164,9 +164,9 @@ export function Overview() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${((stats?.activeInvestment ?? 0) + (stats?.walletBalance ?? 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold font-mono">${((stats?.activeInvestment ?? 0) + (stats?.walletBalance ?? 0) + (stats?.lockedBonus ?? 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                          سرمایه فعال + کیف پول
+                          سرمایه فعال + کیف پول + جایزه قفل شده
                         </p>
                     </>
                 )}

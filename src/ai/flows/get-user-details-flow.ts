@@ -85,7 +85,7 @@ const getUserDetailsFlow = ai.defineFlow(
     const userDocRef = doc(db, "users", userId);
     const investmentsQuery = query(collection(db, "investments"), where("userId", "==", userId));
     const dbTransactionsQuery = query(collection(db, "transactions"), where("userId", "==", userId));
-    const bonusQuery = query(collection(db, "bonuses"), where("userId", "==", userId));
+    const bonusQuery = query(collection(db, "bonuses"), where("userId", "==", userId), where("status", "==", "locked"));
 
     const [userDoc, investmentsSnapshot, dbTransactionsSnapshot, bonusSnapshot] = await Promise.all([
         getDoc(userDocRef),
@@ -122,18 +122,19 @@ const getUserDetailsFlow = ai.defineFlow(
     // 2.2. Wallet Balance (Calculated ONLY from cash-like transactions in the ledger)
     let walletBalance = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
-    const cashLikeTransactionTypes = ['profit_payout', 'commission', 'bonus', 'withdrawal_refund'];
-    const debitTransactionTypes = ['withdrawal_request'];
+    // These are the only transaction types that constitute the liquid, withdrawable wallet balance.
+    const liquidCreditTransactionTypes = ['profit_payout', 'commission', 'principal_return', 'bonus', 'withdrawal_refund'];
+    const liquidDebitTransactionTypes = ['withdrawal_request'];
 
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
         // Sum up cash-like credits and withdrawal debits for the withdrawable balance.
-        if (cashLikeTransactionTypes.includes(data.type)) {
+        if (liquidCreditTransactionTypes.includes(data.type) && data.status === 'completed') {
             walletBalance += data.amount;
-        } else if (debitTransactionTypes.includes(data.type)) {
-            walletBalance += data.amount; // amount is already negative
+        } else if (liquidDebitTransactionTypes.includes(data.type) && data.status === 'pending') {
+            walletBalance += data.amount; // amount is already negative for pending requests
         }
 
         let fundId = '-';
@@ -156,7 +157,7 @@ const getUserDetailsFlow = ai.defineFlow(
         });
     })
     
-    // 2.3. Locked Bonus (total amount from 'bonuses' collection, independent of wallet)
+    // 2.3. Locked Bonus (total amount from 'bonuses' collection with status 'locked')
     const lockedBonus = bonusSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
 
     // 3. Prepare Chart Data

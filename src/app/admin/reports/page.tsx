@@ -73,6 +73,7 @@ export default function AdminReportsPage() {
 
     const handleDistributeProfits = async () => {
         setIsDistributing(true);
+        toast({ title: "عملیات در حال انجام", description: "توزیع سود آغاز شد..."});
         try {
             const result = await distributeProfitsAction();
             if (result.success) {
