@@ -184,15 +184,14 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // Correctly calculate walletBalance: free cash from DB (commissions, returned principal) + total earned profits.
-    const freeCashInWallet = userData.walletBalance || 0;
-    const withdrawableBalance = freeCashInWallet + totalProfit;
+    // walletBalance is now the Single Source of Truth for free/withdrawable cash.
+    const withdrawableBalance = userData.walletBalance || 0;
 
     const stats: z.infer<typeof StatsSchema> = {
         activeInvestment: activeNetInvestment, // Net value of active investments
-        totalProfit: totalProfit,
+        totalProfit: totalProfit, // For display purposes
         lotteryTickets: Math.floor(activeNetInvestment / 10),
-        walletBalance: withdrawableBalance, // Free cash + profits
+        walletBalance: withdrawableBalance, // Free cash from DB (commissions, returned principal, profits)
         totalBalance: activeNetInvestment + withdrawableBalance, // Total net worth
     };
     

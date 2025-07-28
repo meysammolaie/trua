@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for calculating and distributing profits to investors.
@@ -33,14 +34,12 @@ const distributeProfitsFlow = ai.defineFlow(
   },
   async () => {
     try {
-      // 1. Get all active investments and platform settings
+      // 1. Get platform settings and all active investments
       const settings = await getPlatformSettings();
       const investmentsRef = collection(db, 'investments');
       const activeInvestmentsQuery = query(investmentsRef, where('status', '==', 'active'));
 
-      const [investmentsSnapshot] = await Promise.all([
-        getDocs(activeInvestmentsQuery),
-      ]);
+      const investmentsSnapshot = await getDocs(activeInvestmentsQuery);
 
       const activeInvestments = investmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
@@ -48,29 +47,39 @@ const distributeProfitsFlow = ai.defineFlow(
         return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
 
-      // 2. Calculate the total profit pool and total investment amount
-      // Simplified: Profit pool is based on entry fees of all active investments.
-      // A more robust system would track fees in a separate ledger.
+      // 2. Calculate total profit pool from fees of active investments.
+      // A more robust system would track fees in a separate ledger or collection.
       let totalProfitPool = 0;
-      let totalInvestmentAmount = 0;
-      const investmentsByUser: Record<string, number> = {};
-
       activeInvestments.forEach(inv => {
-        const amount = inv.amount as number;
-        const profitFromInvestment = amount * (settings.entryFee / 100);
-        totalProfitPool += profitFromInvestment;
-        totalInvestmentAmount += amount;
-
-        const userId = inv.userId as string;
-        if (!investmentsByUser[userId]) {
-            investmentsByUser[userId] = 0;
-        }
-        investmentsByUser[userId] += amount;
+        const amountUSD = inv.amountUSD as number;
+        // Profit pool is generated from entry and platform fees
+        const entryFeeProfit = amountUSD * (settings.entryFee / 100);
+        const platformFeeProfit = amountUSD * (settings.platformFee / 100);
+        totalProfitPool += entryFeeProfit + platformFeeProfit;
       });
 
       if (totalProfitPool <= 0) {
          return { success: true, message: 'مبلغی برای توزیع سود وجود ندارد.' };
       }
+      
+      // Calculate total active investment amount to determine profit share percentages
+      const totalInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + (inv.netAmountUSD as number), 0);
+      
+      if (totalInvestmentAmount <= 0) {
+          return { success: true, message: 'مجموع سرمایه فعال برای محاسبه سهم سود صفر است.' };
+      }
+      
+      // Group investments by user to calculate total investment per user
+      const investmentsByUser: Record<string, number> = {};
+      activeInvestments.forEach(inv => {
+          const userId = inv.userId as string;
+          const netAmount = inv.netAmountUSD as number;
+          if (!investmentsByUser[userId]) {
+              investmentsByUser[userId] = 0;
+          }
+          investmentsByUser[userId] += netAmount;
+      });
+
 
       // 3. Distribute profit and prepare batch write
       const batch = writeBatch(db);
@@ -81,7 +90,7 @@ const distributeProfitsFlow = ai.defineFlow(
         const profitShare = (userTotalInvestment / totalInvestmentAmount) * totalProfitPool;
 
         if (profitShare > 0) {
-            // A. Update user's walletBalance
+            // A. Update user's walletBalance directly
             const userRef = doc(db, 'users', userId);
             batch.update(userRef, { walletBalance: increment(profitShare) });
 
@@ -93,7 +102,7 @@ const distributeProfitsFlow = ai.defineFlow(
                 amount: profitShare,
                 status: 'completed',
                 createdAt: serverTimestamp(),
-                details: `Profit distribution based on $${userTotalInvestment.toLocaleString()} investment.`,
+                details: `Profit distribution based on $${userTotalInvestment.toLocaleString()} net investment.`,
             });
         }
       }
