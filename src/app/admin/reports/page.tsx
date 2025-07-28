@@ -26,12 +26,12 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { DateRangePicker } from "@/components/date-range-picker";
-import { FileDown, DollarSign, Users, Ticket, TrendingUp, Loader2, PlayCircle } from "lucide-react";
+import { FileDown, DollarSign, Users, Ticket, TrendingUp, Loader2, PlayCircle, Unlock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TransactionWithUser, AllTransactionsStats } from "@/ai/flows/get-all-transactions-flow";
 import { getAllTransactionsAction } from "@/app/actions/transactions";
 import { useToast } from "@/hooks/use-toast";
-import { distributeProfitsAction } from "@/app/actions/reports";
+import { distributeProfitsAction, unlockBonusesAction } from "@/app/actions/reports";
 
 const revenueChartConfig = {
   revenue: {
@@ -44,6 +44,7 @@ export default function AdminReportsPage() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [isDistributing, setIsDistributing] = useState(false);
+    const [isUnlocking, setIsUnlocking] = useState(false);
     const [transactions, setTransactions] = useState<TransactionWithUser[]>([]);
     const [stats, setStats] = useState<AllTransactionsStats | null>(null);
 
@@ -51,8 +52,7 @@ export default function AdminReportsPage() {
         try {
             setLoading(true);
             const data = await getAllTransactionsAction();
-            // Filter for financial events to show in the recent list
-            const financialEvents = data.transactions.filter(t => ['profit_payout', 'investment'].includes(t.type) || t.type.startsWith('fee_'));
+            const financialEvents = data.transactions;
             setTransactions(financialEvents.slice(0, 10)); // Show latest 10
             setStats(data.stats);
         } catch (error) {
@@ -95,23 +95,47 @@ export default function AdminReportsPage() {
             setIsDistributing(false);
         }
     }
+    
+    const handleUnlockBonuses = async () => {
+        setIsUnlocking(true);
+        toast({ title: "عملیات در حال انجام", description: "آزادسازی جوایز آغاز شد..."});
+        try {
+            const result = await unlockBonusesAction();
+            if (result.success) {
+                toast({
+                    title: "عملیات موفق",
+                    description: result.message,
+                });
+                await fetchData(); // Refresh data after unlocking
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "خطا در آزادسازی جوایز",
+                description: error instanceof Error ? error.message : "یک خطای ناشناخته رخ داد."
+            });
+        } finally {
+            setIsUnlocking(false);
+        }
+    }
+
 
     const typeNames: Record<string, string> = {
-        fee_entry: "کارمزد ورود",
-        fee_lottery: "کارمزد قرعه‌کشی",
-        fee_platform: "کارمزد پلتفرم",
-        profit_payout: "پرداخت سود",
-        lottery_win: "جایزه قرعه‌کشی",
-        withdrawal_fee: "کارمزد خروج",
-        deposit: "واریز",
         investment: "سرمایه‌گذاری",
-        withdrawal: "برداشت",
+        profit_payout: "واریز سود",
+        commission: "کمیسیون",
+        principal_return: "بازگشت اصل پول",
+        withdrawal_request: "درخواست برداشت",
+        withdrawal_refund: "لغو برداشت",
+        bonus: "جایزه"
     };
 
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">گزارشات مالی</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">گزارشات مالی و عملیات</h1>
         <div className="flex items-center gap-2">
             <DateRangePicker />
             <Button variant="outline">
@@ -121,7 +145,7 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
-       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">مجموع درآمد کارمزد</CardTitle>
@@ -133,20 +157,6 @@ export default function AdminReportsPage() {
             }
             <p className="text-xs text-muted-foreground">
               از تمام انواع کارمزدها
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">سود پرداخت شده</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? <Loader2 className="h-6 w-6 animate-spin"/> :
-                <div className="text-2xl font-bold font-mono">$0.00</div>
-            }
-            <p className="text-xs text-muted-foreground">
-              مجموع سودهای توزیع شده بین کاربران
             </p>
           </CardContent>
         </Card>
@@ -205,36 +215,37 @@ export default function AdminReportsPage() {
             </CardContent>
              <CardFooter>
                 <p className="text-xs text-muted-foreground">
-                    این عملیات باید به صورت روزانه اجرا شود. در آینده می‌توان آن را به صورت خودکار زمان‌بندی کرد.
+                    این عملیات، کارمزدهای جدید را بین کاربران فعال توزیع می‌کند.
                 </p>
              </CardFooter>
         </Card>
-        <Card>
+         <Card>
             <CardHeader>
-                <CardTitle>نمودار درآمد کارمزدها</CardTitle>
-                <CardDescription>نمایش روند درآمد ماهانه از کارمزدها.</CardDescription>
+                <CardTitle>آزادسازی جوایز</CardTitle>
+                <CardDescription>
+                   این عملیات تمام جوایز قفل‌شده کاربران را آزاد و به کیف پولشان اضافه می‌کند.
+                </CardDescription>
             </CardHeader>
             <CardContent>
-                {loading ? <div className="h-[250px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : 
-                <ChartContainer config={revenueChartConfig} className="h-[250px] w-full">
-                  <BarChart accessibilityLayer data={stats?.revenueChartData}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                    />
-                     <YAxis />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent hideLabel />}
-                    />
-                    <Bar dataKey="revenue" fill="var(--color-revenue)" radius={8} />
-                  </BarChart>
-                </ChartContainer>
-                }
+                 <Button variant="secondary" className="w-full" onClick={handleUnlockBonuses} disabled={isUnlocking || loading}>
+                    {isUnlocking ? (
+                        <>
+                            <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                            در حال آزادسازی...
+                        </>
+                    ) : (
+                        <>
+                             <Unlock className="h-4 w-4 ml-2" />
+                            اجرای آزادسازی جوایز
+                        </>
+                    )}
+                 </Button>
             </CardContent>
+             <CardFooter>
+                <p className="text-xs text-muted-foreground">
+                    این دکمه را فقط زمانی بزنید که شرط آزادسازی جوایز محقق شده باشد.
+                </p>
+             </CardFooter>
         </Card>
       </div>
 

@@ -9,15 +9,18 @@
  */
 
 import { genkit } from 'genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, query, where, getDocs } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 import { UpdateInvestmentStatusInputSchema, UpdateInvestmentStatusOutputSchema } from '@/ai/schemas';
+import { googleAI } from '@genkit-ai/googleai';
+
 
 const ai = genkit({
-  plugins: [],
+  plugins: [googleAI()],
 });
+
 
 export type UpdateInvestmentStatusInput = z.infer<typeof UpdateInvestmentStatusInputSchema>;
 export type UpdateInvestmentStatusOutput = z.infer<typeof UpdateInvestmentStatusOutputSchema>;
@@ -79,30 +82,20 @@ const updateInvestmentStatusFlow = ai.defineFlow(
 
             const bonusesRef = collection(db, 'bonuses');
             const userBonusQuery = query(bonusesRef, where('userId', '==', investmentData.userId));
-            const userBonusSnapshot = await getDocs(userBonusQuery);
+            const userBonusSnapshot = await transaction.get(userBonusQuery);
 
             if (userBonusSnapshot.empty) {
                 const totalBonusesQuery = query(bonusesRef);
-                const totalBonusesSnapshot = await getDocs(totalBonusesQuery);
+                const totalBonusesSnapshot = await transaction.get(totalBonusesQuery);
                 if (totalBonusesSnapshot.size < REWARD_USER_LIMIT) {
                     const bonusDocRef = doc(collection(db, 'bonuses'));
+                    // ONLY create the locked bonus record. Do NOT create a cash transaction.
                     transaction.set(bonusDocRef, {
                         userId: investmentData.userId,
                         amount: REWARD_AMOUNT,
-                        status: 'locked',
+                        status: 'locked', // Status is 'locked', not 'completed'
                         awardedAt: serverTimestamp(),
                         reason: `First ${REWARD_USER_LIMIT} users bonus`
-                    });
-
-                    // Create a transaction to credit the user's WALLET for the bonus
-                    const txRef = doc(collection(db, 'transactions'));
-                     transaction.set(txRef, {
-                        userId: investmentData.userId,
-                        type: 'bonus',
-                        amount: REWARD_AMOUNT,
-                        status: 'completed',
-                        createdAt: serverTimestamp(),
-                        details: `جایزه برای ${REWARD_USER_LIMIT} کاربر اول`,
                     });
                 }
             }
