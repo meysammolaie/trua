@@ -54,34 +54,21 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         getUserDetails({ userId }),
     ]);
     
-    // 3. Check for recent withdrawals (within last 24 hours)
-    const withdrawalsQuery = query(
+    // 3. Check for an existing 'pending' withdrawal request
+    const pendingWithdrawalsQuery = query(
         collection(db, 'withdrawals'),
-        where('userId', '==', userId)
+        where('userId', '==', userId),
+        where('status', '==', 'pending')
     );
-    const withdrawalsSnapshot = await getDocs(withdrawalsQuery);
+    const pendingSnapshot = await getDocs(pendingWithdrawalsQuery);
 
-    if (!withdrawalsSnapshot.empty) {
-        // Sort documents by createdAt timestamp descending in code
-        const sortedWithdrawals = withdrawalsSnapshot.docs.sort((a, b) => {
-            const timeA = a.data().createdAt?.toMillis() || 0;
-            const timeB = b.data().createdAt?.toMillis() || 0;
-            return timeB - timeA;
-        });
-        
-        const lastWithdrawal = sortedWithdrawals[0].data();
-        if (lastWithdrawal.createdAt) {
-            const lastWithdrawalTime = (lastWithdrawal.createdAt as Timestamp).toMillis();
-            const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-
-            if (lastWithdrawalTime > twentyFourHoursAgo) {
-                 return {
-                    success: false,
-                    message: 'شما در ۲۴ ساعت گذشته یک درخواست برداشت ثبت کرده‌اید. لطفاً بعداً تلاش کنید.',
-                };
-            }
-        }
+    if (!pendingSnapshot.empty) {
+        return {
+            success: false,
+            message: 'شما از قبل یک درخواست برداشت در انتظار بررسی دارید. لطفاً تا زمان پردازش آن صبر کنید.',
+        };
     }
+
 
     // 4. Check withdrawal rules
     if (amount < settings.minWithdrawalAmount) {
