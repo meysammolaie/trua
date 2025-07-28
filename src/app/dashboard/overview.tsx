@@ -8,8 +8,10 @@ import {
   CreditCard,
   Crown,
   DollarSign,
+  Gift,
   Landmark,
   Loader2,
+  Lock,
   Medal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +119,21 @@ export function Overview() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl">داشبورد</h1>
       </div>
+       {stats?.lockedBonus && stats.lockedBonus > 0 && (
+         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
+             <Card className="bg-primary/10 border-primary/40">
+                <CardHeader className="flex flex-row items-center gap-4">
+                    <Gift className="w-8 h-8 text-primary" />
+                    <div>
+                        <CardTitle>شما یک جایزه ویژه دارید!</CardTitle>
+                        <CardDescription className="text-foreground/80">
+                            مبلغ <span className="font-bold text-yellow-400">${stats.lockedBonus.toLocaleString()}</span> جایزه به شما تعلق گرفته است که پس از رسیدن حجم کل سرمایه پلتفرم به حد نصاب، آزاد خواهد شد.
+                        </CardDescription>
+                    </div>
+                </CardHeader>
+             </Card>
+        </motion.div>
+       )}
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
             <Card>
@@ -157,7 +174,7 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">موجودی کیف پول (قابل برداشت)</CardTitle>
+                <CardTitle className="text-sm font-medium">موجودی کیف پول</CardTitle>
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -260,7 +277,7 @@ export function Overview() {
                     </CardDescription>
                 </div>
                 <Button asChild size="sm" className="ml-auto gap-1">
-                <Link href="/dashboard/reports">
+                <Link href="/dashboard/wallet">
                     مشاهده همه
                     <ArrowUpRight className="h-4 w-4" />
                 </Link>
