@@ -6,6 +6,7 @@ import { HowItWorksSection } from "@/components/landing/how-it-works-section";
 import { LotterySection } from "@/components/landing/lottery-section";
 import { FaqSection } from "@/components/landing/faq-section";
 import { FutureVisionSection } from "@/components/landing/future-vision-section";
+import { RewardPromoSection } from "@/components/landing/reward-promo-section";
 
 export default function Home() {
   return (
@@ -13,6 +14,7 @@ export default function Home() {
       <Header />
       <main className="flex-1">
         <HeroSection />
+        <RewardPromoSection />
         <FundsSection />
         <HowItWorksSection />
         <LotterySection />

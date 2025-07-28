@@ -20,6 +20,7 @@ import {
   Ticket,
   ArrowDownUp,
   Gift,
+  ClipboardCheck,
 } from "lucide-react";
 
 import {
@@ -46,7 +47,7 @@ const navItems = [
   { href: "/admin/investments", icon: Package, label: "سرمایه‌ها" },
   { href: "/admin/withdrawals", icon: ArrowDownUp, label: "برداشت‌ها" },
   { href: "/admin/transactions", icon: Wallet, label: "تراکنش‌ها" },
-  // Adding more items for the sheet/sidebar, but maybe not for the bottom nav
+  { href: "/admin/tasks", icon: ClipboardCheck, label: "مدیریت وظایف", sidebarOnly: true },
   { href: "/admin/commissions", icon: Gift, label: "کمیسیون‌ها", sidebarOnly: true },
   { href: "/admin/reports", icon: LineChart, label: "گزارشات", sidebarOnly: true },
   { href: "/admin/lottery", icon: Ticket, label: "قرعه‌کشی", sidebarOnly: true },

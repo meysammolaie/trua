@@ -56,6 +56,9 @@ const statusNames: Record<string, string> = {
     completed: "تکمیل شده",
     rejected: "رد شده",
     withdrawal_request: "درخواست برداشت",
+    commission: "کمیسیون",
+    profit_payout: "واریز سود",
+    principal_return: "بازگشت اصل پول"
 };
 
 export async function getUserDetails(input: GetUserDetailsInput): Promise<GetUserDetailsOutput> {
@@ -70,15 +73,16 @@ const getUserDetailsFlow = ai.defineFlow(
   },
   async ({ userId }) => {
     
-    // 1. Fetch user profile, investments, and all transactions in parallel
     const userDocRef = doc(db, "users", userId);
     const investmentsQuery = query(collection(db, "investments"), where("userId", "==", userId));
     const dbTransactionsQuery = query(collection(db, "transactions"), where("userId", "==", userId));
+    const bonusQuery = query(collection(db, "bonuses"), where("userId", "==", userId), where("status", "==", "locked"));
 
-    const [userDoc, investmentsSnapshot, dbTransactionsSnapshot] = await Promise.all([
+    const [userDoc, investmentsSnapshot, dbTransactionsSnapshot, bonusSnapshot] = await Promise.all([
         getDoc(userDocRef),
         getDocs(investmentsQuery),
         getDocs(dbTransactionsQuery),
+        getDocs(bonusQuery)
     ]);
     
     if (!userDoc.exists()) {
@@ -86,7 +90,6 @@ const getUserDetailsFlow = ai.defineFlow(
     }
     const userData = userDoc.data();
     
-    // 2. Calculate Active Investment (Net) and prepare data for charts/history
     let activeNetInvestment = 0;
     const investmentByMonth: Record<string, number> = {};
     const allTransactionsForHistory: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
@@ -119,7 +122,6 @@ const getUserDetailsFlow = ai.defineFlow(
         });
     });
 
-    // 3. Calculate REAL wallet balance and total profit by summing up the transactions collection
     let withdrawableBalance = 0;
     let totalProfit = 0;
 
@@ -127,8 +129,6 @@ const getUserDetailsFlow = ai.defineFlow(
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Sum up amounts of all relevant transactions to get the current balance
-        // Positive amounts are credits (profit), negative are debits (withdrawal requests)
         withdrawableBalance += data.amount;
 
         if (data.type === 'profit_payout' && data.status === 'completed') {
@@ -137,7 +137,7 @@ const getUserDetailsFlow = ai.defineFlow(
         
         allTransactionsForHistory.push({
             id: doc.id,
-            type: data.type,
+            type: statusNames[data.type as keyof typeof statusNames] || data.type,
             fund: data.details || '-',
             status: statusNames[data.status as keyof typeof statusNames] || data.status || 'تکمیل شده',
             date: createdAt.toLocaleDateString('fa-IR'),
@@ -146,8 +146,9 @@ const getUserDetailsFlow = ai.defineFlow(
             proof: data.proof,
         });
     })
+    
+    const lockedBonus = bonusSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
 
-    // 4. Prepare Chart Data
     const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     const investmentChartData = Object.entries(investmentByMonth)
         .sort(([a], [b]) => a.localeCompare(b))
@@ -160,7 +161,6 @@ const getUserDetailsFlow = ai.defineFlow(
             };
         });
 
-    // 5. Assemble final output
     const profile: z.infer<typeof UserProfileSchema> = {
         uid: userDoc.id,
         firstName: userData.firstName,
@@ -176,6 +176,7 @@ const getUserDetailsFlow = ai.defineFlow(
         lotteryTickets: Math.floor(activeNetInvestment / 10),
         walletBalance: withdrawableBalance, 
         totalBalance: activeNetInvestment + withdrawableBalance,
+        lockedBonus: lockedBonus,
     };
     
     const sortedTransactions = allTransactionsForHistory.sort((a,b) => b.timestamp - a.timestamp);

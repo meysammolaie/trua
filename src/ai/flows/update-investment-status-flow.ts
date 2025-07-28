@@ -12,7 +12,7 @@ import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, increment, query, where, getDocs } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 import { UpdateInvestmentStatusInputSchema, UpdateInvestmentStatusOutputSchema } from '@/ai/schemas';
 
@@ -20,15 +20,15 @@ const ai = genkit({
   plugins: [googleAI()],
 });
 
-
 export type UpdateInvestmentStatusInput = z.infer<typeof UpdateInvestmentStatusInputSchema>;
 export type UpdateInvestmentStatusOutput = z.infer<typeof UpdateInvestmentStatusOutputSchema>;
 
+const REWARD_USER_LIMIT = 5000;
+const REWARD_AMOUNT = 100;
 
 export async function updateInvestmentStatus(input: UpdateInvestmentStatusInput): Promise<UpdateInvestmentStatusOutput> {
     return await updateInvestmentStatusFlow(input);
 }
-
 
 const updateInvestmentStatusFlow = ai.defineFlow(
   {
@@ -51,8 +51,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         
         const investmentData = investmentDoc.data();
         if (investmentData.status === newStatus) {
-            // No change needed
-            return;
+            return; // No change needed
         }
 
         const userRef = doc(db, 'users', investmentData.userId);
@@ -69,50 +68,66 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         
         // Handle different statuses
         if (newStatus === 'active') {
-          // If activating, handle referral commission if the user was referred
-          if (userDoc.exists() && userDoc.data().referredBy) {
-            const referrerId = userDoc.data().referredBy;
-            const commissionAmount = investmentData.amountUSD * (settings.entryFee * 2/3 / 100); // 2/3 of entry fee on USD amount
+            // Check for and award the initial bonus
+            const bonusesRef = collection(db, 'bonuses');
+            const userBonusQuery = query(bonusesRef, where('userId', '==', investmentData.userId));
+            const userBonusSnapshot = await getDocs(userBonusQuery);
+
+            if (userBonusSnapshot.empty) { // If user has no bonus yet
+                const totalBonusesQuery = query(bonusesRef);
+                const totalBonusesSnapshot = await getDocs(totalBonusesQuery);
+                if (totalBonusesSnapshot.size < REWARD_USER_LIMIT) {
+                    const bonusDocRef = doc(collection(db, 'bonuses'));
+                    transaction.set(bonusDocRef, {
+                        userId: investmentData.userId,
+                        amount: REWARD_AMOUNT,
+                        status: 'locked',
+                        awardedAt: serverTimestamp(),
+                        reason: 'First 5000 users bonus'
+                    });
+                }
+            }
+
+
+          // Handle referral commission if the user was referred
+          if (userDoc.exists() && userDoc.data()?.referredBy) {
+            const referrerId = userDoc.data()!.referredBy;
+            const commissionAmount = investmentData.amountUSD * (settings.entryFee * 2/3 / 100); 
 
             if (commissionAmount > 0) {
               const commissionDocRef = doc(collection(db, 'commissions'));
-              const commissionData = {
+              transaction.set(commissionDocRef, {
                 referrerId: referrerId,
                 referredUserId: investmentData.userId,
                 investmentId: investmentId,
                 investmentAmount: investmentData.amountUSD,
                 commissionAmount: commissionAmount,
                 createdAt: serverTimestamp(),
-              };
-              transaction.set(commissionDocRef, commissionData);
+              });
               
-              // Create a transaction record for the commission payout
               const txRef = doc(collection(db, 'transactions'));
-              const txData = {
+              transaction.set(txRef, {
                   userId: referrerId,
                   type: 'commission',
                   amount: commissionAmount,
                   status: 'completed',
                   createdAt: serverTimestamp(),
                   details: `Commission from user ${investmentData.userId.substring(0, 6)}`,
-              };
-              transaction.set(txRef, txData);
+              });
             }
           }
         } else if (newStatus === 'completed') {
-            // If completing, return principal (net amount) to user's wallet
             const amountToReturn = investmentData.netAmountUSD || 0;
             if (amountToReturn > 0) {
                 const txRef = doc(collection(db, 'transactions'));
-                const txData = {
+                transaction.set(txRef, {
                     userId: investmentData.userId,
                     type: 'principal_return',
                     amount: amountToReturn,
                     status: 'completed',
                     createdAt: serverTimestamp(),
                     details: `Return of principal from investment ${investmentId.substring(0,6)}`,
-                };
-                transaction.set(txRef, txData);
+                });
             }
         }
       });

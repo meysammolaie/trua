@@ -76,6 +76,7 @@ export const StatsSchema = z.object({
   lotteryTickets: z.number(),
   walletBalance: z.number(), // Free, withdrawable cash
   totalBalance: z.number(), // activeInvestment + walletBalance
+  lockedBonus: z.number().optional(),
 });
 
 export const ChartDataPointSchema = z.object({
