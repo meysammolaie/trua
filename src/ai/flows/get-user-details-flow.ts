@@ -11,20 +11,11 @@ import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore';
-import { GetUserDetailsInputSchema, UserProfileSchema, TransactionSchema, StatsSchema, ChartDataPointSchema } from '@/ai/schemas';
+import { GetUserDetailsInputSchema, UserProfileSchema, TransactionSchema, StatsSchema, ChartDataPointSchema, GetUserDetailsOutputSchema } from '@/ai/schemas';
 
 const ai = genkit({
   plugins: [googleAI()],
 });
-
-// Re-define the output schema locally to include totalBalance
-const GetUserDetailsOutputSchema = z.object({
-  profile: UserProfileSchema,
-  transactions: z.array(TransactionSchema),
-  stats: StatsSchema,
-  investmentChartData: z.array(ChartDataPointSchema),
-});
-
 
 export type GetUserDetailsInput = z.infer<typeof GetUserDetailsInputSchema>;
 export type GetUserDetailsOutput = z.infer<typeof GetUserDetailsOutputSchema>;
@@ -137,7 +128,7 @@ const getUserDetailsFlow = ai.defineFlow(
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Sum up only cash-like transactions and debits for the withdrawable balance.
+        // Sum up cash-like credits and withdrawal debits for the withdrawable balance.
         if (cashLikeTransactionTypes.includes(data.type) || data.type === 'withdrawal_request') {
             walletBalance += data.amount;
         }

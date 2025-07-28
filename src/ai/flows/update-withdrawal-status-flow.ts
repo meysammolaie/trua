@@ -52,7 +52,7 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
             throw new Error('این درخواست قبلاً پردازش شده است.');
         }
 
-        const txQuery = query(collection(db, 'transactions'), where('withdrawalId', '==', withdrawalId));
+        const txQuery = query(collection(db, 'transactions'), where('withdrawalId', '==', withdrawalId), where('status', '==', 'pending'));
         const txSnapshot = await getDocs(txQuery);
         const txDocRef = txSnapshot.docs.length > 0 ? txSnapshot.docs[0].ref : null;
 
@@ -60,15 +60,12 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
             throw new Error(`تراکنش مرتبط با این برداشت یافت نشد. شناسه: ${withdrawalId}`);
         }
         
-        const updatePayload: Record<string, any> = { status: newStatus === 'approved' ? 'completed' : 'rejected' };
-        
         if (newStatus === 'approved') {
           if (!adminTransactionProof) {
             throw new Error('برای تایید برداشت، ارائه رسید تراکنش الزامی است.');
           }
-          updatePayload.adminTransactionProof = adminTransactionProof;
           
-          transaction.update(withdrawalRef, updatePayload);
+          transaction.update(withdrawalRef, { status: 'completed', adminTransactionProof });
           transaction.update(txDocRef, {
               status: 'completed',
               details: `برداشت موفق به ${withdrawalData.walletAddress}`,
@@ -77,6 +74,8 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
 
         } else { // If 'rejected'
           transaction.update(withdrawalRef, { status: 'rejected' });
+          
+          // Instead of updating the original transaction, we create a refund transaction to keep the ledger immutable
           transaction.update(txDocRef, { status: 'rejected' });
           
           // Create a NEW transaction to refund the amount.

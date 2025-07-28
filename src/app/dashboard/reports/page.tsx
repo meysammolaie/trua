@@ -139,7 +139,7 @@ export default function ReportsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>نوع</TableHead>
-                <TableHead>صندوق/مقصد</TableHead>
+                <TableHead>صندوق/جزئیات</TableHead>
                 <TableHead>وضعیت</TableHead>
                 <TableHead>تاریخ</TableHead>
                 <TableHead className="text-right">مبلغ (دلار)</TableHead>

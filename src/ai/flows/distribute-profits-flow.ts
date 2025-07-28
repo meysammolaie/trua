@@ -7,7 +7,7 @@
  */
 
 import {genkit} from 'genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, collectionGroup } from 'firebase/firestore';
 

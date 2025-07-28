@@ -56,7 +56,10 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         const userRef = doc(db, 'users', investmentData.userId);
         const userDoc = await transaction.get(userRef);
 
-        const updatePayload: { status: string, rejectionReason?: string } = { status: newStatus };
+        const updatePayload: { status: string, rejectionReason?: string, updatedAt?: any } = { 
+            status: newStatus,
+            updatedAt: serverTimestamp(),
+        };
         if (newStatus === 'rejected' && rejectionReason) {
           updatePayload.rejectionReason = rejectionReason;
         }

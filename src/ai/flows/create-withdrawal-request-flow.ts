@@ -51,7 +51,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         const settings = await getPlatformSettings();
         // Use the single source of truth to get the current, accurate balance
         const userDetails = await getUserDetails({ userId });
-        const currentBalance = userDetails.stats.walletBalance; // This is the liquid, withdrawable balance
+        const currentBalance = userDetails.walletBalance; // This is the liquid, withdrawable balance
 
         if (currentBalance < amount) {
             return {
