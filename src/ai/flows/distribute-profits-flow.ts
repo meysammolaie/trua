@@ -11,6 +11,10 @@ import {z} from 'zod';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, collectionGroup } from 'firebase/firestore';
 
+const ai = genkit({
+  plugins: [],
+});
+
 const DistributeProfitsOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
@@ -55,16 +59,15 @@ const distributeProfitsFlow = ai.defineFlow(
 
       const todaysActivatedInvestments = await getDocs(q);
 
-      const dailyDistributablePool = todaysActivatedInvestments.docs.reduce((sum, doc) => {
-        // Assuming entry fee is the primary source for the profit pool
-        const fees = doc.data().feesUSD || 0;
-        const amount = doc.data().amountUSD || 0;
-        const platformFeeRate = 0.01;
-        const lotteryFeeRate = 0.02;
-        // This calculates the portion of fees that is the entry fee (3%)
-        const entryFee = fees - (amount * (platformFeeRate + lotteryFeeRate));
-        return sum + (entryFee > 0 ? entryFee : 0);
-      }, 0);
+      let dailyDistributablePool = 0;
+      // The profit pool is the sum of entry fees from today's activated investments.
+      // Entry fee is 3% of the gross investment amount (amountUSD).
+      todaysActivatedInvestments.forEach(doc => {
+          const investment = doc.data() as InvestmentDoc;
+          // Assuming entry fee is 3% and it's calculated from amountUSD
+          const entryFeeRate = 0.03; 
+          dailyDistributablePool += (investment.amountUSD || 0) * entryFeeRate;
+      });
       
       if (dailyDistributablePool <= 0) {
          return { success: true, message: 'مبلغی برای توزیع سود امروز وجود ندارد.' };
