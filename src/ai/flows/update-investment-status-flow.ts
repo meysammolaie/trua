@@ -2,16 +2,13 @@
 'use server';
 /**
  * @fileOverview A flow for updating an investment's status.
- *
- * - updateInvestmentStatus - Handles updating an investment document in Firestore.
- * - UpdateInvestmentStatusInput - The input type for the function.
- * - UpdateInvestmentStatusOutput - The return type for the function.
+ * This is a critical flow that triggers other financial events.
  */
 
-import { genkit } from 'genkit';
+import { genkit } from 'zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc, addDoc, collection, serverTimestamp, runTransaction, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, collection, serverTimestamp, runTransaction, query, where, getDocs } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 import { UpdateInvestmentStatusInputSchema, UpdateInvestmentStatusOutputSchema } from '@/ai/schemas';
 import { googleAI } from '@genkit-ai/googleai';
@@ -40,10 +37,9 @@ const updateInvestmentStatusFlow = ai.defineFlow(
   },
   async ({ investmentId, newStatus, rejectionReason }) => {
     try {
-      const investmentRef = doc(db, 'investments', investmentId);
-      
       await runTransaction(db, async (transaction) => {
         const settings = await getPlatformSettings();
+        const investmentRef = doc(db, 'investments', investmentId);
         const investmentDoc = await transaction.get(investmentRef);
         
         if (!investmentDoc.exists()) {
@@ -68,7 +64,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         transaction.update(investmentRef, updatePayload);
         
         if (newStatus === 'active') {
-            // Add a transaction to credit the user's wallet with the net investment amount
+            // 1. Credit the net amount to the user's wallet (transactions ledger)
             const investmentTxRef = doc(collection(db, 'transactions'));
             transaction.set(investmentTxRef, {
                 userId: investmentData.userId,
@@ -79,18 +75,52 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                 details: `سرمایه‌گذاری در صندوق ${investmentData.fundId}`,
                 investmentId: investmentId,
             });
+            
+            // 2. Add each fee to the daily_fees collection for later distribution
+            const feesCollectionRef = collection(db, 'daily_fees');
+            const entryFee = investmentData.amountUSD * (settings.entryFee / 100);
+            const lotteryFee = investmentData.amountUSD * (settings.lotteryFee / 100);
+            const platformFee = investmentData.amountUSD * (settings.platformFee / 100);
 
-            // Check for and award the signup bonus if eligible
+            if (entryFee > 0) {
+                 transaction.set(doc(feesCollectionRef), {
+                    type: 'entry_fee',
+                    amount: entryFee,
+                    createdAt: serverTimestamp(),
+                    distributed: false,
+                    investmentId: investmentId,
+                 });
+            }
+             if (lotteryFee > 0) {
+                 transaction.set(doc(feesCollectionRef), {
+                    type: 'lottery_fee',
+                    amount: lotteryFee,
+                    createdAt: serverTimestamp(),
+                    distributed: false, // Lottery fees are handled separately
+                    investmentId: investmentId,
+                 });
+            }
+             if (platformFee > 0) {
+                 transaction.set(doc(feesCollectionRef), {
+                    type: 'platform_fee',
+                    amount: platformFee,
+                    createdAt: serverTimestamp(),
+                    distributed: true, // Platform fees are not redistributed
+                    investmentId: investmentId,
+                 });
+            }
+
+
+            // 3. Check for and award the signup bonus if eligible (as a LOCKED bonus)
             const bonusesRef = collection(db, 'bonuses');
             const userBonusQuery = query(bonusesRef, where('userId', '==', investmentData.userId));
-            const userBonusSnapshot = await getDocs(userBonusQuery); // Use getDocs, not transaction.get
+            const userBonusSnapshot = await getDocs(userBonusQuery);
 
             if (userBonusSnapshot.empty) {
                 const totalBonusesQuery = query(bonusesRef);
-                const totalBonusesSnapshot = await getDocs(totalBonusesQuery); // Use getDocs
+                const totalBonusesSnapshot = await getDocs(totalBonusesQuery);
                 if (totalBonusesSnapshot.size < REWARD_USER_LIMIT) {
                     const bonusDocRef = doc(collection(db, 'bonuses'));
-                    // ONLY create the locked bonus record. Do NOT create a cash transaction here.
                     transaction.set(bonusDocRef, {
                         userId: investmentData.userId,
                         amount: REWARD_AMOUNT,
@@ -102,7 +132,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
             }
 
 
-          // Handle referral commission
+          // 4. Handle referral commission
           if (userDoc.exists() && userDoc.data()?.referredBy) {
             const referrerId = userDoc.data()!.referredBy;
             const commissionAmount = investmentData.amountUSD * (settings.entryFee * 2/3 / 100); 

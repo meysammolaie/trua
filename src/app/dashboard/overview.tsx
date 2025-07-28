@@ -187,15 +187,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">سرمایه فعال</CardTitle>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">موجودی قابل برداشت</CardTitle>
+                <PiggyBank className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold font-mono">${(stats?.walletBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                        دارایی شما در صندوق‌ها
+                          سودها، کمیسیون‌ها و اصل پول
                         </p>
                     </>
                  )}
@@ -205,15 +205,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">موجودی قابل برداشت</CardTitle>
-                <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">سرمایه فعال</CardTitle>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${(stats?.walletBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                          سودها و کمیسیون‌ها
+                        پایه محاسبه سود روزانه شما
                         </p>
                     </>
                  )}

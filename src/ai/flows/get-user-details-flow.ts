@@ -128,7 +128,9 @@ const getUserDetailsFlow = ai.defineFlow(
         // Sum up ALL completed transactions (positive or negative) to get the final withdrawable balance.
         // Pending withdrawals are also subtracted to block the funds.
         if (data.status === 'completed' || data.status === 'pending') {
-            walletBalance += data.amount;
+             if (['investment', 'profit_payout', 'commission', 'principal_return', 'withdrawal_refund', 'bonus', 'withdrawal_request'].includes(data.type)) {
+                walletBalance += data.amount;
+            }
         }
 
         let fundId = '-';

@@ -51,7 +51,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         const settings = await getPlatformSettings();
         // Use the single source of truth to get the current, accurate balance
         const userDetails = await getUserDetails({ userId });
-        const currentBalance = userDetails.walletBalance; // This is the liquid, withdrawable balance
+        const currentBalance = userDetails.stats.walletBalance;
 
         if (currentBalance < amount) {
             return {
@@ -90,6 +90,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
                 throw new Error("مبلغ درخواستی پس از کسر کارمزدها باید مثبت باشد.");
             }
 
+            // Create the main withdrawal document
             const withdrawalRef = doc(collection(db, 'withdrawals'));
             const newWithdrawal = {
                 userId,
@@ -102,6 +103,18 @@ const createWithdrawalRequestFlow = ai.defineFlow(
                 netAmount: netAmount,
             };
             transaction.set(withdrawalRef, newWithdrawal);
+
+            // Create a fee record for the exit fee to be distributed later
+             const feesCollectionRef = collection(db, 'daily_fees');
+             if (exitFee > 0) {
+                transaction.set(doc(feesCollectionRef), {
+                    type: 'exit_fee',
+                    amount: exitFee,
+                    createdAt: serverTimestamp(),
+                    distributed: false,
+                    withdrawalId: withdrawalRef.id,
+                 });
+             }
 
             // Create a transaction record to immediately debit the balance
             const transactionRef = doc(collection(db, 'transactions'));
