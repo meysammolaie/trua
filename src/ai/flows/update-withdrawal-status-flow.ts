@@ -41,9 +41,8 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
   },
   async ({ withdrawalId, newStatus, adminTransactionProof }) => {
     try {
-      const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
-
       await runTransaction(db, async (transaction) => {
+        const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
         const withdrawalDoc = await transaction.get(withdrawalRef);
         if (!withdrawalDoc.exists()) {
           throw new Error(`درخواست برداشت با شناسه ${withdrawalId} یافت نشد.`);
@@ -53,44 +52,37 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
             throw new Error('این درخواست قبلاً پردازش شده است.');
         }
 
-        const userId = withdrawalData.userId;
-        const userRef = doc(db, 'users', userId);
-
         // Find the associated transaction record to update its status
-        const txQuery = query(collection(db, 'transactions'), where('withdrawalId', '==', withdrawalId), where('userId', '==', userId));
-        const txSnapshot = await getDocs(txQuery);
+        const txQuery = query(collection(db, 'transactions'), where('withdrawalId', '==', withdrawalId));
+        const txSnapshot = await getDocs(txQuery); // This query does not need transaction
         const txDocRef = txSnapshot.docs.length > 0 ? txSnapshot.docs[0].ref : null;
 
-        const updatePayload: Record<string, any> = { status: newStatus };
+        if (!txDocRef) {
+            throw new Error(`تراکنش مرتبط با این برداشت یافت نشد. شناسه: ${withdrawalId}`);
+        }
 
+        const updatePayload: Record<string, any> = { status: newStatus === 'approved' ? 'completed' : 'rejected' };
+        
         if (newStatus === 'approved') {
           if (!adminTransactionProof) {
             throw new Error('برای تایید برداشت، ارائه رسید تراکنش الزامی است.');
           }
-          // The amount was already deducted from the user's wallet when the request was created.
-          // Now we just update the status to 'completed' and log the admin proof.
           updatePayload.adminTransactionProof = adminTransactionProof;
-          updatePayload.status = 'completed'; 
+          
+          // Update withdrawal document status
           transaction.update(withdrawalRef, updatePayload);
-
-          if (txDocRef) {
-              transaction.update(txDocRef, {
-                  status: 'completed',
-                  details: `برداشت موفق به ${withdrawalData.walletAddress}`,
-                  proof: adminTransactionProof
-              });
-          }
+          // Update the corresponding transaction status
+          transaction.update(txDocRef, {
+              status: 'completed',
+              details: `برداشت موفق به ${withdrawalData.walletAddress}`,
+              proof: adminTransactionProof
+          });
 
         } else { // If 'rejected'
-          // We need to return the deducted amount back to the user's wallet.
-          transaction.update(userRef, {
-              walletBalance: increment(withdrawalData.amount) // Return the gross amount
-          });
-          // And update the withdrawal and transaction status.
+          // Update withdrawal document status
           transaction.update(withdrawalRef, { status: 'rejected' });
-          if(txDocRef) {
-              transaction.update(txDocRef, { status: 'rejected', details: 'درخواست برداشت توسط مدیر رد شد.' });
-          }
+          // Update the corresponding transaction status
+          transaction.update(txDocRef, { status: 'rejected', details: 'درخواست برداشت توسط مدیر رد شد.' });
         }
       });
 
@@ -98,7 +90,7 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
 
       const message = newStatus === 'approved' 
         ? `درخواست برداشت با موفقیت تایید و رسید ثبت شد.`
-        : `درخواست برداشت با موفقیت رد و مبلغ به کیف پول کاربر بازگردانده شد.`;
+        : `درخواست برداشت با موفقیت رد شد.`;
 
       return { success: true, message: message };
 
@@ -109,3 +101,5 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
     }
   }
 );
+
+    

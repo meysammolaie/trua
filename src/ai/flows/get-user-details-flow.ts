@@ -134,19 +134,25 @@ const getUserDetailsFlow = ai.defineFlow(
     });
 
 
-    // 4. Process other transactions (profits, withdrawals)
+    // 4. Process other transactions (profits, withdrawals, etc.) to calculate REAL wallet balance
     let totalProfit = 0;
+    let withdrawableBalance = 0;
+
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Investment transactions are handled above
-        if(data.type.includes('investment')) return;
+        // This is the core logic for wallet balance calculation
+        // We only consider 'completed' or 'pending' transactions that affect the balance
+        if(data.status === 'completed' || data.status === 'pending') {
+            withdrawableBalance += data.amount;
+        }
 
         if (data.type === 'profit_payout' && data.status === 'completed') {
             totalProfit += data.amount;
         }
         
+        // Add to history list for display
         allTransactions.push({
             id: doc.id,
             type: data.type,
@@ -184,14 +190,11 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // walletBalance is now the Single Source of Truth for free/withdrawable cash.
-    const withdrawableBalance = userData.walletBalance || 0;
-
     const stats: z.infer<typeof StatsSchema> = {
         activeInvestment: activeNetInvestment, // Net value of active investments
         totalProfit: totalProfit, // For display purposes
         lotteryTickets: Math.floor(activeNetInvestment / 10),
-        walletBalance: withdrawableBalance, // Free cash from DB (commissions, returned principal, profits)
+        walletBalance: withdrawableBalance, // Calculated free cash
         totalBalance: activeNetInvestment + withdrawableBalance, // Total net worth
     };
     
@@ -205,3 +208,5 @@ const getUserDetailsFlow = ai.defineFlow(
     };
   }
 );
+
+    

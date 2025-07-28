@@ -90,11 +90,7 @@ const distributeProfitsFlow = ai.defineFlow(
         const profitShare = (userTotalInvestment / totalInvestmentAmount) * totalProfitPool;
 
         if (profitShare > 0) {
-            // A. Update user's walletBalance directly
-            const userRef = doc(db, 'users', userId);
-            batch.update(userRef, { walletBalance: increment(profitShare) });
-
-            // B. Create a transaction record for the profit payout
+            // Create a transaction record for the profit payout
             const transactionRef = doc(collection(db, 'transactions'));
             batch.set(transactionRef, {
                 userId,
@@ -127,3 +123,5 @@ const distributeProfitsFlow = ai.defineFlow(
     }
   }
 );
+
+    

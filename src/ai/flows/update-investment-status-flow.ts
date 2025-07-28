@@ -75,6 +75,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
             const commissionAmount = investmentData.amountUSD * (settings.entryFee * 2/3 / 100); // 2/3 of entry fee on USD amount
 
             if (commissionAmount > 0) {
+              const commissionDocRef = doc(collection(db, 'commissions'));
               const commissionData = {
                 referrerId: referrerId,
                 referredUserId: investmentData.userId,
@@ -83,27 +84,35 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                 commissionAmount: commissionAmount,
                 createdAt: serverTimestamp(),
               };
+              transaction.set(commissionDocRef, commissionData);
               
-              const commissionRef = doc(collection(db, 'commissions'));
               const referrerUserRef = doc(db, 'users', referrerId);
-
-              // 1A. Create the commission document
-              transaction.set(commissionRef, commissionData);
-              // 1B. Add commission amount to referrer's wallet balance
-              transaction.update(referrerUserRef, {
-                  walletBalance: increment(commissionAmount)
-              });
+              const txRef = doc(collection(db, 'transactions'));
+              const txData = {
+                  userId: referrerId,
+                  type: 'commission',
+                  amount: commissionAmount,
+                  status: 'completed',
+                  createdAt: serverTimestamp(),
+                  details: `Commission from user ${investmentData.userId.substring(0, 6)}`,
+              };
+              transaction.set(txRef, txData);
             }
           }
         } else if (newStatus === 'completed') {
-            // If completing, return principal (net amount) to user's wallet after exit fee
-            const exitFee = (investmentData.netAmountUSD || 0) * (settings.exitFee / 100);
-            const amountToReturn = (investmentData.netAmountUSD || 0) - exitFee;
-
+            // If completing, return principal (net amount) to user's wallet
+            const amountToReturn = investmentData.netAmountUSD || 0;
             if (amountToReturn > 0) {
-                 transaction.update(userRef, {
-                    walletBalance: increment(amountToReturn)
-                });
+                const txRef = doc(collection(db, 'transactions'));
+                const txData = {
+                    userId: investmentData.userId,
+                    type: 'principal_return',
+                    amount: amountToReturn,
+                    status: 'completed',
+                    createdAt: serverTimestamp(),
+                    details: `Return of principal from investment ${investmentId.substring(0,6)}`,
+                };
+                transaction.set(txRef, txData);
             }
         }
       });
@@ -134,3 +143,5 @@ const updateInvestmentStatusFlow = ai.defineFlow(
     }
   }
 );
+
+    

@@ -10,6 +10,7 @@ import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, doc, getDoc, query, where, getDocs, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
+import { getUserDetails } from './get-user-details-flow';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -50,34 +51,40 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     try {
         const userRef = doc(db, 'users', userId);
         const settings = await getPlatformSettings();
+        
+        // Use the single source of truth to get the current, accurately calculated balance.
+        const userDetails = await getUserDetails({ userId });
+        const currentBalance = userDetails.stats.walletBalance;
+
+        if (currentBalance < amount) {
+            return {
+                success: false,
+                message: `موجودی کیف پول شما (${currentBalance.toLocaleString()}$) برای برداشت مبلغ ${amount.toLocaleString()}$ کافی نیست.`,
+            };
+        }
+
+        // Check for an existing 'pending' withdrawal request
+        const pendingWithdrawalsQuery = query(
+            collection(db, 'withdrawals'),
+            where('userId', '==', userId),
+            where('status', '==', 'pending')
+        );
+        const pendingSnapshot = await getDocs(pendingWithdrawalsQuery);
+
+        if (!pendingSnapshot.empty) {
+            return {
+                success: false,
+                message: 'شما از قبل یک درخواست برداشت در انتظار بررسی دارید. لطفاً تا زمان پردازش آن صبر کنید.',
+            };
+        }
+         if (amount < settings.minWithdrawalAmount) {
+            return {
+                success: false,
+                message: `حداقل مبلغ برای برداشت ${settings.minWithdrawalAmount} دلار است.`,
+            };
+        }
 
         await runTransaction(db, async (transaction) => {
-            // Re-verify user balance within the transaction to prevent race conditions
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) {
-                 throw new Error("کاربر یافت نشد.");
-            }
-            const currentBalance = userDoc.data().walletBalance || 0;
-
-            if (currentBalance < amount) {
-                throw new Error(`موجودی کیف پول شما (${currentBalance.toLocaleString()}$) برای برداشت مبلغ ${amount.toLocaleString()}$ کافی نیست.`);
-            }
-
-            // Check for an existing 'pending' withdrawal request
-            const pendingWithdrawalsQuery = query(
-                collection(db, 'withdrawals'),
-                where('userId', '==', userId),
-                where('status', '==', 'pending')
-            );
-            const pendingSnapshot = await getDocs(pendingWithdrawalsQuery);
-
-            if (!pendingSnapshot.empty) {
-                throw new Error('شما از قبل یک درخواست برداشت در انتظار بررسی دارید. لطفاً تا زمان پردازش آن صبر کنید.');
-            }
-             if (amount < settings.minWithdrawalAmount) {
-                throw new Error(`حداقل مبلغ برای برداشت ${settings.minWithdrawalAmount} دلار است.`);
-            }
-
             // Calculate fees and net amount
             const exitFee = amount * (settings.exitFee / 100);
             const networkFee = settings.networkFee || 0;
@@ -103,19 +110,17 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             transaction.set(withdrawalRef, newWithdrawal);
 
             // B. Create a corresponding 'pending' transaction record for the user's history
+            // This is crucial for the new balance calculation logic.
             const transactionRef = doc(collection(db, 'transactions'));
             transaction.set(transactionRef, {
                 userId,
                 type: 'withdrawal_request',
-                amount: -amount,
+                amount: -amount, // Make it a negative value as it's a debit
                 status: 'pending',
                 createdAt: serverTimestamp(),
                 details: `درخواست برداشت به آدرس ${walletAddress}`,
                 withdrawalId: withdrawalRef.id // Link transaction to withdrawal request
             });
-
-            // C. Deduct the amount from user's walletBalance
-            transaction.update(userRef, { walletBalance: increment(-amount) });
         });
 
         return {
@@ -132,3 +137,5 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     }
   }
 );
+
+    
