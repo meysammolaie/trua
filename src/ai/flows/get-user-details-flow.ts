@@ -29,7 +29,7 @@ type InvestmentDocument = {
   fundId: string;
   amount: number;
   amountUSD: number; // Gross amount in USD
-  netAmountUSD?: number; // Net amount after fees
+  netAmountUSD: number; // Net amount after fees
   status: 'pending' | 'active' | 'completed' | 'rejected';
   createdAt: Timestamp;
   transactionHash: string;
@@ -59,6 +59,7 @@ const statusNames: Record<string, string> = {
     active: "فعال",
     completed: "تکمیل شده",
     rejected: "رد شده",
+    withdrawal_request: "درخواست برداشت",
 };
 
 export async function getUserDetails(input: GetUserDetailsInput): Promise<GetUserDetailsOutput> {
@@ -106,14 +107,14 @@ const getUserDetailsFlow = ai.defineFlow(
     const activeInvestments = investmentsSnapshot.docs.filter(doc => doc.data().status === 'active');
     activeInvestments.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
-        grossInvestment += data.amountUSD;
+        grossInvestment += data.netAmountUSD; // Use NET amount for active investment value
 
         const date = data.createdAt.toDate();
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         if(!investmentByMonth[monthKey]) {
             investmentByMonth[monthKey] = 0;
         }
-        investmentByMonth[monthKey] += data.amountUSD;
+        investmentByMonth[monthKey] += data.amountUSD; // Chart can still show gross
     });
 
     // 3. Process all investments for transaction history
@@ -139,18 +140,18 @@ const getUserDetailsFlow = ai.defineFlow(
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Exclude investment transactions as they are handled above
+        // Investment transactions are handled above
         if(data.type.includes('investment')) return;
 
         if (data.type === 'profit_payout' && data.status === 'completed') {
             totalProfit += data.amount;
         }
-
+        
         allTransactions.push({
             id: doc.id,
             type: data.type,
             fund: data.details || '-',
-            status: statusNames[data.status] || data.status || 'تکمیل شده',
+            status: statusNames[data.status as keyof typeof statusNames] || data.status || 'تکمیل شده',
             date: createdAt.toLocaleDateString('fa-IR'),
             amount: data.amount,
             timestamp: createdAt.getTime(),
@@ -183,14 +184,14 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // Wallet balance is the sum of active gross investment and total profits earned.
-    const walletBalance = grossInvestment + totalProfit;
+    // Wallet balance is the sum of active NET investment and total profits earned.
+    const walletBalanceFromDB = userData.walletBalance || 0;
 
     const stats: z.infer<typeof StatsSchema> = {
         grossInvestment: grossInvestment,
         totalProfit: totalProfit,
         lotteryTickets: Math.floor(grossInvestment / 10),
-        walletBalance: walletBalance, 
+        walletBalance: walletBalanceFromDB, 
     };
     
     const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);

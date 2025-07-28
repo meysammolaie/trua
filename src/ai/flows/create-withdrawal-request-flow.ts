@@ -10,7 +10,6 @@ import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs, Timestamp, runTransaction, increment } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
-import { getUserDetails } from './get-user-details-flow';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -48,11 +47,8 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
 
-    // 2. Get platform settings and user details in parallel
-    const [settings, userDetails] = await Promise.all([
-        getPlatformSettings(),
-        getUserDetails({ userId }),
-    ]);
+    // 2. Get platform settings
+    const settings = await getPlatformSettings();
     
     // 3. Check for an existing 'pending' withdrawal request
     const pendingWithdrawalsQuery = query(
@@ -77,14 +73,6 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         };
     }
     
-    const userBalance = userDetails.stats.walletBalance;
-    if (amount > userBalance) {
-        return {
-            success: false,
-            message: `مبلغ درخواستی (${amount.toLocaleString()}$) از موجودی کیف پول شما (${userBalance.toLocaleString()}$) بیشتر است.`,
-        };
-    }
-
     // 5. Calculate fees and net amount
     const exitFee = amount * (settings.exitFee / 100);
     const networkFee = settings.networkFee || 0;
@@ -104,11 +92,14 @@ const createWithdrawalRequestFlow = ai.defineFlow(
 
         await runTransaction(db, async (transaction) => {
             // Re-verify user balance within the transaction to prevent race conditions
-            const remoteUserDetails = await getUserDetails({userId});
-            const remoteBalance = remoteUserDetails.stats.walletBalance;
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                 throw new Error("کاربر یافت نشد.");
+            }
+            const remoteBalance = userDoc.data().walletBalance || 0;
 
             if (remoteBalance < amount) {
-                throw new Error(`موجودی کیف پول شما (${remoteBalance.toLocaleString()}$) برای برداشت مبلغ ${amount} کافی نیست.`);
+                throw new Error(`موجودی کیف پول شما (${remoteBalance.toLocaleString()}$) برای برداشت مبلغ ${amount.toLocaleString()}$ کافی نیست.`);
             }
 
             // A. Create the withdrawal document
