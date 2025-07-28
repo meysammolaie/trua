@@ -69,21 +69,6 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         // Handle different statuses
         if (newStatus === 'active') {
 
-            // Create the main transaction record for the investment itself
-            const investmentTxRef = doc(collection(db, 'transactions'));
-            transaction.set(investmentTxRef, {
-                userId: investmentData.userId,
-                type: 'investment',
-                // This is a debit from the user's overall financial picture
-                amount: -Math.abs(investmentData.amountUSD),
-                status: 'completed',
-                createdAt: serverTimestamp(),
-                details: `سرمایه‌گذاری در صندوق ${investmentData.fundId}`,
-                proof: investmentData.transactionHash,
-                investmentId: investmentId,
-            });
-
-
             // Check for and award the initial bonus
             const bonusesRef = collection(db, 'bonuses');
             const userBonusQuery = query(bonusesRef, where('userId', '==', investmentData.userId));
@@ -103,16 +88,8 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                     });
 
                     // IMPORTANT: Also create a transaction to credit the user's wallet
-                    const bonusTxRef = doc(collection(db, 'transactions'));
-                    transaction.set(bonusTxRef, {
-                        userId: investmentData.userId,
-                        type: 'bonus',
-                        amount: REWARD_AMOUNT, // Credit the user's balance
-                        status: 'completed',
-                        createdAt: serverTimestamp(),
-                        details: `جایزه ${REWARD_USER_LIMIT} کاربر اول`,
-                        bonusId: bonusDocRef.id
-                    });
+                    // This is no longer a "bonus" that adds to the balance, it's a locked amount
+                    // so we do not create a transaction here anymore. The bonus is tracked separately.
                 }
             }
 
