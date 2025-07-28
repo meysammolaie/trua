@@ -43,7 +43,7 @@ import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
 import { getUserDetailsAction } from "@/app/actions/user-details";
 import { getPlatformSettingsAction } from "@/app/actions/platform-settings";
@@ -103,30 +103,41 @@ export function Overview() {
     const [bonusUnlockTarget, setBonusUnlockTarget] = useState(1000000);
 
 
-    useEffect(() => {
+    const fetchData = useCallback(async () => {
         if (user) {
             setLoading(true);
-            Promise.all([
-                getUserDetailsAction({ userId: user.uid }),
-                getAllTransactionsAction(),
-                getPlatformSettingsAction()
-            ]).then(([userDetails, allTransactions, settings]) => {
+            try {
+                const [userDetails, allTransactions, settings] = await Promise.all([
+                    getUserDetailsAction({ userId: user.uid }),
+                    getAllTransactionsAction(),
+                    getPlatformSettingsAction()
+                ]);
+
                 setTransactions(userDetails.transactions.slice(0, 5));
                 setStats(userDetails.stats);
                 setChartData(userDetails.investmentChartData);
+
                 const activeInvestments = allTransactions.transactions.filter(t => t.type === 'investment' && t.status === 'active');
                 const totalTvl = activeInvestments.reduce((sum, inv) => sum + Math.abs(inv.amount), 0);
                 setPlatformTvl(totalTvl);
-                setBonusUnlockTarget(settings.bonusUnlockTarget);
-            }).catch(error => {
+
+                if (settings && settings.bonusUnlockTarget) {
+                    setBonusUnlockTarget(settings.bonusUnlockTarget);
+                }
+            } catch (error) {
                 console.error("Failed to fetch dashboard data:", error);
-            }).finally(() => {
+            } finally {
                 setLoading(false);
-            });
+            }
         }
     }, [user]);
 
-    const bonusProgress = Math.min((platformTvl / bonusUnlockTarget) * 100, 100);
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const bonusProgress = bonusUnlockTarget > 0 ? Math.min((platformTvl / bonusUnlockTarget) * 100, 100) : 0;
+    const totalAssetValue = (stats?.activeInvestment ?? 0) + (stats?.walletBalance ?? 0) + (stats?.lockedBonus ?? 0);
 
   return (
     <>
@@ -139,9 +150,9 @@ export function Overview() {
                 <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-4">
                     <Gift className="w-12 h-12 text-primary flex-shrink-0" />
                     <div className="flex-grow">
-                        <CardTitle>شما یک جایزه ۱۰۰ دلاری قفل‌شده دارید!</CardTitle>
+                        <CardTitle>شما یک جایزه ${stats.lockedBonus.toLocaleString()} قفل‌شده دارید!</CardTitle>
                         <CardDescription className="text-foreground/80 mt-1">
-                             این مبلغ ${stats.lockedBonus.toLocaleString()} پس از رسیدن حجم کل سرمایه پلتفرم به ${bonusUnlockTarget.toLocaleString()} آزاد شده و به موجودی قابل برداشت شما اضافه خواهد شد.
+                             این مبلغ پس از رسیدن حجم کل سرمایه پلتفرم به ${bonusUnlockTarget.toLocaleString()} آزاد شده و به موجودی قابل برداشت شما اضافه خواهد شد.
                         </CardDescription>
                         <div className="mt-3">
                             <Progress value={bonusProgress} className="w-full h-2" />
@@ -164,7 +175,7 @@ export function Overview() {
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${((stats?.activeInvestment ?? 0) + (stats?.walletBalance ?? 0) + (stats?.lockedBonus ?? 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-bold font-mono">${totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
                           سرمایه فعال + کیف پول + جایزه
                         </p>
@@ -342,8 +353,8 @@ export function Overview() {
                                     {tx.status}
                                 </Badge>
                             </TableCell>
-                            <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <TableCell className={`text-right font-mono ${tx.amount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {tx.amount >= 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </TableCell>
                         </TableRow>
                    )))}
