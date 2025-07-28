@@ -18,6 +18,7 @@ import {
   Wallet,
   CandlestickChart,
   ClipboardCheck,
+  ArrowRightLeft,
 } from "lucide-react";
 
 import {
@@ -44,6 +45,7 @@ const navItems = [
   { href: "/dashboard", icon: Home, label: "داشبورد" },
   { href: "/dashboard/invest", icon: Package, label: "سرمایه‌گذاری" },
   { href: "/dashboard/wallet", icon: Wallet, label: "کیف پول" },
+  { href: "/dashboard/reports", icon: ArrowRightLeft, label: "تراکنش‌ها" },
   { href: "/dashboard/analytics", icon: CandlestickChart, label: "تحلیل بازار" },
   { href: "/dashboard/tasks", icon: ClipboardCheck, label: "وظایف" },
   { href: "/dashboard/referrals", icon: Users, label: "معرفی‌ها" },
@@ -183,8 +185,8 @@ export default function DashboardLayout({
             <DropdownMenuContent align="end" className="bg-card/80 backdrop-blur-lg">
               <DropdownMenuLabel>حساب من</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>تنظیمات</DropdownMenuItem>
-              <DropdownMenuItem>پشتیبانی</DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href="/dashboard/profile">پروفایل</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href="/dashboard/support">پشتیبانی</Link></DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>خروج</DropdownMenuItem>
             </DropdownMenuContent>

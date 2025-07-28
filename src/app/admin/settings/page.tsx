@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network } from "lucide-react";
+import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network, Target } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPlatformSettingsAction, updatePlatformSettingsAction } from "@/app/actions/platform-settings";
 import { PlatformSettingsSchema } from "@/ai/schemas";
@@ -69,6 +69,7 @@ export default function AdminSettingsPage() {
       bitcoinWalletAddress: "",
       minWithdrawalAmount: 10,
       withdrawalDay: "saturday",
+      bonusUnlockTarget: 1000000,
     },
   });
 
@@ -312,10 +313,10 @@ export default function AdminSettingsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>وضعیت سیستم</CardTitle>
+                        <CardTitle>تنظیمات سیستم</CardTitle>
                         <CardDescription>تنظیمات کلی و وضعیت عملیاتی پلتفرم.</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="grid md:grid-cols-2 gap-6">
                          <FormField
                             control={form.control}
                             name="maintenanceMode"
@@ -333,6 +334,23 @@ export default function AdminSettingsPage() {
                                         onCheckedChange={field.onChange}
                                         />
                                     </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="bonusUnlockTarget"
+                            render={({ field }) => (
+                                <FormItem className="rounded-lg border p-4">
+                                <FormLabel>هدف آزادسازی جایزه (دلار)</FormLabel>
+                                <div className="relative">
+                                    <Input type="number" {...field} className="pr-8" />
+                                    <Target className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <FormDescription>
+                                   مبلغ کل TVL پلتفرم که پس از رسیدن به آن، جوایز کاربران آزاد می‌شود.
+                                </FormDescription>
+                                <FormMessage />
                                 </FormItem>
                             )}
                         />

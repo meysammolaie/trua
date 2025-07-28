@@ -48,7 +48,7 @@ import { useEffect, useState, useCallback } from "react";
 import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
 import { getUserDetailsAction } from "@/app/actions/user-details";
 import { getPlatformSettingsAction } from "@/app/actions/platform-settings";
-import { getAllTransactionsAction } from "@/app/actions/transactions";
+import { getAllInvestmentsAction } from "@/app/actions/investment";
 import { Progress } from "@/components/ui/progress";
 
 
@@ -108,9 +108,9 @@ export function Overview() {
         if (user) {
             setLoading(true);
             try {
-                const [userDetails, allTransactions, settings] = await Promise.all([
+                const [userDetails, allInvestments, settings] = await Promise.all([
                     getUserDetailsAction({ userId: user.uid }),
-                    getAllTransactionsAction(),
+                    getAllInvestmentsAction(),
                     getPlatformSettingsAction()
                 ]);
 
@@ -118,8 +118,7 @@ export function Overview() {
                 setStats(userDetails.stats);
                 setChartData(userDetails.investmentChartData);
 
-                const activeInvestments = allTransactions.transactions.filter(t => t.type === 'investment' && t.status === 'active');
-                const totalTvl = activeInvestments.reduce((sum, inv) => sum + Math.abs(inv.amount), 0);
+                const totalTvl = allInvestments.investments.filter(inv => inv.status === 'active').reduce((sum, inv) => sum + inv.amountUSD, 0);
                 setPlatformTvl(totalTvl);
 
                 if (settings && settings.bonusUnlockTarget) {
@@ -368,5 +367,3 @@ export function Overview() {
     </>
   );
 }
-
-    

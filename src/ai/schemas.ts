@@ -108,5 +108,3 @@ export const GetUserWalletOutputSchema = z.object({
   walletBalance: z.number(), 
   lockedBonus: z.number(),
 });
-
-    

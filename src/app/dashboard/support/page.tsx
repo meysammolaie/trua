@@ -101,10 +101,10 @@ export default function UserSupportPage() {
                                     <TableRow key={ticket.id}>
                                         <TableCell className="font-medium">{ticket.subject}</TableCell>
                                         <TableCell>
-                                            <Badge variant={statusVariantMap[ticket.status]}>{ticket.status}</Badge>
+                                            <Badge variant={statusVariantMap[ticket.status] || 'default'}>{ticket.status}</Badge>
                                         </TableCell>
                                          <TableCell>
-                                            <Badge variant={priorityVariantMap[ticket.priority]}>{ticket.priority}</Badge>
+                                            <Badge variant={priorityVariantMap[ticket.priority] || 'default'}>{ticket.priority}</Badge>
                                         </TableCell>
                                         <TableCell>{ticket.updatedAt}</TableCell>
                                         <TableCell>
