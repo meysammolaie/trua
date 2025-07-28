@@ -128,18 +128,26 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD;
     });
 
-    // 2.2. Wallet Balance (Calculated ONLY from the transaction ledger)
+    // 2.2. Wallet Balance (Calculated ONLY from cash-like transactions in the ledger)
     let walletBalance = 0;
     const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
-    
+    const cashLikeTransactionTypes = ['profit_payout', 'commission', 'bonus', 'withdrawal_refund'];
+
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // Sum up all transactions for the wallet balance.
-        // A withdrawal request will be a negative amount. A refund is positive.
-        // This gives the current liquid, withdrawable balance.
-        walletBalance += data.amount;
+        // Sum up only cash-like transactions for the withdrawable balance.
+        if (cashLikeTransactionTypes.includes(data.type) || data.amount > 0) { // Include all positive transactions
+             if (data.type !== 'withdrawal_request') { // Exclude pending withdrawals from sum
+                 walletBalance += data.amount;
+             }
+        }
+        // Also sum up negative withdrawal requests for locked balance
+        if(data.type === 'withdrawal_request') {
+            walletBalance += data.amount; // amount is already negative
+        }
+
 
         let fundId = '-';
         if (data.investmentId) {
@@ -205,3 +213,5 @@ const getUserDetailsFlow = ai.defineFlow(
     };
   }
 );
+
+    

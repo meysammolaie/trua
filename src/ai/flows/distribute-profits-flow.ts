@@ -9,7 +9,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, runTransaction } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -46,20 +46,29 @@ const distributeProfitsFlow = ai.defineFlow(
     try {
       
       const investmentsRef = collection(db, 'investments');
-      const allInvestmentsQuery = query(investmentsRef, where('status', '==', 'active'));
-      const activeInvestmentsSnapshot = await getDocs(allInvestmentsQuery);
+      
+      // Get all active investments to determine who gets profits and their share
+      const activeInvestmentsQuery = query(investmentsRef, where('status', '==', 'active'));
+      const activeInvestmentsSnapshot = await getDocs(activeInvestmentsQuery);
       
       if (activeInvestmentsSnapshot.empty) {
         return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
 
-      // Calculate the total profit pool from the fees of ALL investments ever made
+      // Calculate the total profit pool from the entry fees of ALL investments ever made
       const allTimeInvestmentsSnapshot = await getDocs(collection(db, 'investments'));
-      let totalFeePool = allTimeInvestmentsSnapshot.docs.reduce((sum, doc) => sum + (doc.data().feesUSD || 0), 0);
+      let totalEntryFeePool = allTimeInvestmentsSnapshot.docs.reduce((sum, doc) => {
+          const fees = doc.data().feesUSD || 0;
+          const amount = doc.data().amountUSD || 0;
+          const platformFeeRate = 0.01;
+          const lotteryFeeRate = 0.02;
+          const entryFee = fees - (amount * (platformFeeRate + lotteryFeeRate));
+          return sum + (entryFee > 0 ? entryFee : 0);
+      }, 0);
       
-      // Assume we distribute 5% of the total collected fees daily.
-      // This is a simplified model. A real system would track the "undistributed" fee pool.
-      const dailyDistributablePool = totalFeePool * 0.05; 
+      // Let's assume for this example, we distribute 5% of the total collected entry fees daily.
+      // A more robust system would track an "undistributed" pool and clear it daily.
+      const dailyDistributablePool = totalEntryFeePool * 0.05;
 
       if (dailyDistributablePool <= 0) {
          return { success: true, message: 'مبلغی برای توزیع سود وجود ندارد.' };
@@ -72,6 +81,7 @@ const distributeProfitsFlow = ai.defineFlow(
           return { success: true, message: 'مجموع سرمایه فعال برای محاسبه سهم سود صفر است.' };
       }
       
+      // Group investments by user to calculate total investment per user
       const investmentsByUser = activeInvestments.reduce((acc, inv) => {
         if (!acc[inv.userId]) {
             acc[inv.userId] = 0;
@@ -119,3 +129,5 @@ const distributeProfitsFlow = ai.defineFlow(
     }
   }
 );
+
+    
