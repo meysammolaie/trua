@@ -8,7 +8,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, runTransaction, increment, addDoc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { doc, runTransaction, collection, query, where, getDocs } from 'firebase/firestore';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -81,8 +81,13 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
         } else { // If 'rejected'
           // Update withdrawal document status
           transaction.update(withdrawalRef, { status: 'rejected' });
-          // Update the corresponding transaction status
-          transaction.update(txDocRef, { status: 'rejected', details: 'درخواست برداشت توسط مدیر رد شد.' });
+          // Update the corresponding transaction status and refund the amount to the user's balance.
+          // The original transaction amount was negative, so we add its absolute value back.
+          transaction.update(txDocRef, {
+              status: 'rejected',
+              details: 'درخواست برداشت توسط مدیر رد شد.',
+              amount: 0 // Nullify the effect of this transaction on the balance
+          });
         }
       });
 
@@ -90,7 +95,7 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
 
       const message = newStatus === 'approved' 
         ? `درخواست برداشت با موفقیت تایید و رسید ثبت شد.`
-        : `درخواست برداشت با موفقیت رد شد.`;
+        : `درخواست برداشت با موفقیت رد شد و مبلغ به کیف پول کاربر بازگردانده شد.`;
 
       return { success: true, message: message };
 
@@ -101,5 +106,3 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
     }
   }
 );
-
-    

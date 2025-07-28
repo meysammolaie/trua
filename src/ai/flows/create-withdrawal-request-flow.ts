@@ -8,7 +8,7 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, query, where, getDocs, runTransaction, increment, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, query, where, getDocs, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 import { getUserDetails } from './get-user-details-flow';
 
@@ -49,7 +49,6 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     }
 
     try {
-        const userRef = doc(db, 'users', userId);
         const settings = await getPlatformSettings();
         
         // Use the single source of truth to get the current, accurately calculated balance.
@@ -137,5 +136,3 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     }
   }
 );
-
-    

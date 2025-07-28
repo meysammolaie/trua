@@ -86,7 +86,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
               };
               transaction.set(commissionDocRef, commissionData);
               
-              const referrerUserRef = doc(db, 'users', referrerId);
+              // Create a transaction record for the commission payout
               const txRef = doc(collection(db, 'transactions'));
               const txData = {
                   userId: referrerId,
@@ -143,5 +143,3 @@ const updateInvestmentStatusFlow = ai.defineFlow(
     }
   }
 );
-
-    

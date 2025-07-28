@@ -102,7 +102,7 @@ const getUserDetailsFlow = ai.defineFlow(
     // 2. Process investments and calculate stats
     let activeNetInvestment = 0;
     const investmentByMonth: Record<string, number> = {};
-    const allTransactions: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
+    const allTransactionsForHistory: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
 
     const activeInvestments = investmentsSnapshot.docs.filter(doc => doc.data().status === 'active');
     activeInvestments.forEach(doc => {
@@ -117,11 +117,11 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD; // Chart can still show gross
     });
 
-    // 3. Process all investments for transaction history
+    // 3. Process all investments for transaction history display
     investmentsSnapshot.docs.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
         const createdAt = data.createdAt.toDate();
-        allTransactions.push({
+        allTransactionsForHistory.push({
             id: doc.id,
             type: "investment",
             fund: fundNames[data.fundId as keyof typeof fundNames] || data.fundId,
@@ -134,16 +134,16 @@ const getUserDetailsFlow = ai.defineFlow(
     });
 
 
-    // 4. Process other transactions (profits, withdrawals, etc.) to calculate REAL wallet balance
-    let totalProfit = 0;
+    // 4. Calculate REAL wallet balance and total profit from the transactions collection
     let withdrawableBalance = 0;
+    let totalProfit = 0;
 
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        // This is the core logic for wallet balance calculation
-        // We only consider 'completed' or 'pending' transactions that affect the balance
+        // Core logic for wallet balance: sum up amounts of relevant transactions.
+        // We consider 'completed' transactions and 'pending' withdrawals.
         if(data.status === 'completed' || data.status === 'pending') {
             withdrawableBalance += data.amount;
         }
@@ -153,7 +153,7 @@ const getUserDetailsFlow = ai.defineFlow(
         }
         
         // Add to history list for display
-        allTransactions.push({
+        allTransactionsForHistory.push({
             id: doc.id,
             type: data.type,
             fund: data.details || '-',
@@ -194,11 +194,11 @@ const getUserDetailsFlow = ai.defineFlow(
         activeInvestment: activeNetInvestment, // Net value of active investments
         totalProfit: totalProfit, // For display purposes
         lotteryTickets: Math.floor(activeNetInvestment / 10),
-        walletBalance: withdrawableBalance, // Calculated free cash
+        walletBalance: withdrawableBalance, // Calculated free cash from transactions
         totalBalance: activeNetInvestment + withdrawableBalance, // Total net worth
     };
     
-    const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);
+    const sortedTransactions = allTransactionsForHistory.sort((a,b) => b.timestamp - a.timestamp);
 
     return {
       profile,
@@ -208,5 +208,3 @@ const getUserDetailsFlow = ai.defineFlow(
     };
   }
 );
-
-    
