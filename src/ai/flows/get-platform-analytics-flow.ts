@@ -71,14 +71,17 @@ const getPlatformAnalyticsFlow = ai.defineFlow(
   async () => {
     // 1. Fetch all investments and platform settings in parallel
     const investmentsCollection = collection(db, "investments");
-    const activeInvestmentsQuery = query(investmentsCollection, where('status', '==', 'active'), orderBy("createdAt", "asc"));
     
     const [investmentsSnapshot, settings] = await Promise.all([
-      getDocs(activeInvestmentsQuery),
+      getDocs(investmentsCollection), // Fetch all investments without a complex query
       getPlatformSettings()
     ]);
 
-    const activeInvestments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDocument);
+    // Filter and sort in code instead of in the query
+    const allInvestments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDocument);
+    const activeInvestments = allInvestments
+        .filter(inv => inv.status === 'active')
+        .sort((a,b) => a.createdAt.toMillis() - b.createdAt.toMillis()); // Sort ascending
 
     // 2. Calculate Stats
     let totalTVL = 0;
