@@ -65,11 +65,12 @@ const updateInvestmentStatusFlow = ai.defineFlow(
         
         if (newStatus === 'active') {
             // 1. Credit the net amount to the user's wallet (transactions ledger)
+            // THIS IS THE KEY CHANGE: Add the principal to the withdrawable balance.
             const investmentTxRef = doc(collection(db, 'transactions'));
             transaction.set(investmentTxRef, {
                 userId: investmentData.userId,
                 type: 'investment',
-                amount: investmentData.netAmountUSD,
+                amount: investmentData.netAmountUSD, // POSITIVE amount to credit the wallet
                 status: 'completed',
                 createdAt: serverTimestamp(),
                 details: `سرمایه‌گذاری در صندوق ${investmentData.fundId}`,
@@ -98,7 +99,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                     type: 'lottery_fee',
                     amount: lotteryFee,
                     createdAt: serverTimestamp(),
-                    distributed: false,
+                    distributed: false, // Lottery fees are not distributed daily
                     investmentId: investmentId,
                     fundId: investmentData.fundId,
                  });
