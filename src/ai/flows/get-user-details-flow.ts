@@ -184,15 +184,16 @@ const getUserDetailsFlow = ai.defineFlow(
         status: userData.status || 'active',
     };
     
-    // Wallet balance is the sum of active NET investment and total profits earned.
-    const freeWalletBalance = userData.walletBalance || 0;
+    // Correctly calculate walletBalance: free cash from DB (commissions, returned principal) + total earned profits.
+    const freeCashInWallet = userData.walletBalance || 0;
+    const withdrawableBalance = freeCashInWallet + totalProfit;
 
     const stats: z.infer<typeof StatsSchema> = {
         activeInvestment: activeNetInvestment, // Net value of active investments
         totalProfit: totalProfit,
         lotteryTickets: Math.floor(activeNetInvestment / 10),
-        walletBalance: freeWalletBalance, // Free cash, withdrawable
-        totalBalance: activeNetInvestment + freeWalletBalance, // Total net worth
+        walletBalance: withdrawableBalance, // Free cash + profits
+        totalBalance: activeNetInvestment + withdrawableBalance, // Total net worth
     };
     
     const sortedTransactions = allTransactions.sort((a,b) => b.timestamp - a.timestamp);
