@@ -23,6 +23,7 @@ const FundStatSchema = z.object({
   id: z.string(),
   name: z.string(),
   totalValue: z.number(),
+  investorCount: z.number(),
 });
 
 const GrowthDataPointSchema = z.object({
@@ -32,9 +33,8 @@ const GrowthDataPointSchema = z.object({
 
 const PlatformAnalyticsDataSchema = z.object({
   totalTVL: z.number(),
-  lotteryPool: z.number(),
-  activeInvestors: z.number(),
-  potentialDailyProfit: z.number(),
+  totalLotteryPool: z.number(),
+  totalActiveInvestors: z.number(),
   fundStats: z.array(FundStatSchema),
   tvlGrowthData: z.array(GrowthDataPointSchema),
 });
@@ -45,8 +45,9 @@ type InvestmentDocument = {
   id: string;
   userId: string;
   fundId: string;
-  amount: number;
-  status: 'pending' | 'active' | 'completed';
+  amountUSD: number;
+  netAmountUSD: number;
+  status: 'pending' | 'active' | 'completed' | 'rejected';
   createdAt: Timestamp;
 };
 
@@ -69,68 +70,65 @@ const getPlatformAnalyticsFlow = ai.defineFlow(
     outputSchema: PlatformAnalyticsDataSchema,
   },
   async () => {
-    // 1. Fetch all investments and platform settings in parallel
     const investmentsCollection = collection(db, "investments");
     
     const [investmentsSnapshot, settings] = await Promise.all([
-      getDocs(investmentsCollection), // Fetch all investments without a complex query
+      getDocs(query(investmentsCollection, where('status', '==', 'active'))),
       getPlatformSettings()
     ]);
 
-    // Filter and sort in code instead of in the query
-    const allInvestments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDocument);
-    const activeInvestments = allInvestments
-        .filter(inv => inv.status === 'active')
-        .sort((a,b) => a.createdAt.toMillis() - b.createdAt.toMillis()); // Sort ascending
+    const activeInvestments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDocument);
 
-    // 2. Calculate Stats
     let totalTVL = 0;
-    let lotteryPool = 0;
-    const investors = new Set<string>();
-    const fundTotals: Record<string, number> = { gold: 0, silver: 0, usdt: 0, bitcoin: 0 };
+    let totalLotteryPool = 0;
+    const allInvestors = new Set<string>();
+    
+    const fundData: Record<string, { totalValue: number; investors: Set<string> }> = {
+        gold: { totalValue: 0, investors: new Set() },
+        silver: { totalValue: 0, investors: new Set() },
+        usdt: { totalValue: 0, investors: new Set() },
+        bitcoin: { totalValue: 0, investors: new Set() },
+    };
+
     const tvlByDate: Record<string, number> = {};
 
     activeInvestments.forEach(inv => {
-        totalTVL += inv.amount;
-        lotteryPool += inv.amount * (settings.lotteryFee / 100);
-        investors.add(inv.userId);
+        const netValue = inv.netAmountUSD;
+        totalTVL += netValue;
+        totalLotteryPool += inv.amountUSD * (settings.lotteryFee / 100);
+        allInvestors.add(inv.userId);
         
-        if (fundTotals[inv.fundId] !== undefined) {
-            fundTotals[inv.fundId] += inv.amount;
+        if (fundData[inv.fundId]) {
+            fundData[inv.fundId].totalValue += netValue;
+            fundData[inv.fundId].investors.add(inv.userId);
         }
 
         const dateKey = inv.createdAt.toDate().toLocaleDateString('fa-IR', { year: 'numeric', month: 'short' });
         if (!tvlByDate[dateKey]) {
             tvlByDate[dateKey] = 0;
         }
-        tvlByDate[dateKey] += inv.amount;
+        tvlByDate[dateKey] += netValue;
     });
 
-    const fundStats = Object.entries(fundTotals).map(([id, totalValue]) => ({
+    const fundStats = Object.entries(fundData).map(([id, data]) => ({
       id,
       name: fundNames[id] || id,
-      totalValue
+      totalValue: data.totalValue,
+      investorCount: data.investors.size
     }));
     
-    // Create cumulative growth data
     let cumulativeTvl = 0;
-    const tvlGrowthData = Object.entries(tvlByDate).map(([date, value]) => {
-        cumulativeTvl += value;
-        return { date, tvl: cumulativeTvl };
+    const tvlGrowthData = Object.entries(tvlByDate)
+        .sort((a,b) => a[0].localeCompare(b[0]))
+        .map(([date, value]) => {
+            cumulativeTvl += value;
+            return { date, tvl: cumulativeTvl };
     });
-
-    // 3. Estimate daily profit
-    // This is a simplified estimation. A real system would track fee income separately.
-    // We'll estimate it as a percentage of TVL for demonstration.
-    const estimatedDailyProfitRate = 0.005; // 0.5% daily profit rate example
-    const potentialDailyProfit = totalTVL * estimatedDailyProfitRate;
-
 
     return {
       totalTVL,
-      lotteryPool,
-      activeInvestors: investors.size,
-      potentialDailyProfit,
+      totalLotteryPool,
+      totalActiveInvestors: allInvestors.size,
       fundStats,
       tvlGrowthData,
     };

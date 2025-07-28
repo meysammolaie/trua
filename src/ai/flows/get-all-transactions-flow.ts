@@ -39,11 +39,18 @@ const ChartDataPointSchema = z.object({
   revenue: z.number(),
 });
 
+const FundStatSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    revenue: z.number(),
+    lotteryPool: z.number(),
+});
+
 const StatsSchema = z.object({
     totalTransactions: z.number(),
     totalRevenue: z.number(),
-    lotteryPool: z.number(),
-    revenueChartData: z.array(ChartDataPointSchema),
+    totalLotteryPool: z.number(),
+    fundStats: z.array(FundStatSchema),
 });
 export type AllTransactionsStats = z.infer<typeof StatsSchema>;
 
@@ -70,6 +77,7 @@ type TransactionDocument = {
     amount: number;
     createdAt: Timestamp;
     details?: string;
+    fundId?: string;
 }
 
 type InvestmentDocument = {
@@ -77,8 +85,17 @@ type InvestmentDocument = {
   userId: string;
   fundId: string;
   amount: number;
+  amountUSD: number;
+  feesUSD: number;
   status: 'pending' | 'active' | 'completed' | 'rejected';
   createdAt: Timestamp;
+};
+
+const fundNames: Record<string, string> = {
+    gold: "طلا",
+    silver: "نقره",
+    usdt: "تتر",
+    bitcoin: "بیت‌کوین"
 };
 
 
@@ -93,16 +110,15 @@ const getAllTransactionsFlow = ai.defineFlow(
     outputSchema: GetAllTransactionsOutputSchema,
   },
   async () => {
-    // 1. Fetch all users, investments, and transactions in parallel
     const usersCollection = collection(db, "users");
     const investmentsCollection = collection(db, "investments");
-    const transactionsCollection = collection(db, "transactions");
+    const dbTransactionsQuery = query(collection(db, "transactions"), orderBy("createdAt", "desc"));
     const settingsPromise = getPlatformSettings();
 
     const [usersSnapshot, investmentsSnapshot, dbTransactionsSnapshot, settings] = await Promise.all([
       getDocs(query(usersCollection)),
       getDocs(query(investmentsCollection)),
-      getDocs(query(transactionsCollection)),
+      getDocs(dbTransactionsQuery),
       settingsPromise
     ]);
 
@@ -112,95 +128,65 @@ const getAllTransactionsFlow = ai.defineFlow(
     const investments = investmentsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as InvestmentDocument) }));
     const dbTransactions = dbTransactionsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as TransactionDocument) }));
 
-    // 2. Generate a comprehensive transaction list
-    const allTransactions: TransactionWithUser[] = [];
-    let totalRevenue = 0;
-    let lotteryPool = 0;
-    const revenueByMonth: Record<string, number> = {};
-
-    // Process actual investments and calculate fees
-    investments.forEach(inv => {
-        const user = usersMap.get(inv.userId);
-        const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'کاربر نامشخص';
-        const userEmail = user ? user.email : 'ایمیل نامشخص';
-        const investmentDate = inv.createdAt.toDate();
-        
-        if (inv.status === 'active') {
-            const fees = {
-                entry: inv.amount * (settings.entryFee / 100),
-                lottery: inv.amount * (settings.lotteryFee / 100),
-                platform: inv.amount * (settings.platformFee / 100),
-            };
-
-            const investmentRevenue = fees.entry + fees.lottery + fees.platform;
-            totalRevenue += investmentRevenue;
-            lotteryPool += fees.lottery;
-            
-            const monthKey = `${investmentDate.getFullYear()}/${String(investmentDate.getMonth() + 1).padStart(2, '0')}`;
-            if (!revenueByMonth[monthKey]) {
-                revenueByMonth[monthKey] = 0;
-            }
-            revenueByMonth[monthKey] += investmentRevenue;
-        }
-
-        allTransactions.push({
-            id: inv.id,
-            userId: inv.userId,
-            userFullName,
-            userEmail,
-            fundId: inv.fundId,
-            amount: -inv.amount,
-            type: 'investment',
-            status: inv.status,
-            createdAt: investmentDate.toLocaleDateString('fa-IR'),
-            originalInvestmentId: inv.id,
-        });
-    });
-
-    // Process transactions from the transactions collection
-    dbTransactions.forEach(tx => {
+    const allTransactions: TransactionWithUser[] = dbTransactions.map(tx => {
         const user = usersMap.get(tx.userId);
         const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'کاربر نامشخص';
         const userEmail = user ? user.email : 'ایمیل نامشخص';
         
-        allTransactions.push({
+        return {
             id: tx.id,
             userId: tx.userId,
             userFullName,
             userEmail,
+            fundId: tx.fundId,
             amount: tx.amount,
             type: tx.type,
-            status: 'completed',
+            status: 'completed', // All ledger transactions are considered complete
             createdAt: tx.createdAt.toDate().toLocaleDateString('fa-IR'),
-        });
+        };
     });
 
-    // 3. Prepare chart data
-    const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
-    const revenueChartData = Object.entries(revenueByMonth)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .slice(-6)
-        .map(([key, value]) => {
-            const monthIndex = parseInt(key.split('/')[1], 10) - 1;
-            return {
-                date: monthNames[monthIndex],
-                revenue: value,
-            };
-        });
+    // Calculate stats based on all investments
+    let totalRevenue = 0;
+    let totalLotteryPool = 0;
+    const fundStats: Record<string, { revenue: number, lotteryPool: number }> = {
+        gold: { revenue: 0, lotteryPool: 0 },
+        silver: { revenue: 0, lotteryPool: 0 },
+        usdt: { revenue: 0, lotteryPool: 0 },
+        bitcoin: { revenue: 0, lotteryPool: 0 },
+    };
 
-    // Sort all generated transactions by date descending
-    const sortedTransactions = allTransactions.sort((a, b) => {
-      // A simple date string comparison is not robust, but works for fa-IR format (YYYY/MM/DD)
-      return b.createdAt.localeCompare(a.createdAt);
+    investments.forEach(inv => {
+        if (inv.status === 'active' || inv.status === 'completed') {
+            const entryFee = inv.amountUSD * (settings.entryFee / 100);
+            const lotteryFee = inv.amountUSD * (settings.lotteryFee / 100);
+            const platformFee = inv.amountUSD * (settings.platformFee / 100);
+
+            const investmentRevenue = entryFee + platformFee; // Revenue for platform is entry and platform fees
+            totalRevenue += investmentRevenue;
+            totalLotteryPool += lotteryFee;
+
+            if (fundStats[inv.fundId]) {
+                fundStats[inv.fundId].revenue += investmentRevenue;
+                fundStats[inv.fundId].lotteryPool += lotteryFee;
+            }
+        }
     });
+
+    const fundStatsArray = Object.entries(fundStats).map(([id, data]) => ({
+        id,
+        name: fundNames[id],
+        ...data,
+    }));
+
 
     return {
-      transactions: sortedTransactions,
+      transactions: allTransactions,
       stats: {
-        totalTransactions: sortedTransactions.length,
+        totalTransactions: allTransactions.length,
         totalRevenue,
-        lotteryPool,
-        revenueChartData
+        totalLotteryPool,
+        fundStats: fundStatsArray,
       },
     };
   }

@@ -5,7 +5,7 @@
  * This is a critical flow that triggers other financial events.
  */
 
-import { genkit } from 'zod';
+import { genkit } from 'genkit';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, collection, serverTimestamp, runTransaction, query, where, getDocs } from 'firebase/firestore';
@@ -69,11 +69,12 @@ const updateInvestmentStatusFlow = ai.defineFlow(
             transaction.set(investmentTxRef, {
                 userId: investmentData.userId,
                 type: 'investment',
-                amount: investmentData.netAmountUSD, // Positive amount credited to wallet
+                amount: investmentData.netAmountUSD,
                 status: 'completed',
                 createdAt: serverTimestamp(),
                 details: `سرمایه‌گذاری در صندوق ${investmentData.fundId}`,
                 investmentId: investmentId,
+                fundId: investmentData.fundId,
             });
             
             // 2. Add each fee to the daily_fees collection for later distribution
@@ -89,6 +90,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                     createdAt: serverTimestamp(),
                     distributed: false,
                     investmentId: investmentId,
+                    fundId: investmentData.fundId,
                  });
             }
              if (lotteryFee > 0) {
@@ -96,8 +98,9 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                     type: 'lottery_fee',
                     amount: lotteryFee,
                     createdAt: serverTimestamp(),
-                    distributed: false, // Lottery fees are handled separately
+                    distributed: false,
                     investmentId: investmentId,
+                    fundId: investmentData.fundId,
                  });
             }
              if (platformFee > 0) {
@@ -105,8 +108,9 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                     type: 'platform_fee',
                     amount: platformFee,
                     createdAt: serverTimestamp(),
-                    distributed: true, // Platform fees are not redistributed
+                    distributed: true, // Platform fees are not redistributed to users
                     investmentId: investmentId,
+                    fundId: investmentData.fundId,
                  });
             }
 

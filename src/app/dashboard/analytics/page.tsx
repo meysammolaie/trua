@@ -23,7 +23,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getPlatformAnalyticsAction } from "@/app/actions/platform-analytics";
-import type { PlatformAnalyticsData } from "@/ai/flows/get-platform-analytics-flow";
+import type { PlatformAnalyticsData, FundStat } from "@/ai/flows/get-platform-analytics-flow";
 
 const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
@@ -66,7 +66,7 @@ export default function AnalyticsPage() {
         <h1 className="text-lg font-semibold md:text-2xl">تحلیل بازار</h1>
       </div>
       
-       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <div className="text-2xl font-bold font-mono">{formatCurrency(data?.totalTVL ?? 0)}</div>
                 )}
-                 <p className="text-xs text-muted-foreground">مجموع سرمایه در تمام صندوق‌ها</p>
+                 <p className="text-xs text-muted-foreground">مجموع سرمایه خالص در تمام صندوق‌ها</p>
             </CardContent>
             </Card>
         </motion.div>
@@ -89,7 +89,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
-                    <div className="text-2xl font-bold">{data?.activeInvestors.toLocaleString() ?? 0}</div>
+                    <div className="text-2xl font-bold">{data?.totalActiveInvestors.toLocaleString() ?? 0}</div>
                 )}
                  <p className="text-xs text-muted-foreground">تعداد کاربران با سرمایه فعال</p>
             </CardContent>
@@ -103,23 +103,9 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
-                    <div className="text-2xl font-bold font-mono">{formatCurrency(data?.lotteryPool ?? 0)}</div>
+                    <div className="text-2xl font-bold font-mono">{formatCurrency(data?.totalLotteryPool ?? 0)}</div>
                 )}
                 <p className="text-xs text-muted-foreground">آماده برای قرعه‌کشی بعدی</p>
-            </CardContent>
-            </Card>
-        </motion.div>
-        <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
-            <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">سود بالقوه روزانه</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
-                    <div className="text-2xl font-bold font-mono">{formatCurrency(data?.potentialDailyProfit ?? 0)}</div>
-                )}
-                 <p className="text-xs text-muted-foreground">تخمین سود توزیعی روزانه (مثال)</p>
             </CardContent>
             </Card>
         </motion.div>

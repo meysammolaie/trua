@@ -19,26 +19,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { DateRangePicker } from "@/components/date-range-picker";
-import { FileDown, DollarSign, Users, Ticket, TrendingUp, Loader2, PlayCircle, Unlock } from "lucide-react";
+import { FileDown, DollarSign, Users, Ticket, Loader2, PlayCircle, Unlock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { TransactionWithUser, AllTransactionsStats } from "@/ai/flows/get-all-transactions-flow";
+import { TransactionWithUser, AllTransactionsStats, FundStat } from "@/ai/flows/get-all-transactions-flow";
 import { getAllTransactionsAction } from "@/app/actions/transactions";
 import { useToast } from "@/hooks/use-toast";
 import { distributeProfitsAction, unlockBonusesAction } from "@/app/actions/reports";
-
-const revenueChartConfig = {
-  revenue: {
-    label: "درآمد",
-    color: "hsl(var(--primary))",
-  },
-};
 
 export default function AdminReportsPage() {
     const { toast } = useToast();
@@ -121,7 +108,6 @@ export default function AdminReportsPage() {
         }
     }
 
-
     const typeNames: Record<string, string> = {
         investment: "سرمایه‌گذاری",
         profit_payout: "واریز سود",
@@ -131,6 +117,8 @@ export default function AdminReportsPage() {
         withdrawal_refund: "لغو برداشت",
         bonus: "جایزه"
     };
+    
+    const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <>
@@ -148,29 +136,29 @@ export default function AdminReportsPage() {
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">مجموع درآمد کارمزد</CardTitle>
+            <CardTitle className="text-sm font-medium">مجموع درآمد پلتفرم</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? <Loader2 className="h-6 w-6 animate-spin"/> :
-                <div className="text-2xl font-bold font-mono">${stats?.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalRevenue ?? 0)}</div>
             }
             <p className="text-xs text-muted-foreground">
-              از تمام انواع کارمزدها
+              از کارمزدهای ورود و پلتفرم
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">موجودی صندوق قرعه‌کشی</CardTitle>
+            <CardTitle className="text-sm font-medium">موجودی کل صندوق قرعه‌کشی</CardTitle>
             <Ticket className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? <Loader2 className="h-6 w-6 animate-spin"/> :
-                <div className="text-2xl font-bold font-mono">${stats?.lotteryPool.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalLotteryPool ?? 0)}</div>
             }
             <p className="text-xs text-muted-foreground">
-              آماده برای قرعه‌کشی بعدی
+              آماده برای قرعه‌کشی‌های ماهانه
             </p>
           </CardContent>
         </Card>
@@ -189,13 +177,33 @@ export default function AdminReportsPage() {
           </CardContent>
         </Card>
       </div>
+
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        {(stats?.fundStats || []).map((fund) => (
+            <Card key={fund.id}>
+                <CardHeader>
+                    <CardTitle className="text-base">صندوق {fund.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm space-y-2">
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">درآمد پلتفرم:</span>
+                        <span className="font-mono">{formatCurrency(fund.revenue)}</span>
+                    </div>
+                     <div className="flex justify-between">
+                        <span className="text-muted-foreground">موجودی قرعه‌کشی:</span>
+                        <span className="font-mono">{formatCurrency(fund.lotteryPool)}</span>
+                    </div>
+                </CardContent>
+            </Card>
+        ))}
+       </div>
       
        <div className="grid gap-4 md:grid-cols-2 lg:gap-8">
         <Card>
             <CardHeader>
                 <CardTitle>توزیع سود روزانه</CardTitle>
                 <CardDescription>
-                    با اجرای این عملیات، سود انباشته شده از کارمزدها بین سرمایه‌گذاران فعال توزیع می‌شود.
+                    با اجرای این عملیات، سود انباشته شده از کارمزدها (ورود و خروج) بین سرمایه‌گذاران فعال هر صندوق توزیع می‌شود.
                 </CardDescription>
             </CardHeader>
             <CardContent>
