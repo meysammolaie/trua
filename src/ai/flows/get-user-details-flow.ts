@@ -3,6 +3,7 @@
 /**
  * @fileOverview A flow for fetching all details for a single user.
  * This is the single source of truth for user financial data.
+ * It calculates balances in real-time based on the transaction ledger.
  */
 
 import {genkit} from 'genkit';
@@ -35,7 +36,7 @@ type DbTransactionDocument = {
     id: string;
     userId: string;
     type: string;
-    amount: number;
+    amount: number; // Can be positive (credit) or negative (debit)
     status: 'completed' | 'pending' | 'rejected';
     createdAt: Timestamp;
     details?: string;
@@ -50,15 +51,20 @@ const fundNames: Record<string, string> = {
     bitcoin: "بیت‌کوین"
 };
 
-const statusNames: Record<string, string> = {
+const transactionTypeNames: Record<string, string> = {
+    investment: "سرمایه‌گذاری",
+    profit_payout: "واریز سود",
+    commission: "کمیسیون",
+    principal_return: "بازگشت اصل پول",
+    withdrawal_request: "درخواست برداشت",
+    bonus: "جایزه"
+};
+
+const transactionStatusNames: Record<string, string> = {
     pending: "در انتظار",
     active: "فعال",
     completed: "تکمیل شده",
     rejected: "رد شده",
-    withdrawal_request: "درخواست برداشت",
-    commission: "کمیسیون",
-    profit_payout: "واریز سود",
-    principal_return: "بازگشت اصل پول"
 };
 
 export async function getUserDetails(input: GetUserDetailsInput): Promise<GetUserDetailsOutput> {
@@ -73,6 +79,7 @@ const getUserDetailsFlow = ai.defineFlow(
   },
   async ({ userId }) => {
     
+    // 1. Fetch all user-related data in parallel
     const userDocRef = doc(db, "users", userId);
     const investmentsQuery = query(collection(db, "investments"), where("userId", "==", userId));
     const dbTransactionsQuery = query(collection(db, "transactions"), where("userId", "==", userId));
@@ -90,6 +97,9 @@ const getUserDetailsFlow = ai.defineFlow(
     }
     const userData = userDoc.data();
     
+    // 2. Calculate Stats
+    
+    // 2.1. Active Investment (Net amount)
     let activeNetInvestment = 0;
     const investmentByMonth: Record<string, number> = {};
     const allTransactionsForHistory: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
@@ -107,39 +117,47 @@ const getUserDetailsFlow = ai.defineFlow(
         investmentByMonth[monthKey] += data.amountUSD;
     });
 
+    // Add investment records to the combined history for display
     investmentsSnapshot.docs.forEach(doc => {
         const data = doc.data() as InvestmentDocument;
         const createdAt = data.createdAt.toDate();
         allTransactionsForHistory.push({
             id: doc.id,
-            type: "investment",
+            type: transactionTypeNames["investment"],
             fund: fundNames[data.fundId as keyof typeof fundNames] || data.fundId,
-            status: statusNames[data.status as keyof typeof statusNames] || data.status,
+            status: transactionStatusNames[data.status as keyof typeof transactionStatusNames] || data.status,
             date: createdAt.toLocaleDateString('fa-IR'),
-            amount: -Math.abs(data.amountUSD),
+            amount: -Math.abs(data.amountUSD), // Investments are shown as debits in history
             timestamp: createdAt.getTime(),
             proof: data.transactionHash
         });
     });
 
-    let withdrawableBalance = 0;
+    // 2.2. Wallet Balance and Total Profit (Calculated from the transaction ledger)
+    let walletBalance = 0;
     let totalProfit = 0;
 
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
         const createdAt = data.createdAt.toDate();
         
-        withdrawableBalance += data.amount;
+        // Add or subtract from balance based on the transaction amount
+        // We only consider 'completed' or 'pending' (for withdrawal requests) transactions for balance calculation.
+        if (data.status === 'completed' || data.status === 'pending') {
+            walletBalance += data.amount;
+        }
 
+        // Calculate total profit separately for display
         if (data.type === 'profit_payout' && data.status === 'completed') {
             totalProfit += data.amount;
         }
         
+        // Add DB transactions to the combined history for display
         allTransactionsForHistory.push({
             id: doc.id,
-            type: statusNames[data.type as keyof typeof statusNames] || data.type,
+            type: transactionTypeNames[data.type as keyof typeof transactionTypeNames] || data.type,
             fund: data.details || '-',
-            status: statusNames[data.status as keyof typeof statusNames] || data.status || 'تکمیل شده',
+            status: transactionStatusNames[data.status as keyof typeof transactionStatusNames] || data.status || 'تکمیل شده',
             date: createdAt.toLocaleDateString('fa-IR'),
             amount: data.amount,
             timestamp: createdAt.getTime(),
@@ -147,8 +165,10 @@ const getUserDetailsFlow = ai.defineFlow(
         });
     })
     
+    // 2.3. Locked Bonus
     const lockedBonus = bonusSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
 
+    // 3. Prepare Chart Data
     const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     const investmentChartData = Object.entries(investmentByMonth)
         .sort(([a], [b]) => a.localeCompare(b))
@@ -161,6 +181,7 @@ const getUserDetailsFlow = ai.defineFlow(
             };
         });
 
+    // 4. Assemble Final Output
     const profile: z.infer<typeof UserProfileSchema> = {
         uid: userDoc.id,
         firstName: userData.firstName,
@@ -174,11 +195,12 @@ const getUserDetailsFlow = ai.defineFlow(
         activeInvestment: activeNetInvestment,
         totalProfit: totalProfit,
         lotteryTickets: Math.floor(activeNetInvestment / 10),
-        walletBalance: withdrawableBalance, 
-        totalBalance: activeNetInvestment + withdrawableBalance,
+        walletBalance: walletBalance, 
+        totalBalance: activeNetInvestment + walletBalance,
         lockedBonus: lockedBonus,
     };
     
+    // Sort combined history by date
     const sortedTransactions = allTransactionsForHistory.sort((a,b) => b.timestamp - a.timestamp);
 
     return {

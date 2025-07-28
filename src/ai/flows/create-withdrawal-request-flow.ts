@@ -49,6 +49,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
 
     try {
         const settings = await getPlatformSettings();
+        // Use the single source of truth for user data, which calculates balance in real-time
         const userDetails = await getUserDetails({ userId });
         const currentBalance = userDetails.stats.walletBalance;
 
@@ -102,6 +103,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             };
             transaction.set(withdrawalRef, newWithdrawal);
 
+            // Create a transaction record to immediately debit the balance
             const transactionRef = doc(collection(db, 'transactions'));
             transaction.set(transactionRef, {
                 userId,

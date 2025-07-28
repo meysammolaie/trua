@@ -2,13 +2,14 @@
 'use server';
 /**
  * @fileOverview A flow for calculating and distributing profits to investors.
+ * This is a critical flow that directly impacts user balances.
  */
 
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, runTransaction } from 'firebase/firestore';
 import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
@@ -43,30 +44,41 @@ const distributeProfitsFlow = ai.defineFlow(
     try {
       const settings = await getPlatformSettings();
       const investmentsRef = collection(db, 'investments');
-      const activeInvestmentsQuery = query(investmentsRef, where('status', '==', 'active'));
+      const allInvestmentsQuery = query(investmentsRef, where('status', 'in', ['active', 'completed']));
 
-      const investmentsSnapshot = await getDocs(activeInvestmentsQuery);
-      const activeInvestments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDoc);
-
+      const [investmentsSnapshot] = await Promise.all([
+          getDocs(allInvestmentsQuery),
+      ]);
+      
+      const allInvestments = investmentsSnapshot.docs.map(doc => doc.data());
+      const activeInvestments = allInvestments.filter(inv => inv.status === 'active');
+      
       if (activeInvestments.length === 0) {
         return { success: true, message: 'هیچ سرمایه‌گذار فعالی برای توزیع سود یافت نشد.' };
       }
 
-      // Calculate total profit pool from entry and platform fees based on ALL active investments
+      // Profit pool is calculated from ALL entry and exit fees since the beginning of time.
+      // This is a simplified model. A more robust system would track fees in a separate ledger.
       let totalProfitPool = 0;
-      activeInvestments.forEach(inv => {
-        const entryFeeProfit = inv.amountUSD * (settings.entryFee / 100);
-        // platformFee is for platform maintenance, not profit pool. The main driver is entry/exit fees.
-        totalProfitPool += entryFeeProfit; 
+      allInvestments.forEach(inv => {
+        const entryFee = inv.amountUSD * (settings.entryFee / 100);
+        totalProfitPool += entryFee;
+        if (inv.status === 'completed') {
+            const exitFee = inv.amountUSD * (settings.exitFee / 100);
+            totalProfitPool += exitFee;
+        }
       });
+      
+      // We will distribute a portion of this pool, e.g., 5% of the total accumulated pool daily.
+      const dailyDistributablePool = totalProfitPool * 0.05; // Example: Distribute 5% of the total pool daily
 
-      if (totalProfitPool <= 0) {
+      if (dailyDistributablePool <= 0) {
          return { success: true, message: 'مبلغی برای توزیع سود وجود ندارد.' };
       }
       
-      const totalInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
+      const totalActiveInvestmentAmount = activeInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
       
-      if (totalInvestmentAmount <= 0) {
+      if (totalActiveInvestmentAmount <= 0) {
           return { success: true, message: 'مجموع سرمایه فعال برای محاسبه سهم سود صفر است.' };
       }
       
@@ -83,14 +95,16 @@ const distributeProfitsFlow = ai.defineFlow(
 
       for (const userId in investmentsByUser) {
         const userTotalInvestment = investmentsByUser[userId];
-        const profitShare = (userTotalInvestment / totalInvestmentAmount) * totalProfitPool;
+        const profitShare = (userTotalInvestment / totalActiveInvestmentAmount) * dailyDistributablePool;
 
         if (profitShare > 0) {
+            // CRITICAL: Create a transaction record for the profit payout.
+            // This is the ledger entry that will be used to calculate the user's balance.
             const transactionRef = doc(collection(db, 'transactions'));
             batch.set(transactionRef, {
                 userId,
                 type: 'profit_payout',
-                amount: profitShare,
+                amount: profitShare, // Positive amount, as it's a credit
                 status: 'completed',
                 createdAt: serverTimestamp(),
                 details: `سود روزانه بر اساس سرمایه خالص $${userTotalInvestment.toLocaleString()}`,
@@ -102,8 +116,8 @@ const distributeProfitsFlow = ai.defineFlow(
 
       return {
         success: true,
-        message: `مبلغ ${totalProfitPool.toLocaleString('en-US', {style: 'currency', currency: 'USD'})} با موفقیت بین ${investorCount} سرمایه‌گذار توزیع شد.`,
-        distributedAmount: totalProfitPool,
+        message: `مبلغ ${dailyDistributablePool.toLocaleString('en-US', {style: 'currency', currency: 'USD'})} با موفقیت بین ${investorCount} سرمایه‌گذار توزیع شد.`,
+        distributedAmount: dailyDistributablePool,
         investorCount: investorCount,
       };
 
