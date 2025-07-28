@@ -100,7 +100,7 @@ const getUserDetailsFlow = ai.defineFlow(
                 uid: userId,
                 firstName: 'کاربر',
                 lastName: 'نامشخص',
-                email: 'نامشخص',
+                email: `unknown-${userId.substring(0,8)}@example.com`,
                 createdAt: '-',
                 status: 'blocked',
             },
