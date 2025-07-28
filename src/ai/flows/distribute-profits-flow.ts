@@ -10,6 +10,7 @@ import {genkit} from 'genkit';
 import {z} from 'zod';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, collectionGroup } from 'firebase/firestore';
+import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
   plugins: [],
@@ -30,7 +31,7 @@ type InvestmentDoc = {
     feesUSD: number;
     status: 'pending' | 'active' | 'completed' | 'rejected';
     createdAt: Timestamp;
-    updatedAt?: Timestamp; // Assuming there's an updatedAt field when status changes to 'active'
+    updatedAt?: Timestamp; 
 }
 
 export async function distributeProfits(): Promise<z.infer<typeof DistributeProfitsOutputSchema>> {
@@ -53,20 +54,17 @@ const distributeProfitsFlow = ai.defineFlow(
       const investmentsRef = collection(db, 'investments');
       const q = query(investmentsRef, 
         where('status', '==', 'active'),
-        where('updatedAt', '>=', startOfToday),
-        where('updatedAt', '<', endOfToday)
+        where('updatedAt', '>=', Timestamp.fromDate(startOfToday)),
+        where('updatedAt', '<', Timestamp.fromDate(endOfToday))
       );
 
       const todaysActivatedInvestments = await getDocs(q);
-
+      
       let dailyDistributablePool = 0;
       // The profit pool is the sum of entry fees from today's activated investments.
-      // Entry fee is 3% of the gross investment amount (amountUSD).
       todaysActivatedInvestments.forEach(doc => {
           const investment = doc.data() as InvestmentDoc;
-          // Assuming entry fee is 3% and it's calculated from amountUSD
-          const entryFeeRate = 0.03; 
-          dailyDistributablePool += (investment.amountUSD || 0) * entryFeeRate;
+          dailyDistributablePool += investment.feesUSD || 0;
       });
       
       if (dailyDistributablePool <= 0) {

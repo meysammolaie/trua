@@ -139,9 +139,9 @@ export function Overview() {
                 <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-4">
                     <Gift className="w-12 h-12 text-primary flex-shrink-0" />
                     <div className="flex-grow">
-                        <CardTitle>شما یک جایزه ۱۰۰ دلاری دارید!</CardTitle>
+                        <CardTitle>شما یک جایزه ۱۰۰ دلاری قفل‌شده دارید!</CardTitle>
                         <CardDescription className="text-foreground/80 mt-1">
-                            این جایزه با رسیدن حجم کل سرمایه پلتفرم به ${bonusUnlockTarget.toLocaleString()} آزاد خواهد شد.
+                            این جایزه با رسیدن حجم کل سرمایه پلتفرم به ${bonusUnlockTarget.toLocaleString()} آزاد شده و به موجودی قابل برداشت شما اضافه خواهد شد.
                         </CardDescription>
                         <div className="mt-3">
                             <Progress value={bonusProgress} className="w-full h-2" />
