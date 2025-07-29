@@ -37,7 +37,12 @@ const formSchema = z.object({
   firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
   lastName: z.string().min(2, { message: "نام خانوادگی باید حداقل ۲ حرف داشته باشد." }),
   email: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." }),
-  password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر داشته باشد." }),
+  password: z.string()
+    .min(8, { message: "رمز عبور باید حداقل ۸ کاراکتر باشد." })
+    .regex(/[A-Z]/, { message: "رمز عبور باید شامل حداقل یک حرف بزرگ باشد." })
+    .regex(/[a-z]/, { message: "رمز عبور باید شامل حداقل یک حرف کوچک باشد." })
+    .regex(/[0-9]/, { message: "رمز عبور باید شامل حداقل یک عدد باشد." })
+    .regex(/[^A-Za-z0-9]/, { message: "رمز عبور باید شامل حداقل یک کاراکتر خاص باشد." }),
   confirmPassword: z.string(),
   referralCode: z.string().optional(),
   // Honeypot field for bot protection

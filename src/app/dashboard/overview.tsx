@@ -68,22 +68,26 @@ const funds = [
   {
     name: "صندوق طلا",
     icon: <Crown className="w-6 h-6 text-yellow-500" />,
-    apy: "۱۲.۵٪",
+    risk: "ریسک کم",
+    description: "پناهگاهی امن برای حفظ ارزش دارایی در بلندمدت.",
   },
   {
     name: "صندوق نقره",
     icon: <Medal className="w-6 h-6 text-slate-400" />,
-    apy: "۹.۸٪",
+    risk: "ریسک متوسط",
+    description: "ترکیبی از ثبات و پتانسیل رشد صنعتی.",
   },
   {
     name: "صندوق دلار",
     icon: <Landmark className="w-6 h-6 text-green-500" />,
-    apy: "۷.۲٪",
+    risk: "ریسک پایین",
+    description: "مناسب برای نقدشوندگی و ثبات در سبد دارایی شما.",
   },
   {
     name: "صندوق بیت‌کوین",
     icon: <Bitcoin className="w-6 h-6 text-orange-500" />,
-    apy: "۲۵.۱٪",
+    risk: "ریسک بالا",
+    description: "دروازه‌ای به آینده مالی با پتانسیل رشد چشمگیر.",
   },
 ];
 
@@ -283,19 +287,19 @@ export function Overview() {
                 <CardContent>
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {funds.map((fund) => (
-                        <Card key={fund.name} className="hover:bg-muted/50 transition-colors duration-300">
+                        <Card key={fund.name} className="hover:bg-muted/50 transition-colors duration-300 flex flex-col">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <div className="flex items-center gap-2">
                                     {fund.icon}
                                     <CardTitle className="text-base font-semibold">{fund.name}</CardTitle>
                                 </div>
-                                 <Button asChild size="sm">
+                                <Badge variant={fund.risk === "ریسک بالا" ? "destructive" : fund.risk === "ریسک متوسط" ? "secondary" : "default"}>{fund.risk}</Badge>
+                            </CardHeader>
+                            <CardContent className="flex-grow flex flex-col justify-between">
+                                 <p className="text-xs text-muted-foreground mb-4">{fund.description}</p>
+                                 <Button asChild size="sm" className="w-full mt-auto">
                                     <Link href="/dashboard/invest">سرمایه‌گذاری</Link>
                                  </Button>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-lg font-bold">APY: {fund.apy}</div>
-                                <p className="text-xs text-muted-foreground">سود سالانه تخمینی</p>
                             </CardContent>
                         </Card>
                         ))}
