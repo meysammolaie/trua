@@ -51,11 +51,8 @@ export function Header() {
                         ))}
                     </nav>
                      <div className="mt-auto flex flex-col gap-2">
-                        <Button variant="ghost" asChild size="lg">
-                            <Link href="/login">Login</Link>
-                        </Button>
                         <Button asChild size="lg">
-                            <Link href="/signup">Sign Up</Link>
+                            <Link href="/signup">Start Now</Link>
                         </Button>
                     </div>
                 </SheetContent>
@@ -87,11 +84,8 @@ export function Header() {
         {/* Mobile & Desktop: Auth Buttons (Right) */}
         <div className="flex-1 flex justify-end">
             <div className="flex items-center gap-2">
-                <Button variant="ghost" asChild>
-                    <Link href="/login">Login</Link>
-                </Button>
-                <Button asChild>
-                    <Link href="/signup">Sign Up</Link>
+                 <Button asChild>
+                    <Link href="/signup">Start Now</Link>
                 </Button>
             </div>
         </div>
