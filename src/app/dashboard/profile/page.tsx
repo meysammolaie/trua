@@ -365,8 +365,8 @@ export default function ProfilePage() {
             <CardTitle>Security Settings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             <div className="flex items-center justify-between rounded-lg border p-4">
-                <div>
+             <div className="flex flex-col md:flex-row items-start md:items-center justify-between rounded-lg border p-4">
+                <div className="mb-4 md:mb-0">
                     <h3 className="font-medium">Two-Factor Authentication (2FA)</h3>
                     <p className="text-sm text-muted-foreground">Add an extra layer of security to your account. (Test code: 123456)</p>
                 </div>

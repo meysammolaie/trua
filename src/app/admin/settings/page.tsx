@@ -141,7 +141,7 @@ export default function AdminSettingsPage() {
                     Configure the platform's financial rules like fees and withdrawal conditions.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <FormField
                     control={form.control}
                     name="entryFee"
@@ -257,7 +257,7 @@ export default function AdminSettingsPage() {
                         <CardTitle>Wallet Management</CardTitle>
                         <CardDescription>Set up wallet addresses for user deposits.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 gap-6">
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <FormField
                             control={form.control}
                             name="usdtWalletAddress"
@@ -318,7 +318,7 @@ export default function AdminSettingsPage() {
                         <CardTitle>System Settings</CardTitle>
                         <CardDescription>General platform settings and operational status.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 gap-6">
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <FormField
                             control={form.control}
                             name="maintenanceMode"

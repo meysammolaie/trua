@@ -29,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { VerdantVaultLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
@@ -50,6 +50,14 @@ const navItems = [
   { href: "/dashboard/tasks", icon: ClipboardCheck, label: "Tasks" },
   { href: "/dashboard/referrals", icon: Users, label: "Referrals" },
   { href: "/dashboard/support", icon: MessageSquare, label: "Support" },
+  { href: "/dashboard/profile", icon: CircleUser, label: "Profile" },
+];
+
+const mobileNavItems = [
+  { href: "/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/dashboard/invest", icon: Package, label: "Invest" },
+  { href: "/dashboard/wallet", icon: Wallet, label: "Wallet" },
+  { href: "/dashboard/reports", icon: ArrowRightLeft, label: "Transactions" },
   { href: "/dashboard/profile", icon: CircleUser, label: "Profile" },
 ];
 
@@ -153,14 +161,16 @@ export default function DashboardLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col bg-card/80 backdrop-blur-lg">
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link
-                  href="#"
-                  className="flex items-center gap-2 text-lg font-semibold mb-4"
-                >
-                  <VerdantVaultLogo className="h-6 w-6" />
-                  <span >Trusva</span>
-                </Link>
+               <SheetHeader className="text-left">
+                  <SheetTitle className="flex items-center gap-2">
+                      <VerdantVaultLogo className="h-6 w-6" />
+                      <span>Trusva Menu</span>
+                  </SheetTitle>
+                  <SheetDescription>
+                      Navigate to different sections of the dashboard.
+                  </SheetDescription>
+              </SheetHeader>
+              <nav className="grid gap-2 text-lg font-medium mt-4">
                 {navItems.map(item => <NavLink key={item.href} item={item} isSheet />)}
               </nav>
             </SheetContent>
@@ -196,7 +206,7 @@ export default function DashboardLayout({
             {children}
         </main>
         <ChatWidget />
-        <MobileDashboardNav navItems={navItems} />
+        <MobileDashboardNav navItems={mobileNavItems} />
       </div>
     </div>
   );

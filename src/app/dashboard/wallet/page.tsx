@@ -74,7 +74,7 @@ export default function WalletPage() {
           </CardContent>
         </Card>
         
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">Wallet Balance (Withdrawable)</CardTitle>
@@ -115,7 +115,7 @@ export default function WalletPage() {
       </div>
 
        <Card>
-            <CardHeader className="flex flex-row justify-between items-start">
+            <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <CardTitle>Withdraw from Wallet</CardTitle>
                     <CardDescription>Manage your wallet balance and create withdrawal requests.</CardDescription>
