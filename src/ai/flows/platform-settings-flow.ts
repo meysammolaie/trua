@@ -67,7 +67,7 @@ const getPlatformSettingsFlow = ai.defineFlow(
             bitcoinWalletAddress: "0xA1bDa01cd7c599a734615026A355bd80a4ae6f48",
             minWithdrawalAmount: 10,
             withdrawalDay: 'saturday',
-            bonusUnlockTarget: 1000000,
+            bonusUnlockTarget: 50000000,
             automaticProfitDistribution: true,
             lastDistributionAt: null,
         };

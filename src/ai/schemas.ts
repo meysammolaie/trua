@@ -14,7 +14,7 @@ export const PlatformSettingsSchema = z.object({
   bitcoinWalletAddress: z.string(),
   minWithdrawalAmount: z.coerce.number().min(0).default(10),
   withdrawalDay: z.enum(['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday']).default('saturday'),
-  bonusUnlockTarget: z.coerce.number().positive().default(1000000), // New field for bonus unlock
+  bonusUnlockTarget: z.coerce.number().positive().default(50000000), // New field for bonus unlock
   automaticProfitDistribution: z.boolean().default(true),
   lastDistributionAt: z.string().nullable().optional(),
 });
