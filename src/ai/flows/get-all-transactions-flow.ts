@@ -45,13 +45,15 @@ const FundStatSchema = z.object({
     platformRevenue: z.number(),
     lotteryPool: z.number(),
     profitPool: z.number(), 
+    totalActiveInvestment: z.number(),
+    investorCount: z.number(),
 });
 
 const StatsSchema = z.object({
     totalTransactions: z.number(),
     totalPlatformRevenue: z.number(),
     totalLotteryPool: z.number(),
-    totalProfitPool: z.number(),
+    totalProfitPool: z.number(), 
     totalPlatformWallet: z.number(), 
     fundStats: z.array(FundStatSchema),
 });
@@ -93,6 +95,12 @@ type DailyFeeDocument = {
     fundId: string;
 }
 
+type InvestmentDocument = {
+    netAmountUSD: number;
+    fundId: string;
+    userId: string;
+}
+
 const fundNames: Record<string, string> = {
     gold: "طلا",
     silver: "نقره",
@@ -129,7 +137,7 @@ const getAllTransactionsFlow = ai.defineFlow(
     
     const dbTransactions = dbTransactionsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as TransactionDocument) }));
     const allFees = feesSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as DailyFeeDocument));
-    const activeInvestments = investmentsSnapshot.docs.map(doc => doc.data());
+    const activeInvestments = investmentsSnapshot.docs.map(doc => doc.data() as InvestmentDocument);
 
 
     const allTransactions: TransactionWithUser[] = dbTransactions.map(tx => {
@@ -152,11 +160,11 @@ const getAllTransactionsFlow = ai.defineFlow(
         };
     });
 
-    const fundStats: Record<string, { platformRevenue: number, lotteryPool: number, profitPool: number }> = {
-        gold: { platformRevenue: 0, lotteryPool: 0, profitPool: 0 },
-        silver: { platformRevenue: 0, lotteryPool: 0, profitPool: 0 },
-        usdt: { platformRevenue: 0, lotteryPool: 0, profitPool: 0 },
-        bitcoin: { platformRevenue: 0, lotteryPool: 0, profitPool: 0 },
+    const fundStats: Record<string, { platformRevenue: number, lotteryPool: number, profitPool: number, totalActiveInvestment: number, investors: Set<string> }> = {
+        gold: { platformRevenue: 0, lotteryPool: 0, profitPool: 0, totalActiveInvestment: 0, investors: new Set() },
+        silver: { platformRevenue: 0, lotteryPool: 0, profitPool: 0, totalActiveInvestment: 0, investors: new Set() },
+        usdt: { platformRevenue: 0, lotteryPool: 0, profitPool: 0, totalActiveInvestment: 0, investors: new Set() },
+        bitcoin: { platformRevenue: 0, lotteryPool: 0, profitPool: 0, totalActiveInvestment: 0, investors: new Set() },
     };
 
     allFees.forEach(fee => {
@@ -171,16 +179,27 @@ const getAllTransactionsFlow = ai.defineFlow(
         }
     });
     
+    activeInvestments.forEach(inv => {
+        if (fundStats[inv.fundId]) {
+            fundStats[inv.fundId].totalActiveInvestment += inv.netAmountUSD;
+            fundStats[inv.fundId].investors.add(inv.userId);
+        }
+    });
+
     const fundStatsArray = Object.entries(fundStats).map(([id, data]) => ({
         id,
         name: fundNames[id],
-        ...data,
+        platformRevenue: data.platformRevenue,
+        lotteryPool: data.lotteryPool,
+        profitPool: data.profitPool,
+        totalActiveInvestment: data.totalActiveInvestment,
+        investorCount: data.investors.size,
     }));
     
     const totalPlatformRevenue = fundStatsArray.reduce((sum, fund) => sum + fund.platformRevenue, 0);
     const totalLotteryPool = fundStatsArray.reduce((sum, fund) => sum + fund.lotteryPool, 0);
     const totalProfitPool = fundStatsArray.reduce((sum, fund) => sum + fund.profitPool, 0);
-    const totalPlatformWallet = activeInvestments.reduce((sum, inv) => sum + (inv.netAmountUSD || 0), 0);
+    const totalPlatformWallet = fundStatsArray.reduce((sum, fund) => sum + fund.totalActiveInvestment, 0);
 
 
     return {

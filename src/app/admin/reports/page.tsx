@@ -191,30 +191,6 @@ export default function AdminReportsPage() {
           </CardContent>
         </Card>
       </div>
-
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-        {(stats?.fundStats || []).map((fund) => (
-            <Card key={fund.id}>
-                <CardHeader>
-                    <CardTitle className="text-base">صندوق {fund.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">استخر سود روزانه:</span>
-                        <span className="font-mono">{formatCurrency(fund.profitPool)}</span>
-                    </div>
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">موجودی قرعه‌کشی:</span>
-                        <span className="font-mono">{formatCurrency(fund.lotteryPool)}</span>
-                    </div>
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">درآمد پلتفرم:</span>
-                        <span className="font-mono">{formatCurrency(fund.platformRevenue)}</span>
-                    </div>
-                </CardContent>
-            </Card>
-        ))}
-       </div>
       
        <div className="grid gap-4 md:grid-cols-2 lg:gap-8">
         <Card>
@@ -274,6 +250,53 @@ export default function AdminReportsPage() {
              </CardFooter>
         </Card>
       </div>
+
+       <Card>
+            <CardHeader>
+                <CardTitle>آمار صندوق‌ها برای توزیع سود</CardTitle>
+                <CardDescription>
+                   این جدول وضعیت هر صندوق را قبل از اجرای عملیات توزیع سود نشان می‌دهد.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>صندوق</TableHead>
+                            <TableHead className="text-right">استخر سود روزانه</TableHead>
+                            <TableHead className="text-right">سرمایه فعال صندوق</TableHead>
+                             <TableHead className="text-center">تعداد سرمایه‌گذاران</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                             <TableRow>
+                                <TableCell colSpan={4} className="text-center py-10">
+                                    <div className="flex justify-center items-center gap-2">
+                                        <Loader2 className="h-5 w-5 animate-spin"/>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : stats?.fundStats.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="text-center py-10">
+                                   داده‌ای برای نمایش وجود ندارد.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            stats?.fundStats.map((fund) => (
+                                <TableRow key={fund.id}>
+                                    <TableCell className="font-medium">{fund.name}</TableCell>
+                                    <TableCell className="text-right font-mono text-green-500">{formatCurrency(fund.profitPool)}</TableCell>
+                                    <TableCell className="text-right font-mono">{formatCurrency(fund.totalActiveInvestment)}</TableCell>
+                                    <TableCell className="text-center font-mono">{fund.investorCount.toLocaleString()}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+       </Card>
 
        <Card>
             <CardHeader>
