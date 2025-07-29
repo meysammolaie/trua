@@ -45,11 +45,11 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
         const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
         const withdrawalDoc = await transaction.get(withdrawalRef);
         if (!withdrawalDoc.exists()) {
-          throw new Error(`درخواست برداشت با شناسه ${withdrawalId} یافت نشد.`);
+          throw new Error(`Withdrawal request with ID ${withdrawalId} not found.`);
         }
         const withdrawalData = withdrawalDoc.data();
         if (withdrawalData.status !== 'pending') {
-            throw new Error('این درخواست قبلاً پردازش شده است.');
+            throw new Error('This request has already been processed.');
         }
 
         const txQuery = query(collection(db, 'transactions'), where('withdrawalId', '==', withdrawalId), where('status', '==', 'pending'));
@@ -57,18 +57,18 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
         const txDocRef = txSnapshot.docs.length > 0 ? txSnapshot.docs[0].ref : null;
 
         if (!txDocRef) {
-            throw new Error(`تراکنش مرتبط با این برداشت یافت نشد. شناسه: ${withdrawalId}`);
+            throw new Error(`Associated transaction not found for this withdrawal. ID: ${withdrawalId}`);
         }
         
         if (newStatus === 'approved') {
           if (!adminTransactionProof) {
-            throw new Error('برای تایید برداشت، ارائه رسید تراکنش الزامی است.');
+            throw new Error('Transaction proof is required to approve a withdrawal.');
           }
           
           transaction.update(withdrawalRef, { status: 'completed', adminTransactionProof });
           transaction.update(txDocRef, {
               status: 'completed',
-              details: `برداشت موفق به ${withdrawalData.walletAddress}`,
+              details: `Successful withdrawal to ${withdrawalData.walletAddress}`,
               proof: adminTransactionProof
           });
 
@@ -86,7 +86,7 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
               amount: Math.abs(withdrawalData.amount), // Add the positive amount back
               status: 'completed',
               createdAt: serverTimestamp(),
-              details: `لغو درخواست برداشت به ${withdrawalData.walletAddress}`,
+              details: `Cancelled withdrawal request to ${withdrawalData.walletAddress}`,
               withdrawalId: withdrawalId,
           });
         }
@@ -95,15 +95,15 @@ const updateWithdrawalStatusFlow = ai.defineFlow(
       console.log(`Withdrawal ${withdrawalId} status updated to ${newStatus}.`);
 
       const message = newStatus === 'approved' 
-        ? `درخواست برداشت با موفقیت تایید و رسید ثبت شد.`
-        : `درخواست برداشت با موفقیت رد شد و مبلغ به کیف پول کاربر بازگردانده شد.`;
+        ? `Withdrawal request successfully approved and proof recorded.`
+        : `Withdrawal request successfully rejected and amount returned to user's wallet.`;
 
       return { success: true, message: message };
 
     } catch (error) {
       console.error(`Error updating withdrawal ${withdrawalId} status:`, error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-      return { success: false, message: `خطایی در به‌روزرسانی وضعیت درخواست رخ داد: ${errorMessage}` };
+      return { success: false, message: `An error occurred while updating the request status: ${errorMessage}` };
     }
   }
 );

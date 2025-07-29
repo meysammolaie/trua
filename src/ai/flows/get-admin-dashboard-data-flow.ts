@@ -13,7 +13,7 @@ import {z} from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, orderBy, where, Timestamp } from 'firebase/firestore';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { faIR } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 const ai = genkit({
   plugins: [googleAI()],
@@ -74,10 +74,10 @@ type InvestmentDocument = {
 };
 
 const fundNames: Record<string, string> = {
-    gold: "طلا",
-    silver: "نقره",
-    usdt: "تتر",
-    bitcoin: "بیت‌کوین"
+    gold: "Gold",
+    silver: "Silver",
+    usdt: "USDT",
+    bitcoin: "Bitcoin"
 };
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
@@ -146,7 +146,7 @@ const getAdminDashboardDataFlow = ai.defineFlow(
 
     // 4. Prepare User Growth Chart Data
     const userGrowthMap: Record<string, number> = {};
-    const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     
     users.forEach(user => {
         const date = user.createdAt.toDate();
@@ -176,8 +176,8 @@ const getAdminDashboardDataFlow = ai.defineFlow(
     users.slice(0, 3).forEach(user => {
         recentActivities.push({
             type: 'new_user',
-            detail: `کاربر جدیدی با ایمیل ${user.email} ثبت نام کرد.`,
-            time: formatDistanceToNowStrict(user.createdAt.toDate(), { addSuffix: true, locale: faIR }),
+            detail: `New user signed up with email ${user.email}.`,
+            time: formatDistanceToNowStrict(user.createdAt.toDate(), { addSuffix: true, locale: enUS }),
             status: 'info'
         });
     });
@@ -185,11 +185,11 @@ const getAdminDashboardDataFlow = ai.defineFlow(
     // Add latest investments
     investments.slice(0, 3).forEach(inv => {
         const user = users.find(u => u.uid === inv.userId);
-        const userName = user ? `${user.firstName} ${user.lastName}`.trim() : `کاربر (${inv.userId.substring(0,6)}...)`;
+        const userName = user ? `${user.firstName} ${user.lastName}`.trim() : `User (${inv.userId.substring(0,6)}...)`;
         recentActivities.push({
             type: 'investment',
-            detail: `سرمایه‌گذاری جدید از ${userName} به مبلغ $${inv.amount.toLocaleString()} در صندوق ${fundNames[inv.fundId]}.`,
-            time: formatDistanceToNowStrict(inv.createdAt.toDate(), { addSuffix: true, locale: faIR }),
+            detail: `New investment from ${userName} for $${inv.amount.toLocaleString()} in ${fundNames[inv.fundId]}.`,
+            time: formatDistanceToNowStrict(inv.createdAt.toDate(), { addSuffix: true, locale: enUS }),
             status: 'success'
         });
     });

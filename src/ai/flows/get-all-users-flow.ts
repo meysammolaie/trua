@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching all users from Firestore along with their aggregated data.
@@ -93,7 +94,7 @@ const getAllUsersFlow = ai.defineFlow(
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            createdAt: user.createdAt.toDate().toLocaleDateString('fa-IR'),
+            createdAt: user.createdAt.toDate().toLocaleDateString('en-US'),
             totalInvestment: investmentsByUser.get(user.uid) || 0,
             status: user.status || 'active', // Default to active if not set
         };

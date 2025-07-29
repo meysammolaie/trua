@@ -97,7 +97,7 @@ const getLotteryDataFlow = ai.defineFlow(
             userId: data.userId,
             userName: data.userName,
             prizeAmount: data.prizeAmount,
-            drawDate: (data.drawDate as Timestamp).toDate().toLocaleDateString('fa-IR'),
+            drawDate: (data.drawDate as Timestamp).toDate().toLocaleDateString('en-US'),
         }
     })
 

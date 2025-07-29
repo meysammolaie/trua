@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -8,10 +9,10 @@ import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { name: "صندوق‌ها", href: "/#funds" },
-  { name: "چگونه کار می‌کند", href: "/#how-it-works" },
-  { name: "قرعه‌کشی", href: "/#lottery" },
-  { name: "سوالات متداول", href: "/#faq" },
+  { name: "Funds", href: "/#funds" },
+  { name: "How it Works", href: "/#how-it-works" },
+  { name: "Lottery", href: "/#lottery" },
+  { name: "FAQ", href: "/#faq" },
 ];
 
 export function Header() {
@@ -39,17 +40,17 @@ export function Header() {
         <div className="flex items-center gap-2">
             <div className="hidden items-center gap-2 md:flex">
                 <Button variant="ghost" asChild>
-                    <Link href="/login">ورود</Link>
+                    <Link href="/login">Login</Link>
                 </Button>
                 <Button asChild>
-                    <Link href="/signup">ثبت نام</Link>
+                    <Link href="/signup">Sign Up</Link>
                 </Button>
             </div>
              <Sheet>
                 <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="md:hidden">
                     <Menu className="h-5 w-5" />
-                    <span className="sr-only">باز کردن منو</span>
+                    <span className="sr-only">Open menu</span>
                 </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="flex flex-col bg-card/80 backdrop-blur-lg">
@@ -66,10 +67,10 @@ export function Header() {
                     </nav>
                      <div className="mt-auto flex flex-col gap-2">
                         <Button variant="ghost" asChild size="lg">
-                            <Link href="/login">ورود</Link>
+                            <Link href="/login">Login</Link>
                         </Button>
                         <Button asChild size="lg">
-                            <Link href="/signup">ثبت نام</Link>
+                            <Link href="/signup">Sign Up</Link>
                         </Button>
                     </div>
                 </SheetContent>

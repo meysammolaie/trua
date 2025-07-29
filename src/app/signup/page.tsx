@@ -34,21 +34,21 @@ import { useEffect, Suspense } from "react";
 import { Loader2, Chrome } from "lucide-react";
 
 const formSchema = z.object({
-  firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
-  lastName: z.string().min(2, { message: "نام خانوادگی باید حداقل ۲ حرف داشته باشد." }),
-  email: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." }),
+  firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
+  lastName: z.string().min(2, { message: "Last name must be at least 2 characters." }),
+  email: z.string().email({ message: "Please enter a valid email." }),
   password: z.string()
-    .min(8, { message: "رمز عبور باید حداقل ۸ کاراکتر باشد." })
-    .regex(/[A-Z]/, { message: "رمز عبور باید شامل حداقل یک حرف بزرگ باشد." })
-    .regex(/[a-z]/, { message: "رمز عبور باید شامل حداقل یک حرف کوچک باشد." })
-    .regex(/[0-9]/, { message: "رمز عبور باید شامل حداقل یک عدد باشد." })
-    .regex(/[^A-Za-z0-9]/, { message: "رمز عبور باید شامل حداقل یک کاراکتر خاص باشد." }),
+    .min(8, { message: "Password must be at least 8 characters." })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter." })
+    .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter." })
+    .regex(/[0-9]/, { message: "Password must contain at least one number." })
+    .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character." }),
   confirmPassword: z.string(),
   referralCode: z.string().optional(),
   // Honeypot field for bot protection
-  website: z.string().max(0, { message: "ربات شناسایی شد." }).optional(),
+  website: z.string().max(0, { message: "Bot detected." }).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "رمزهای عبور یکسان نیستند.",
+  message: "Passwords do not match.",
   path: ["confirmPassword"],
 });
 
@@ -104,9 +104,9 @@ function SignupForm() {
         if (!querySnapshot.empty) {
             const referrerDoc = querySnapshot.docs[0];
             referredBy = referrerDoc.id; // Store referrer's UID
-            toast({ title: "معرف شما تایید شد", description: `شما توسط ${referrerDoc.data().firstName} معرفی شده‌اید.`});
+            toast({ title: "Referrer Confirmed", description: `You have been referred by ${referrerDoc.data().firstName}.`});
         } else {
-            toast({ variant: 'destructive', title: "کد معرف نامعتبر", description: "کد معرف وارد شده صحیح نمی‌باشد."});
+            toast({ variant: 'destructive', title: "Invalid Referral Code", description: "The entered referral code is not valid."});
         }
       }
 
@@ -140,20 +140,20 @@ function SignupForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       await createUserDocument(userCredential, values);
       toast({
-        title: "ثبت نام موفق",
-        description: "حساب کاربری شما با موفقیت ایجاد شد. در حال انتقال به داشبورد...",
+        title: "Signup Successful",
+        description: "Your account has been created. Redirecting to dashboard...",
       });
     } catch (error) {
       console.error("Error signing up:", error);
-      let description = "خطایی در هنگام ثبت‌نام رخ داد. لطفاً دوباره تلاش کنید.";
+      let description = "An error occurred during signup. Please try again.";
       if (error instanceof FirebaseError) {
         if (error.code === "auth/email-already-in-use") {
-          description = "این ایمیل قبلاً استفاده شده است. لطفاً از صفحه ورود، وارد شوید.";
+          description = "This email is already in use. Please log in instead.";
         }
       }
       toast({
         variant: "destructive",
-        title: "خطا در ثبت نام",
+        title: "Signup Error",
         description,
       });
     }
@@ -174,15 +174,15 @@ function SignupForm() {
       });
 
       toast({
-        title: "ورود موفق",
-        description: "شما با موفقیت از طریق گوگل وارد شدید.",
+        title: "Login Successful",
+        description: "You have successfully logged in with Google.",
       });
     } catch (error) {
       console.error("Google Sign-In Error:", error);
       toast({
         variant: "destructive",
-        title: "خطا در ورود با گوگل",
-        description: "مشکلی در هنگام ورود با گوگل پیش آمد. لطفاً دوباره تلاش کنید.",
+        title: "Google Sign-In Error",
+        description: "There was a problem signing in with Google. Please try again.",
       });
     }
   };
@@ -191,7 +191,7 @@ function SignupForm() {
      return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
+        <p className="mt-4 text-muted-foreground">Redirecting to dashboard...</p>
       </div>
     );
   }
@@ -201,7 +201,7 @@ function SignupForm() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="absolute top-4 left-4">
         <Button variant="outline" asChild>
-          <Link href="/">بازگشت به خانه</Link>
+          <Link href="/">Back to Home</Link>
         </Button>
       </div>
       <Card className="mx-auto w-full max-w-sm">
@@ -209,9 +209,9 @@ function SignupForm() {
           <Link href="/" className="flex justify-center">
             <VerdantVaultLogo className="h-12 w-12" />
           </Link>
-          <CardTitle className="text-2xl font-headline">ایجاد حساب کاربری</CardTitle>
+          <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
           <CardDescription>
-            برای شروع سرمایه‌گذاری، اطلاعات خود را وارد کنید.
+            Enter your information to start investing.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -223,10 +223,10 @@ function SignupForm() {
                     control={form.control}
                     name="firstName"
                     render={({ field }) => (
-                      <FormItem className="text-right">
-                        <FormLabel>نام</FormLabel>
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="علی" {...field} />
+                          <Input placeholder="John" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -236,10 +236,10 @@ function SignupForm() {
                     control={form.control}
                     name="lastName"
                     render={({ field }) => (
-                      <FormItem className="text-right">
-                        <FormLabel>نام خانوادگی</FormLabel>
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="رضایی" {...field} />
+                          <Input placeholder="Doe" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -250,13 +250,12 @@ function SignupForm() {
                   control={form.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="text-right">
-                      <FormLabel>ایمیل</FormLabel>
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
                           placeholder="m@example.com"
-                          dir="ltr"
                           {...field}
                         />
                       </FormControl>
@@ -268,10 +267,10 @@ function SignupForm() {
                   control={form.control}
                   name="password"
                   render={({ field }) => (
-                    <FormItem className="text-right">
-                      <FormLabel>رمز عبور</FormLabel>
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" dir="ltr" {...field} />
+                        <Input type="password" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -281,10 +280,10 @@ function SignupForm() {
                   control={form.control}
                   name="confirmPassword"
                   render={({ field }) => (
-                    <FormItem className="text-right">
-                      <FormLabel>تکرار رمز عبور</FormLabel>
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
-                        <Input type="password" dir="ltr" {...field} />
+                        <Input type="password" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -294,10 +293,10 @@ function SignupForm() {
                   control={form.control}
                   name="referralCode"
                   render={({ field }) => (
-                    <FormItem className="text-right">
-                      <FormLabel>کد معرف (اختیاری)</FormLabel>
+                    <FormItem>
+                      <FormLabel>Referral Code (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="کد معرف خود را وارد کنید" dir="ltr" {...field} disabled={!!searchParams.get('ref')}/>
+                        <Input placeholder="Enter referral code" {...field} disabled={!!searchParams.get('ref')}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -317,7 +316,7 @@ function SignupForm() {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? "در حال ایجاد حساب..." : "ایجاد حساب"}
+                  {form.formState.isSubmitting ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
             </Form>
@@ -328,20 +327,20 @@ function SignupForm() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  یا ادامه با
+                  Or continue with
                 </span>
               </div>
             </div>
              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={form.formState.isSubmitting}>
-               <Chrome className="ml-2 h-4 w-4" />
-              ثبت‌نام با گوگل
+               <Chrome className="mr-2 h-4 w-4" />
+              Sign up with Google
             </Button>
           </div>
 
           <div className="mt-4 text-center text-sm">
-            قبلاً ثبت‌نام کرده‌اید؟{" "}
+            Already have an account?{" "}
             <Link href="/login" className="underline">
-              وارد شوید
+              Log in
             </Link>
           </div>
         </CardContent>

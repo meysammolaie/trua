@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching a user's recent login history.
@@ -36,24 +37,24 @@ export type GetLoginHistoryOutput = z.infer<typeof GetLoginHistoryOutputSchema>;
 
 // A simple parser for User-Agent strings. Not exhaustive but covers common cases.
 const parseUserAgent = (ua: string) => {
-    if (!ua) return { os: 'سیستم‌عامل نامشخص', browser: 'مرورگر نامشخص', device: 'دستگاه نامشخص' };
+    if (!ua) return { os: 'Unknown OS', browser: 'Unknown Browser', device: 'Unknown Device' };
 
-    let os = 'نامشخص';
-    let browser = 'نامشخص';
-    let device = 'دسکتاپ';
+    let os = 'Unknown';
+    let browser = 'Unknown';
+    let device = 'Desktop';
 
     // OS detection
-    if (/windows/i.test(ua)) os = 'ویندوز';
-    else if (/macintosh|mac os x/i.test(ua)) os = 'مک';
-    else if (/android/i.test(ua)) { os = 'اندروید'; device = 'موبایل'; }
-    else if (/iphone|ipad|ipod/i.test(ua)) { os = 'iOS'; device = 'موبایل'; }
-    else if (/linux/i.test(ua)) os = 'لینوکس';
+    if (/windows/i.test(ua)) os = 'Windows';
+    else if (/macintosh|mac os x/i.test(ua)) os = 'macOS';
+    else if (/android/i.test(ua)) { os = 'Android'; device = 'Mobile'; }
+    else if (/iphone|ipad|ipod/i.test(ua)) { os = 'iOS'; device = 'Mobile'; }
+    else if (/linux/i.test(ua)) os = 'Linux';
 
     // Browser detection
-    if (/chrome|crios/i.test(ua)) browser = 'کروم';
-    else if (/firefox|fxios/i.test(ua)) browser = 'فایرفاکس';
-    else if (/safari/i.test(ua) && !/chrome/i.test(ua)) browser = 'سافاری';
-    else if (/edg/i.test(ua)) browser = 'اج';
+    if (/chrome|crios/i.test(ua)) browser = 'Chrome';
+    else if (/firefox|fxios/i.test(ua)) browser = 'Firefox';
+    else if (/safari/i.test(ua) && !/chrome/i.test(ua)) browser = 'Safari';
+    else if (/edg/i.test(ua)) browser = 'Edge';
     
     return { os, browser, device: `${device} - ${os}` };
 };
@@ -93,7 +94,7 @@ const getLoginHistoryFlow = ai.defineFlow(
         return {
             id: doc.id,
             device: parsedUA.device,
-            date: (data.timestamp as Timestamp).toDate().toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short'}),
+            date: (data.timestamp as Timestamp).toDate().toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short'}),
         };
     });
 

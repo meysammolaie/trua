@@ -84,13 +84,13 @@ const getAllInvestmentsFlow = ai.defineFlow(
         return {
             id: doc.id,
             userId: data.userId,
-            userFullName: user ? `${user.firstName} ${user.lastName}`.trim() : 'کاربر نامشخص',
-            userEmail: user ? user.email : 'ایمیل نامشخص',
+            userFullName: user ? `${user.firstName} ${user.lastName}`.trim() : 'Unknown User',
+            userEmail: user ? user.email : 'Unknown Email',
             fundId: data.fundId,
             amount: data.amount,
             amountUSD: data.amountUSD || 0, // Fallback to 0 if amountUSD is missing
             status: data.status,
-            createdAt: data.createdAt.toDate().toLocaleDateString('fa-IR'),
+            createdAt: data.createdAt.toDate().toLocaleDateString('en-US'),
         };
     });
 

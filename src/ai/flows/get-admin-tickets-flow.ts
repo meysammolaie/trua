@@ -64,7 +64,7 @@ const getAdminTicketsFlow = ai.defineFlow(
           userFullName: data.userFullName,
           status: data.status,
           priority: data.priority,
-          updatedAt: (data.updatedAt as Timestamp).toDate().toLocaleString('fa-IR'),
+          updatedAt: (data.updatedAt as Timestamp).toDate().toLocaleString('en-US'),
         };
       });
 

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Rocket, Sparkles, Gift, Users } from "lucide-react";
@@ -6,18 +7,18 @@ import Link from "next/link";
 const visionPoints = [
     {
         icon: <Rocket className="w-8 h-8 mb-4 text-primary"/>,
-        title: "توسعه بی‌پایان",
-        description: "ما متعهد به رشد دائمی هستیم. به زودی صندوق‌ها و مدل‌های درآمدزایی جدیدی مانند استیکینگ و وام‌دهی به پلتفرم اضافه خواهند شد."
+        title: "Endless Development",
+        description: "We are committed to perpetual growth. New funds and income models like staking and lending will soon be added to the platform."
     },
      {
         icon: <Users className="w-8 h-8 mb-4 text-primary"/>,
-        title: "درآمد از معرفی دوستان",
-        description: "هرچه تعداد بیشتری از دوستانتان را معرفی کنید، سود بیشتری از سرمایه‌گذاری آن‌ها به صورت مستقیم به کیف پول شما واریز می‌شود."
+        title: "Income from Referrals",
+        description: "The more friends you refer, the more profit you earn directly from their investments, deposited straight into your wallet."
     },
     {
         icon: <Gift className="w-8 h-8 mb-4 text-primary"/>,
-        title: "پاداش به وفاداری",
-        description: "کاربران اولیه و وفادار ما همیشه در اولویت هستند. منتظر برنامه‌های تشویقی و سورپرایزهای ویژه برای همراهان قدیمی باشید."
+        title: "Loyalty Rewards",
+        description: "Our early and loyal users are always a priority. Expect special incentive programs and surprises for our long-term supporters."
     }
 ]
 
@@ -28,10 +29,10 @@ export function FutureVisionSection() {
         <div className="flex flex-col items-center justify-center space-y-6 text-center">
           <div className="space-y-4">
             <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
-              آینده‌ای که با هم می‌سازیم
+              The Future We Build Together
             </h2>
             <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed">
-              Trusva یک پروژه تمام‌شده نیست، بلکه یک اکوسیستم در حال تکامل است. ما برای آینده برنامه‌های بزرگی داریم.
+              Trusva is not a finished project, but an evolving ecosystem. We have big plans for the future.
             </p>
           </div>
           <div className="grid gap-8 pt-8 sm:grid-cols-1 md:grid-cols-3">
@@ -44,7 +45,7 @@ export function FutureVisionSection() {
             ))}
           </div>
           <Button asChild size="lg" className="mt-8">
-            <Link href="/signup">به آینده سرمایه‌گذاری بپیوندید</Link>
+            <Link href="/signup">Join the Future of Investment</Link>
           </Button>
         </div>
       </div>

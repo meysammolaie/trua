@@ -73,7 +73,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                 amount: investmentData.netAmountUSD, // POSITIVE amount to credit the wallet
                 status: 'completed',
                 createdAt: serverTimestamp(),
-                details: `سرمایه‌گذاری در صندوق ${investmentData.fundId}`,
+                details: `Investment in ${investmentData.fundId} fund`,
                 investmentId: investmentId,
                 fundId: investmentData.fundId,
             });
@@ -175,7 +175,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
                 amount: investmentData.netAmountUSD, // Return the net amount
                 status: 'completed',
                 createdAt: serverTimestamp(),
-                details: `بازگشت اصل سرمایه از صندوق ${investmentData.fundId}`,
+                details: `Principal return from ${investmentData.fundId} fund`,
                 investmentId: investmentId,
                 fundId: investmentData.fundId,
             });
@@ -186,11 +186,11 @@ const updateInvestmentStatusFlow = ai.defineFlow(
 
       let message = '';
       if (newStatus === 'active') {
-        message = `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت تایید و به موجودی کاربر اضافه شد.`;
+        message = `Investment ${investmentId} has been successfully approved and added to the user's balance.`;
       } else if (newStatus === 'rejected') {
-        message = `سرمایه‌گذاری با شناسه ${investmentId} با موفقیت رد شد.`;
+        message = `Investment ${investmentId} has been successfully rejected.`;
       } else if (newStatus === 'completed') {
-        message = `سرمایه‌گذاری تکمیل و اصل پول به کیف پول کاربر بازگردانده شد.`;
+        message = `Investment has been completed and the principal returned to the user's wallet.`;
       }
 
       return {
@@ -203,7 +203,7 @@ const updateInvestmentStatusFlow = ai.defineFlow(
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       return {
         success: false,
-        message: `خطایی در به‌روزرسانی وضعیت سرمایه‌گذاری رخ داد: ${errorMessage}`,
+        message: `An error occurred while updating investment status: ${errorMessage}`,
       };
     }
   }

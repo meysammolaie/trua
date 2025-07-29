@@ -61,7 +61,7 @@ const addTicketReplyFlow = ai.defineFlow(
 
       return {
         success: true,
-        message: 'پاسخ شما با موفقیت ثبت شد.',
+        message: 'Your reply has been submitted successfully.',
       };
     } catch (e) {
       console.error("Error adding reply: ", e);

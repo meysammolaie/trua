@@ -45,27 +45,27 @@ type DbTransactionDocument = {
 }
 
 const fundNames: Record<string, string> = {
-    gold: "طلا",
-    silver: "نقره",
-    usdt: "تتر",
-    bitcoin: "بیت‌کوین"
+    gold: "Gold",
+    silver: "Silver",
+    usdt: "USDT",
+    bitcoin: "Bitcoin"
 };
 
 const transactionTypeNames: Record<string, string> = {
-    investment: "سرمایه‌گذاری در صندوق",
-    profit_payout: "واریز سود روزانه",
-    commission: "کمیسیون معرفی",
-    principal_return: "بازگشت اصل سرمایه",
-    withdrawal_request: "درخواست برداشت",
-    withdrawal_refund: "لغو برداشت و بازگشت وجه",
-    bonus: "جایزه و پاداش"
+    investment: "Investment in Fund",
+    profit_payout: "Daily Profit Payout",
+    commission: "Referral Commission",
+    principal_return: "Principal Return",
+    withdrawal_request: "Withdrawal Request",
+    withdrawal_refund: "Withdrawal Cancellation & Refund",
+    bonus: "Bonus & Reward"
 };
 
 const transactionStatusNames: Record<string, string> = {
-    pending: "در انتظار",
-    active: "فعال",
-    completed: "تکمیل شده",
-    rejected: "رد شده",
+    pending: "Pending",
+    active: "Active",
+    completed: "Completed",
+    rejected: "Rejected",
 };
 
 export async function getUserDetails(input: GetUserDetailsInput): Promise<GetUserDetailsOutput> {
@@ -146,8 +146,8 @@ const getUserDetailsFlow = ai.defineFlow(
             id: doc.id,
             type: transactionTypeNames[data.type as keyof typeof transactionTypeNames] || data.type,
             fund: fundId,
-            status: transactionStatusNames[data.status as keyof typeof transactionStatusNames] || data.status || 'تکمیل شده',
-            date: createdAt.toLocaleDateString('fa-IR'),
+            status: transactionStatusNames[data.status as keyof typeof transactionStatusNames] || data.status || 'Completed',
+            date: createdAt.toLocaleDateString('en-US'),
             amount: data.amount,
             timestamp: createdAt.getTime(),
             proof: data.proof,
@@ -158,7 +158,7 @@ const getUserDetailsFlow = ai.defineFlow(
     const lockedBonus = bonusSnapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
 
     // 3. Prepare Chart Data
-    const monthNames = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const investmentChartData = Object.entries(investmentByMonth)
         .sort(([a], [b]) => a.localeCompare(b))
         .slice(-6)
@@ -176,7 +176,7 @@ const getUserDetailsFlow = ai.defineFlow(
         firstName: userData.firstName,
         lastName: userData.lastName,
         email: userData.email,
-        createdAt: (userData.createdAt as Timestamp).toDate().toLocaleDateString('fa-IR'),
+        createdAt: (userData.createdAt as Timestamp).toDate().toLocaleDateString('en-US'),
         status: userData.status || 'active',
     };
     

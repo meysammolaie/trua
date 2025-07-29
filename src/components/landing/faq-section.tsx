@@ -1,3 +1,4 @@
+
 import {
   Accordion,
   AccordionContent,
@@ -7,24 +8,24 @@ import {
 
 const faqs = [
   {
-    question: "سود من چگونه محاسبه و توزیع می‌شود؟",
+    question: "How is my profit calculated and distributed?",
     answer:
-      "سود از محل کارمزدهای ورودی و خروجی تمام کاربران تولید می‌شود. این استخر سود به صورت روزانه بین تمام سرمایه‌گذاران فعال توزیع می‌شود. سهم شما بر اساس مقدار سرمایه‌گذاری، مدت زمان و یک ضریب تشویقی ویژه که به سرمایه‌گذاران بلندمدت پاداش می‌دهد، محاسبه می‌شود. هر چه مدت بیشتری وجوه خود را در پلتفرم نگه دارید، بازده بالقوه شما بیشتر خواهد بود.",
+      "Profit is generated from the entry and exit fees of all users. This profit pool is distributed daily among all active investors. Your share is calculated based on your investment amount, its duration, and a special incentive multiplier that rewards long-term investors. The longer you keep your funds in the platform, the higher your potential return.",
   },
   {
-    question: "کارمزدهای استفاده از Trusva چقدر است؟",
+    question: "What are the fees for using Trusva?",
     answer:
-      "ما به شفافیت کامل اعتقاد داریم. کارمزدها به شرح زیر است: ۳٪ کارمزد ورود، ۲٪ کارمزد قرعه‌کشی و ۱٪ کارمزد پلتفرم. در زمان برداشت اصل سرمایه نیز ۲٪ کارمزد خروج اعمال می‌شود که مهمترین نکته این است که تمام این کارمزدها به استخر سود برای سایر سرمایه‌گذاران بازمی‌گردد و به جیب پلتفرم نمی‌رود.",
+      "We believe in full transparency. The fees are as follows: a 3% entry fee, a 2% lottery fee, and a 1% platform fee. When withdrawing the principal, a 2% exit fee is applied. The most important thing is that all these fees go back to the profit pool for other investors and are not pocketed by the platform.",
   },
   {
-    question: "آیا سرمایه‌گذاری من امن است؟",
+    question: "Is my investment secure?",
     answer:
-      "امنیت اولویت اصلی ماست. ما از به‌روزترین اقدامات امنیتی، از جمله احراز هویت دو مرحله‌ای (2FA) برای ورود، رمزگذاری کامل داده‌ها و ممیزی‌های امنیتی منظم استفاده می‌کنیم. پلتفرم ما بر روی یک زیرساخت قوی برای محافظت از سرمایه‌گذاری‌ها و اطلاعات شخصی شما ساخته شده است.",
+      "Security is our top priority. We use state-of-the-art security measures, including two-factor authentication (2FA) for login, full data encryption, and regular security audits. Our platform is built on a robust infrastructure to protect your investments and personal information.",
   },
   {
-    question: "آیا می‌توانم همزمان در چندین صندوق سرمایه‌گذاری کنم؟",
+    question: "Can I invest in multiple funds at the same time?",
     answer:
-      "قطعاً. شما می‌توانید با سرمایه‌گذاری در هر یک یا تمام چهار صندوق طلا، نقره، دلار و بیت‌کوین، سبد خود را متنوع کنید. تمام سرمایه‌گذاری‌های شما از طریق یک داشبورد یکپارچه قابل مدیریت است.",
+      "Absolutely. You can diversify your portfolio by investing in any or all of the four funds: Gold, Silver, Dollar, and Bitcoin. All your investments are manageable through a single, integrated dashboard.",
   },
 ];
 
@@ -34,20 +35,20 @@ export function FaqSection() {
       <div className="container px-4 md:px-6">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-            سوالات متداول
+            Frequently Asked Questions
           </h2>
           <p className="mt-4 text-muted-foreground md:text-xl/relaxed">
-            پاسخ به برخی از رایج‌ترین سوالات شما. اگر سوال دیگری دارید، تیم پشتیبانی ما همیشه آماده کمک است.
+            Answers to some of your most common questions. If you have another question, our support team is always ready to help.
           </p>
         </div>
         <div className="mx-auto max-w-3xl mt-12">
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
               <AccordionItem key={index} value={`item-${index}`} className="border-white/10">
-                <AccordionTrigger className="text-right font-bold text-lg hover:no-underline text-foreground">
+                <AccordionTrigger className="text-left font-bold text-lg hover:no-underline text-foreground">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-base text-muted-foreground text-right">
+                <AccordionContent className="text-base text-muted-foreground text-left">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>

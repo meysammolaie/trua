@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching referral data for a specific user.
@@ -103,9 +104,9 @@ const getUserReferralsFlow = ai.defineFlow(
 
       return {
         id: doc.id,
-        referredUserName: referredUser?.fullName || 'کاربر نامشخص',
+        referredUserName: referredUser?.fullName || 'Unknown User',
         commissionAmount: commissionAmount,
-        date: (commissionData.createdAt as Timestamp).toDate().toLocaleDateString('fa-IR'),
+        date: (commissionData.createdAt as Timestamp).toDate().toLocaleDateString('en-US'),
       };
     });
 

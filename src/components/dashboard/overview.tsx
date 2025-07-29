@@ -14,6 +14,7 @@ import {
   Lock,
   Medal,
   PiggyBank,
+  TrendingUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,9 +44,12 @@ import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
 import { getUserDetailsAction } from "@/app/actions/user-details";
+import { getPlatformSettingsAction } from "@/app/actions/platform-settings";
+import { getAllInvestmentsAction } from "@/app/actions/investment";
+import { Progress } from "@/components/ui/progress";
 
 
 type UserDetails = GetUserDetailsOutput;
@@ -55,31 +59,35 @@ type ChartData = UserDetails["investmentChartData"];
 
 const chartConfig = {
   investment: {
-    label: "سرمایه (دلار)",
+    label: "Investment ($)",
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
 
 const funds = [
   {
-    name: "صندوق طلا",
+    name: "Gold Fund",
     icon: <Crown className="w-6 h-6 text-yellow-500" />,
-    apy: "۱۲.۵٪",
+    risk: "Low Risk",
+    description: "A safe haven to preserve asset value in the long term.",
   },
   {
-    name: "صندوق نقره",
+    name: "Silver Fund",
     icon: <Medal className="w-6 h-6 text-slate-400" />,
-    apy: "۹.۸٪",
+    risk: "Medium Risk",
+    description: "A combination of stability and industrial growth potential.",
   },
   {
-    name: "صندوق دلار",
+    name: "Dollar Fund",
     icon: <Landmark className="w-6 h-6 text-green-500" />,
-    apy: "۷.۲٪",
+    risk: "Low Risk",
+    description: "Ideal for liquidity and stability in your portfolio.",
   },
   {
-    name: "صندوق بیت‌کوین",
+    name: "Bitcoin Fund",
     icon: <Bitcoin className="w-6 h-6 text-orange-500" />,
-    apy: "۲۵.۱٪",
+    risk: "High Risk",
+    description: "A gateway to the financial future with significant growth potential.",
   },
 ];
 
@@ -96,40 +104,66 @@ export function Overview() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [chartData, setChartData] = useState<ChartData>([]);
     const [loading, setLoading] = useState(true);
+    const [platformTvl, setPlatformTvl] = useState(0);
+    const [bonusUnlockTarget, setBonusUnlockTarget] = useState(1000000);
 
-    useEffect(() => {
+
+    const fetchData = useCallback(async () => {
         if (user) {
             setLoading(true);
-            getUserDetailsAction({ userId: user.uid })
-                .then(response => {
-                    setTransactions(response.transactions.slice(0, 5));
-                    setStats(response.stats);
-                    setChartData(response.investmentChartData);
-                })
-                .catch(error => {
-                    console.error("Failed to fetch user details:", error);
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
+            try {
+                const [userDetails, allInvestments, settings] = await Promise.all([
+                    getUserDetailsAction({ userId: user.uid }),
+                    getAllInvestmentsAction(),
+                    getPlatformSettingsAction()
+                ]);
+
+                setTransactions(userDetails.transactions.slice(0, 5));
+                setStats(userDetails.stats);
+                setChartData(userDetails.investmentChartData);
+
+                const totalTvl = allInvestments.investments.filter(inv => inv.status === 'active').reduce((sum, inv) => sum + inv.amountUSD, 0);
+                setPlatformTvl(totalTvl);
+
+                if (settings && settings.bonusUnlockTarget) {
+                    setBonusUnlockTarget(settings.bonusUnlockTarget);
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard data:", error);
+            } finally {
+                setLoading(false);
+            }
         }
     }, [user]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const bonusProgress = bonusUnlockTarget > 0 ? Math.min((platformTvl / bonusUnlockTarget) * 100, 100) : 0;
+    const totalAssetValue = (stats?.walletBalance ?? 0) + (stats?.lockedBonus ?? 0);
 
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">داشبورد</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
       </div>
        {stats?.lockedBonus && stats.lockedBonus > 0 && (
          <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
              <Card className="bg-primary/10 border-primary/40">
-                <CardHeader className="flex flex-row items-center gap-4">
-                    <Gift className="w-8 h-8 text-primary" />
-                    <div>
-                        <CardTitle>شما یک جایزه ویژه دارید!</CardTitle>
-                        <CardDescription className="text-foreground/80">
-                            مبلغ <span className="font-bold text-yellow-400">${stats.lockedBonus.toLocaleString()}</span> جایزه به شما تعلق گرفته است که پس از رسیدن حجم کل سرمایه پلتفرم به حد نصاب، آزاد خواهد شد.
+                <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                    <Gift className="w-12 h-12 text-primary flex-shrink-0" />
+                    <div className="flex-grow">
+                        <CardTitle>You have a ${stats.lockedBonus.toLocaleString()} locked bonus!</CardTitle>
+                        <CardDescription className="text-foreground/80 mt-1">
+                             This amount will be unlocked and added to your withdrawable balance once the total platform investment reaches ${bonusUnlockTarget.toLocaleString()}.
                         </CardDescription>
+                        <div className="mt-3">
+                            <Progress value={bonusProgress} className="w-full h-2" />
+                            <p className="text-xs text-muted-foreground mt-1 text-right">
+                                ${platformTvl.toLocaleString()} / ${bonusUnlockTarget.toLocaleString()}
+                            </p>
+                        </div>
                     </div>
                 </CardHeader>
              </Card>
@@ -139,15 +173,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">ارزش کل دارایی</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Asset Value</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                          سرمایه فعال + موجودی قابل برداشت
+                          Withdrawable balance + locked bonus
                         </p>
                     </>
                 )}
@@ -157,15 +191,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">سرمایه فعال</CardTitle>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Wallet Balance (Withdrawable)</CardTitle>
+                <PiggyBank className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.activeInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${(stats?.walletBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                        دارایی شما در صندوق‌ها
+                           Principal, profits, rewards, and commissions
                         </p>
                     </>
                  )}
@@ -175,15 +209,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">موجودی قابل برداشت</CardTitle>
-                <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Active Investment (For Profit)</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold font-mono">${stats?.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</div>
+                        <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                          سودها، جوایز و کمیسیون‌ها
+                        This amount is part of your wallet balance
                         </p>
                     </>
                  )}
@@ -193,15 +227,15 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">تیکت‌های قرعه‌کشی</CardTitle>
+                <CardTitle className="text-sm font-medium">Lottery Tickets</CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                     <>
-                        <div className="text-2xl font-bold">{stats?.lotteryTickets.toLocaleString() ?? 0}</div>
+                        <div className="text-2xl font-bold">{(stats?.lotteryTickets ?? 0).toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">
-                         برای قرعه‌کشی این ماه
+                         For this month's draw
                         </p>
                     </>
                 )}
@@ -209,12 +243,18 @@ export function Overview() {
             </Card>
         </motion.div>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-        <motion.div className="xl:col-span-2 grid gap-4" variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.5 }}>
+
+       {loading ? (
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="xl:col-span-3 h-96 flex justify-center items-center"><Loader2 className="w-8 h-8 animate-spin" /></div>
+        </div>
+      ) : stats && stats.activeInvestment > 0 ? (
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+          <motion.div className="xl:col-span-2 grid gap-4" variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.5 }}>
              <Card >
               <CardHeader>
-                <CardTitle>نمای کلی پرتفوی</CardTitle>
-                 <CardDescription>نمودار رشد سرمایه‌گذاری شما در ۶ ماه گذشته.</CardDescription>
+                <CardTitle>Portfolio Overview</CardTitle>
+                 <CardDescription>A chart of your investment growth over the last 6 months.</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
                 {loading ? <div className="h-[250px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
@@ -239,27 +279,27 @@ export function Overview() {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>صندوق‌های سرمایه‌گذاری</CardTitle>
+                    <CardTitle>Investment Funds</CardTitle>
                     <CardDescription>
-                        در صندوق‌های متنوع ما سرمایه‌گذاری کنید و سود کسب کنید.
+                        Invest in our diverse funds and earn profit.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {funds.map((fund) => (
-                        <Card key={fund.name} className="hover:bg-muted/50 transition-colors duration-300">
+                        <Card key={fund.name} className="hover:bg-muted/50 transition-colors duration-300 flex flex-col">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <div className="flex items-center gap-2">
                                     {fund.icon}
                                     <CardTitle className="text-base font-semibold">{fund.name}</CardTitle>
                                 </div>
-                                 <Button asChild size="sm">
-                                    <Link href="/dashboard/invest">سرمایه‌گذاری</Link>
-                                 </Button>
+                                <Badge variant={fund.risk === "High Risk" ? "destructive" : fund.risk === "Medium Risk" ? "secondary" : "default"}>{fund.risk}</Badge>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-lg font-bold">APY: {fund.apy}</div>
-                                <p className="text-xs text-muted-foreground">سود سالانه تخمینی</p>
+                            <CardContent className="flex-grow flex flex-col justify-between">
+                                 <p className="text-xs text-muted-foreground mb-4">{fund.description}</p>
+                                 <Button asChild size="sm" className="w-full mt-auto">
+                                    <Link href="/dashboard/invest">Invest Now</Link>
+                                 </Button>
                             </CardContent>
                         </Card>
                         ))}
@@ -272,14 +312,14 @@ export function Overview() {
             <Card>
             <CardHeader className="flex flex-row items-center">
                 <div className="grid gap-2">
-                    <CardTitle>تراکنش‌های اخیر</CardTitle>
+                    <CardTitle>Recent Transactions</CardTitle>
                     <CardDescription>
-                        لیست واریز و برداشت‌های اخیر شما.
+                        A list of your recent financial events.
                     </CardDescription>
                 </div>
                 <Button asChild size="sm" className="ml-auto gap-1">
                 <Link href="/dashboard/reports">
-                    مشاهده همه
+                    View all
                     <ArrowUpRight className="h-4 w-4" />
                 </Link>
                 </Button>
@@ -288,9 +328,9 @@ export function Overview() {
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>نوع</TableHead>
-                    <TableHead>وضعیت</TableHead>
-                    <TableHead className="text-right">مبلغ</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -299,14 +339,14 @@ export function Overview() {
                             <TableCell colSpan={3} className="text-center py-10">
                                 <div className="flex justify-center items-center gap-2">
                                     <Loader2 className="h-5 w-5 animate-spin"/>
-                                    <span>در حال بارگذاری تراکنش‌ها...</span>
+                                    <span>Loading transactions...</span>
                                 </div>
                             </TableCell>
                         </TableRow>
                    ) : transactions.length === 0 ? (
                         <TableRow>
                             <TableCell colSpan={3} className="text-center py-10">
-                                هیچ تراکنشی یافت نشد.
+                                No transactions found.
                             </TableCell>
                         </TableRow>
                    ) : (
@@ -319,12 +359,12 @@ export function Overview() {
                                 </div>
                             </TableCell>
                             <TableCell>
-                                <Badge className="text-xs" variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'در انتظار' ? 'outline' : 'destructive'}>
+                                <Badge className="text-xs" variant={tx.status === 'Active' ? 'secondary' : tx.status === 'Completed' ? 'default' : 'outline'}>
                                     {tx.status}
                                 </Badge>
                             </TableCell>
-                            <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <TableCell className={`text-right font-mono ${tx.amount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {tx.amount >= 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </TableCell>
                         </TableRow>
                    )))}
@@ -333,7 +373,25 @@ export function Overview() {
             </CardContent>
             </Card>
         </motion.div>
-      </div>
+        </div>
+      ) : (
+        <Card className="col-span-full">
+          <CardHeader className="text-center">
+             <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4">
+                <TrendingUp className="w-12 h-12 text-primary" />
+             </div>
+            <CardTitle className="text-3xl font-bold">Start Your Investment Journey</CardTitle>
+            <CardDescription className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              You don't have any active investments yet. Empower your financial future by investing in our diverse funds today.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+             <Button asChild size="lg">
+                <Link href="/dashboard/invest">Make Your First Investment</Link>
+             </Button>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 }

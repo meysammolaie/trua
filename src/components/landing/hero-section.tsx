@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            این بار، اجازه دهید هوش مصنوعی برای شما درآمد کسب کند
+            This Time, Let AI Earn For You
           </motion.h1>
           <motion.p 
             className="max-w-[600px] text-muted-foreground md:text-xl"
@@ -30,7 +31,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            به Trusva خوش آمدید. اولین پلتفرم درآمدزای مبتنی بر هوش مصنوعی که با شفافیت کامل، امنیت بی‌نظیر و نقدشوندگی آنی، تعریف جدیدی از سرمایه‌گذاری ارائه می‌دهد.
+            Welcome to Trusva. The first AI-powered earning platform that redefines investment with full transparency, unmatched security, and instant liquidity.
           </motion.p>
           <motion.div 
             className="flex flex-col gap-2 min-[400px]:flex-row"
@@ -39,10 +40,10 @@ export function HeroSection() {
             transition={{ delay: 0.4, duration: 0.5 }}
           >
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
-              <Link href="/signup">همین حالا شروع کنید</Link>
+              <Link href="/signup">Start Now</Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link href="#how-it-works">شفافیت در عمل</Link>
+              <Link href="#how-it-works">Transparency in Action</Link>
             </Button>
           </motion.div>
         </div>

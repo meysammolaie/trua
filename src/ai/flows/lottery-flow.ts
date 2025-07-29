@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for running the lottery draw.
@@ -51,7 +52,7 @@ const lotteryDrawFlow = ai.defineFlow(
                 success: false,
                 winnerName: '',
                 prizeAmount: 0,
-                message: 'هیچ کاربری برای شرکت در قرعه‌کشی یافت نشد.',
+                message: 'No users found to participate in the lottery.',
             }
         }
         
@@ -69,7 +70,7 @@ const lotteryDrawFlow = ai.defineFlow(
                 success: false,
                 winnerName: '',
                 prizeAmount: 0,
-                message: 'هیچ کاربر واجد شرایطی (با سرمایه‌گذاری فعال) یافت نشد.',
+                message: 'No eligible users (with active investments) were found.',
             }
         }
         
@@ -88,7 +89,7 @@ const lotteryDrawFlow = ai.defineFlow(
             success: true,
             winnerName: winnerName,
             prizeAmount: prizePool,
-            message: `قرعه‌کشی با موفقیت انجام شد! برنده این دوره ${winnerName} با جایزه $${prizePool.toLocaleString()} است.`,
+            message: `Lottery draw completed successfully! This period's winner is ${winnerName} with a prize of $${prizePool.toLocaleString()}.`,
         };
 
     } catch (error) {
@@ -98,7 +99,7 @@ const lotteryDrawFlow = ai.defineFlow(
             success: false,
             winnerName: '',
             prizeAmount: 0,
-            message: `خطایی در هنگام اجرای قرعه‌کشی رخ داد: ${errorMessage}`,
+            message: `An error occurred while running the lottery: ${errorMessage}`,
         };
     }
   }

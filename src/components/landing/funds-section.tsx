@@ -7,23 +7,23 @@ import { motion } from "framer-motion";
 
 const funds = [
   {
-    name: "صندوق طلا",
-    description: "در ثبات بی‌انتهای طلا سرمایه‌گذاری کنید. پناهگاهی امن برای دارایی‌های شما.",
+    name: "Gold Fund",
+    description: "Invest in the timeless stability of gold. A safe haven for your assets.",
     icon: <Crown className="w-8 h-8 text-primary" />,
   },
   {
-    name: "صندوق نقره",
-    description: "با نقره، یک فلز گرانبها با تقاضای صنعتی قوی، سبد خود را متنوع کنید.",
+    name: "Silver Fund",
+    description: "Diversify your portfolio with silver, a precious metal with strong industrial demand.",
     icon: <Medal className="w-8 h-8 text-primary" />,
   },
   {
-    name: "صندوق دلار",
-    description: "سبد خود را با ارز ذخیره پیشرو در جهان تقویت کنید.",
+    name: "Dollar Fund",
+    description: "Strengthen your portfolio with the world's leading reserve currency.",
     icon: <Landmark className="w-8 h-8 text-primary" />,
   },
   {
-    name: "صندوق بیت‌کوین",
-    description: "با سرمایه‌گذاری در ارز دیجیتال اصلی، آینده مالی را در آغوش بگیرید.",
+    name: "Bitcoin Fund",
+    description: "Embrace the future of finance by investing in the original cryptocurrency.",
     icon: <Bitcoin className="w-8 h-8 text-primary" />,
   },
 ];
@@ -50,10 +50,10 @@ export function FundsSection() {
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
             <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
-              صندوق سرمایه‌گذاری خود را انتخاب کنید
+              Choose Your Investment Fund
             </h2>
             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              ما چهار صندوق متمایز را برای تطابق با استراتژی سرمایه‌گذاری شما ارائه می‌دهیم، از دارایی‌های سنتی تا ارزهای دیجیتال.
+              We offer four distinct funds to match your investment strategy, from traditional assets to digital currencies.
             </p>
           </div>
         </div>

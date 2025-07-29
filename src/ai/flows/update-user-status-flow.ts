@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for updating a user's status.
@@ -53,8 +54,8 @@ const updateUserStatusFlow = ai.defineFlow(
       console.log(`User ${userId} status updated to ${newStatus}.`);
 
       const message = newStatus === 'blocked' 
-        ? `کاربر با شناسه ${userId} با موفقیت مسدود شد.`
-        : `کاربر با شناسه ${userId} با موفقیت فعال شد.`;
+        ? `User with ID ${userId} has been successfully blocked.`
+        : `User with ID ${userId} has been successfully activated.`;
 
       return {
         success: true,
@@ -66,7 +67,7 @@ const updateUserStatusFlow = ai.defineFlow(
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       return {
         success: false,
-        message: `خطایی در به‌روزرسانی وضعیت کاربر رخ داد: ${errorMessage}`,
+        message: `An error occurred while updating the user status: ${errorMessage}`,
       };
     }
   }

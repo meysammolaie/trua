@@ -37,7 +37,7 @@ const unlockBonusesFlow = ai.defineFlow(
       const snapshot = await getDocs(bonusesToUnlockQuery);
       
       if (snapshot.empty) {
-        return { success: true, message: 'هیچ جایزه قفل‌شده‌ای برای آزاد کردن یافت نشد.', unlockedCount: 0 };
+        return { success: true, message: 'No locked bonuses found to unlock.', unlockedCount: 0 };
       }
       
       const batch = writeBatch(db);
@@ -60,7 +60,7 @@ const unlockBonusesFlow = ai.defineFlow(
             amount: bonusData.amount,
             status: 'completed',
             createdAt: serverTimestamp(),
-            details: 'آزاد شدن جایزه ثبت‌نام اولیه',
+            details: 'Initial signup bonus unlocked',
             bonusId: bonusDoc.id,
         });
 
@@ -71,7 +71,7 @@ const unlockBonusesFlow = ai.defineFlow(
 
       return {
         success: true,
-        message: `مبلغ جایزه برای ${unlockedCount} کاربر با موفقیت آزاد و به کیف پولشان اضافه شد.`,
+        message: `Bonus amount successfully unlocked and added to the wallet for ${unlockedCount} users.`,
         unlockedCount: unlockedCount,
       };
 
@@ -80,7 +80,7 @@ const unlockBonusesFlow = ai.defineFlow(
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       return {
         success: false,
-        message: `خطایی در هنگام آزاد کردن جوایز رخ داد: ${errorMessage}`,
+        message: `An error occurred while unlocking bonuses: ${errorMessage}`,
         unlockedCount: 0,
       };
     }

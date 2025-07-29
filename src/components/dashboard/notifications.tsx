@@ -49,7 +49,7 @@ export function Notifications() {
             throw new Error("Failed to mark as read");
         }
     } catch (error) {
-        toast({variant: "destructive", title: "خطا", description: "مشکلی در بروزرسانی اعلان رخ داد."});
+        toast({variant: "destructive", title: "Error", description: "There was a problem updating the notification."});
     }
   }
 
@@ -67,10 +67,10 @@ export function Notifications() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 bg-card/80 backdrop-blur-lg">
-        <DropdownMenuLabel>اعلان‌ها</DropdownMenuLabel>
+        <DropdownMenuLabel>Notifications</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {notifications.length === 0 ? (
-            <DropdownMenuItem disabled>هیچ اعلان جدیدی وجود ندارد.</DropdownMenuItem>
+            <DropdownMenuItem disabled>No new notifications.</DropdownMenuItem>
         ) : (
             notifications.map(notif => (
                  <DropdownMenuItem key={notif.id} className={cn("flex items-start gap-2", !notif.isRead && "font-bold")} onSelect={(e) => e.preventDefault()}>

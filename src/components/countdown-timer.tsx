@@ -13,18 +13,18 @@ const calculateTimeLeft = () => {
   const difference = lastDayOfMonth.getTime() - now.getTime();
 
   let timeLeft = {
-    "روز": 0,
-    "ساعت": 0,
-    "دقیقه": 0,
-    "ثانیه": 0,
+    "Days": 0,
+    "Hours": 0,
+    "Minutes": 0,
+    "Seconds": 0,
   };
 
   if (difference > 0) {
     timeLeft = {
-      "روز": Math.floor(difference / (1000 * 60 * 60 * 24)),
-      "ساعت": Math.floor((difference / (1000 * 60 * 60)) % 24),
-      "دقیقه": Math.floor((difference / 1000 / 60) % 60),
-      "ثانیه": Math.floor((difference / 1000) % 60),
+      "Days": Math.floor(difference / (1000 * 60 * 60 * 24)),
+      "Hours": Math.floor((difference / (1000 * 60 * 60)) % 24),
+      "Minutes": Math.floor((difference / 1000 / 60) % 60),
+      "Seconds": Math.floor((difference / 1000) % 60),
     };
   }
 
@@ -32,7 +32,7 @@ const calculateTimeLeft = () => {
 };
 
 export function CountdownTimer() {
-  const [timeLeft, setTimeLeft] = useState({ "روز": 0, "ساعت": 0, "دقیقه": 0, "ثانیه": 0 });
+  const [timeLeft, setTimeLeft] = useState({ "Days": 0, "Hours": 0, "Minutes": 0, "Seconds": 0 });
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export function CountdownTimer() {
   }
 
   // Correct order for display
-  const displayOrder: Array<keyof typeof timeLeft> = ["روز", "ساعت", "دقیقه", "ثانیه"];
+  const displayOrder: Array<keyof typeof timeLeft> = ["Days", "Hours", "Minutes", "Seconds"];
 
   const timerComponents = displayOrder.map((interval) => {
     const value = timeLeft[interval];
@@ -68,7 +68,7 @@ export function CountdownTimer() {
 
   return (
     <div className="flex justify-center gap-4 md:gap-8">
-      {timerComponents.length ? timerComponents : <span>قرعه‌کشی به پایان رسیده است!</span>}
+      {timerComponents.length ? timerComponents : <span>The draw is over!</span>}
     </div>
   );
 }

@@ -61,15 +61,15 @@ export function RewardPromoSection() {
                 viewport={{ once: true }}
               >
                 <h2 className="font-headline text-3xl font-bold tracking-tighter text-foreground sm:text-4xl md:text-5xl">
-                   به ۵,۰۰۰ نفر اول ۱۰۰$ جایزه می‌دهیم!
+                   We're giving a $100 bonus to the first 5,000 users!
                 </h2>
                 <p className="mt-4 max-w-xl text-muted-foreground md:text-lg">
-                  با اولین سرمایه‌گذاری خود (حتی ۱ دلار)، جزو ۵,۰۰۰ کاربر اول باشید و <span className="text-yellow-400 font-bold">۱۰۰ دلار جایزه</span> دریافت کنید.
+                  Be among the first 5,000 users to make your first investment (even $1) and receive a <span className="text-yellow-400 font-bold">$100 bonus</span>.
                 </p>
                 <div className="mt-6">
                     <div className="flex justify-between items-center mb-2 text-sm text-muted-foreground">
-                        <span>ظرفیت باقی‌مانده</span>
-                        <span>{userCount !== null ? `${(5000 - userCount).toLocaleString()} نفر` : '...'}</span>
+                        <span>Capacity Remaining</span>
+                        <span>{userCount !== null ? `${(5000 - userCount).toLocaleString()} users` : '...'}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2.5">
                         <motion.div 
@@ -82,7 +82,7 @@ export function RewardPromoSection() {
                     </div>
                 </div>
                  <Button asChild size="lg" className="mt-8">
-                    <Link href="/signup">همین حالا جایزه را بگیر</Link>
+                    <Link href="/signup">Claim Your Bonus Now</Link>
                 </Button>
               </motion.div>
             </div>

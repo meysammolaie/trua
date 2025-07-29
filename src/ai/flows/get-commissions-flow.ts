@@ -87,9 +87,9 @@ const getCommissionsFlow = ai.defineFlow(
         return {
             ...data,
             id: doc.id,
-            referrerFullName: referrer ? `${referrer.firstName} ${referrer.lastName}`.trim() : 'کاربر نامشخص',
-            referredUserFullName: referredUser ? `${referredUser.firstName} ${referredUser.lastName}`.trim() : 'کاربر نامشخص',
-            createdAt: data.createdAt.toDate().toLocaleDateString('fa-IR'),
+            referrerFullName: referrer ? `${referrer.firstName} ${referrer.lastName}`.trim() : 'Unknown User',
+            referredUserFullName: referredUser ? `${referredUser.firstName} ${referredUser.lastName}`.trim() : 'Unknown User',
+            createdAt: data.createdAt.toDate().toLocaleDateString('en-US'),
             createdAtTimestamp: data.createdAt.toMillis(),
         };
     });

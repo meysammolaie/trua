@@ -102,10 +102,10 @@ type InvestmentDocument = {
 }
 
 const fundNames: Record<string, string> = {
-    gold: "طلا",
-    silver: "نقره",
-    usdt: "تتر",
-    bitcoin: "بیت‌کوین"
+    gold: "Gold",
+    silver: "Silver",
+    usdt: "USDT",
+    bitcoin: "Bitcoin"
 };
 
 
@@ -142,8 +142,8 @@ const getAllTransactionsFlow = ai.defineFlow(
 
     const allTransactions: TransactionWithUser[] = dbTransactions.map(tx => {
         const user = usersMap.get(tx.userId);
-        const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'کاربر نامشخص';
-        const userEmail = user ? user.email : 'ایمیل نامشخص';
+        const userFullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Unknown User';
+        const userEmail = user ? user.email : 'Unknown Email';
         
         return {
             id: tx.id,
@@ -154,7 +154,7 @@ const getAllTransactionsFlow = ai.defineFlow(
             amount: tx.amount,
             type: tx.type,
             status: tx.status,
-            createdAt: tx.createdAt.toDate().toLocaleDateString('fa-IR'),
+            createdAt: tx.createdAt.toDate().toLocaleDateString('en-US'),
             createdAtTimestamp: tx.createdAt.toMillis(),
             originalInvestmentId: tx.originalInvestmentId
         };

@@ -52,10 +52,10 @@ type InvestmentDocument = {
 };
 
 const fundNames: Record<string, string> = {
-    gold: "طلا",
-    silver: "نقره",
-    usdt: "تتر",
-    bitcoin: "بیت‌کوین"
+    gold: "Gold",
+    silver: "Silver",
+    usdt: "USDT",
+    bitcoin: "Bitcoin"
 };
 
 
@@ -103,7 +103,7 @@ const getPlatformAnalyticsFlow = ai.defineFlow(
             fundData[inv.fundId].investors.add(inv.userId);
         }
 
-        const dateKey = inv.createdAt.toDate().toLocaleDateString('fa-IR', { year: 'numeric', month: 'short' });
+        const dateKey = inv.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
         if (!tvlByDate[dateKey]) {
             tvlByDate[dateKey] = 0;
         }

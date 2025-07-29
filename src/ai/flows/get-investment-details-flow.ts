@@ -24,10 +24,10 @@ export type GetInvestmentDetailsInput = z.infer<typeof GetInvestmentDetailsInput
 
 
 const fundNames: Record<string, string> = {
-    gold: "طلا",
-    silver: "نقره",
-    usdt: "تتر",
-    bitcoin: "بیت‌کوین"
+    gold: "Gold",
+    silver: "Silver",
+    usdt: "USDT",
+    bitcoin: "Bitcoin"
 };
 
 export type GetInvestmentDetailsOutput = z.infer<typeof GetInvestmentDetailsOutputSchema>;
@@ -60,15 +60,15 @@ const getInvestmentDetailsFlow = ai.defineFlow(
     return {
         id: investmentSnap.id,
         userId: investmentData.userId,
-        userFullName: userData ? `${userData.firstName} ${userData.lastName}`.trim() : 'کاربر نامشخص',
-        userEmail: userData ? userData.email : 'ایمیل نامشخص',
+        userFullName: userData ? `${userData.firstName} ${userData.lastName}`.trim() : 'Unknown User',
+        userEmail: userData ? userData.email : 'Unknown Email',
         fundId: investmentData.fundId,
         fundName: fundNames[investmentData.fundId] || investmentData.fundId,
         amount: investmentData.amount,
         amountUSD: investmentData.amountUSD,
         transactionHash: investmentData.transactionHash,
         status: investmentData.status,
-        createdAt: (investmentData.createdAt as Timestamp).toDate().toLocaleString('fa-IR'),
+        createdAt: (investmentData.createdAt as Timestamp).toDate().toLocaleString('en-US'),
         rejectionReason: investmentData.rejectionReason,
     };
   }

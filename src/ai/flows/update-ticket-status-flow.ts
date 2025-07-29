@@ -45,7 +45,7 @@ const updateTicketStatusFlow = ai.defineFlow(
 
       return {
         success: true,
-        message: `وضعیت تیکت با موفقیت به '${newStatus}' تغییر یافت.`,
+        message: `Ticket status successfully changed to '${newStatus}'.`,
       };
     } catch (e) {
       console.error("Error updating ticket status: ", e);

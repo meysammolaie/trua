@@ -43,7 +43,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
     if (twoFactorCode !== '123456') { // Placeholder for real 2FA validation
         return {
             success: false,
-            message: "کد تایید دو مرحله‌ای نامعتبر است.",
+            message: "Invalid two-factor authentication code.",
         };
     }
 
@@ -56,7 +56,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         if (currentBalance < amount) {
             return {
                 success: false,
-                message: `موجودی کیف پول شما (${currentBalance.toLocaleString()}$) برای برداشت مبلغ ${amount.toLocaleString()}$ کافی نیست.`,
+                message: `Your wallet balance (${currentBalance.toLocaleString()}$) is not enough to withdraw ${amount.toLocaleString()}$.`,
             };
         }
 
@@ -70,13 +70,13 @@ const createWithdrawalRequestFlow = ai.defineFlow(
         if (!pendingSnapshot.empty) {
             return {
                 success: false,
-                message: 'شما از قبل یک درخواست برداشت در انتظار بررسی دارید. لطفاً تا زمان پردازش آن صبر کنید.',
+                message: 'You already have a pending withdrawal request. Please wait until it is processed.',
             };
         }
          if (amount < settings.minWithdrawalAmount) {
             return {
                 success: false,
-                message: `حداقل مبلغ برای برداشت ${settings.minWithdrawalAmount} دلار است.`,
+                message: `Minimum withdrawal amount is $${settings.minWithdrawalAmount}.`,
             };
         }
 
@@ -87,7 +87,7 @@ const createWithdrawalRequestFlow = ai.defineFlow(
             const netAmount = amount - totalFees;
 
             if (netAmount <= 0) {
-                throw new Error("مبلغ درخواستی پس از کسر کارمزدها باید مثبت باشد.");
+                throw new Error("The requested amount must be positive after fees.");
             }
 
             // Create the main withdrawal document
@@ -124,18 +124,18 @@ const createWithdrawalRequestFlow = ai.defineFlow(
                 amount: -amount, // Debit the full amount from balance immediately
                 status: 'pending',
                 createdAt: serverTimestamp(),
-                details: `درخواست برداشت به آدرس ${walletAddress}`,
+                details: `Withdrawal request to ${walletAddress}`,
                 withdrawalId: withdrawalRef.id
             });
         });
 
         return {
             success: true,
-            message: "درخواست برداشت شما با موفقیت ثبت شد و پس از بررسی توسط مدیر (ظرف ۲۴ ساعت کاری)، واریز خواهد شد.",
+            message: "Your withdrawal request has been submitted successfully and will be processed after admin review (within 24 business hours).",
         };
     } catch (e) {
         console.error("Error creating withdrawal request: ", e);
-        const errorMessage = e instanceof Error ? e.message : "خطایی در ثبت درخواست شما در پایگاه داده رخ داد.";
+        const errorMessage = e instanceof Error ? e.message : "An error occurred while saving your request to the database.";
         return {
             success: false,
             message: errorMessage,

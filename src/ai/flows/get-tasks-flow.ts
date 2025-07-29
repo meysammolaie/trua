@@ -50,7 +50,7 @@ const getTasksFlow = ai.defineFlow(
           description: data.description,
           rewardAmount: data.rewardAmount,
           rewardType: data.rewardType,
-          createdAt: (data.createdAt as Timestamp).toDate().toLocaleDateString('fa-IR'),
+          createdAt: (data.createdAt as Timestamp).toDate().toLocaleDateString('en-US'),
         };
       });
 

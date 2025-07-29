@@ -71,7 +71,7 @@ const createTicketFlow = ai.defineFlow(
 
       return {
         success: true,
-        message: 'تیکت شما با موفقیت ایجاد شد.',
+        message: 'Your ticket has been created successfully.',
         ticketId: ticketDocRef.id,
       };
     } catch (e) {

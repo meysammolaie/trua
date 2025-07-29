@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for handling new investment requests.
@@ -87,14 +88,14 @@ const investmentFlow = ai.defineFlow(
       return {
         success: true,
         investmentId: docRef.id,
-        message: `سرمایه‌گذاری شما ثبت شد و اکنون در انتظار تایید مدیر است. شناسه پیگیری: ${docRef.id}`,
+        message: `Your investment has been submitted and is now pending admin approval. Tracking ID: ${docRef.id}`,
       };
     } catch (e) {
         console.error("Error adding document: ", e);
         return {
             success: false,
             investmentId: '',
-            message: 'خطایی در ثبت سرمایه‌گذاری شما در پایگاه داده رخ داد.',
+            message: 'An error occurred while saving your investment to the database.',
         };
     }
   }

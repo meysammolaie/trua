@@ -36,18 +36,18 @@ export async function getUserTickets(input: GetUserTicketsInput): Promise<GetUse
 
 const getTicketStatusName = (status: string): string => {
     switch (status) {
-        case 'open': return 'باز';
-        case 'in_progress': return 'در حال بررسی';
-        case 'closed': return 'بسته شده';
+        case 'open': return 'Open';
+        case 'in_progress': return 'In Progress';
+        case 'closed': return 'Closed';
         default: return status;
     }
 }
 
 const getTicketPriorityName = (priority: string): string => {
     switch (priority) {
-        case 'low': return 'پایین';
-        case 'medium': return 'متوسط';
-        case 'high': return 'بالا';
+        case 'low': return 'Low';
+        case 'medium': return 'Medium';
+        case 'high': return 'High';
         default: return priority;
     }
 }
@@ -71,7 +71,7 @@ const getUserTicketsFlow = ai.defineFlow(
           subject: data.subject,
           status: getTicketStatusName(data.status),
           priority: getTicketPriorityName(data.priority),
-          updatedAt: (data.updatedAt as Timestamp).toDate().toLocaleString('fa-IR'),
+          updatedAt: (data.updatedAt as Timestamp).toDate().toLocaleString('en-US'),
         };
       });
 

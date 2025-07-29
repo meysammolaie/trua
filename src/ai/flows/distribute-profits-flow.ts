@@ -167,7 +167,7 @@ const distributeProfitsFlow = ai.defineFlow(
                         amount: profitShare,
                         status: 'completed',
                         createdAt: serverTimestamp(),
-                        details: `سود روزانه از صندوق ${fundId}`,
+                        details: `Daily profit from ${fundId} fund`,
                         fundId: fundId,
                     });
                 }
@@ -188,7 +188,7 @@ const distributeProfitsFlow = ai.defineFlow(
         }
         
         if (totalDistributedAmount === 0) {
-            return { success: true, message: 'هیچ سود جدیدی برای توزیع در هیچ‌کدام از صندوق‌ها یافت نشد.' };
+            return { success: true, message: 'No new profits were found to distribute in any fund.' };
         }
       
         await overallBatch.commit();
@@ -200,7 +200,7 @@ const distributeProfitsFlow = ai.defineFlow(
 
         return {
             success: true,
-            message: `مبلغ ${totalDistributedAmount.toLocaleString('en-US', {style: 'currency', currency: 'USD'})} با موفقیت بین صندوق‌ها توزیع شد.`,
+            message: `Successfully distributed ${totalDistributedAmount.toLocaleString('en-US', {style: 'currency', currency: 'USD'})} among funds.`,
             details: overallDetails,
         };
 
@@ -209,7 +209,7 @@ const distributeProfitsFlow = ai.defineFlow(
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
       return {
         success: false,
-        message: `خطایی در هنگام توزیع سود رخ داد: ${errorMessage}`,
+        message: `An error occurred while distributing profits: ${errorMessage}`,
       };
     }
   }

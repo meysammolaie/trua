@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { VerdantVaultLogo } from "@/components/icons";
 import { Button } from "../ui/button";
@@ -22,25 +23,25 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              سرمایه‌گذاری‌های امن و شفاف برای آینده‌ای سبزتر.
+              Secure and transparent investments for a greener future.
             </p>
           </div>
           <div className="grid gap-4 text-sm md:grid-cols-2">
             <div className="grid gap-1">
-              <h3 className="font-semibold font-headline">لینک‌های سریع</h3>
-              <Link href="#funds" prefetch={false} className="text-muted-foreground hover:text-foreground">صندوق‌ها</Link>
-              <Link href="#how-it-works" prefetch={false} className="text-muted-foreground hover:text-foreground">چگونه کار می‌کند</Link>
-              <Link href="#lottery" prefetch={false} className="text-muted-foreground hover:text-foreground">قرعه‌کشی</Link>
-              <Link href="#faq" prefetch={false} className="text-muted-foreground hover:text-foreground">سوالات متداول</Link>
+              <h3 className="font-semibold font-headline">Quick Links</h3>
+              <Link href="#funds" prefetch={false} className="text-muted-foreground hover:text-foreground">Funds</Link>
+              <Link href="#how-it-works" prefetch={false} className="text-muted-foreground hover:text-foreground">How it Works</Link>
+              <Link href="#lottery" prefetch={false} className="text-muted-foreground hover:text-foreground">Lottery</Link>
+              <Link href="#faq" prefetch={false} className="text-muted-foreground hover:text-foreground">FAQ</Link>
             </div>
             <div className="grid gap-1">
-              <h3 className="font-semibold font-headline">حقوقی</h3>
-              <Link href="#" prefetch={false} className="text-muted-foreground hover:text-foreground">شرایط خدمات</Link>
-              <Link href="#" prefetch={false} className="text-muted-foreground hover:text-foreground">سیاست حفظ حریم خصوصی</Link>
+              <h3 className="font-semibold font-headline">Legal</h3>
+              <Link href="#" prefetch={false} className="text-muted-foreground hover:text-foreground">Terms of Service</Link>
+              <Link href="#" prefetch={false} className="text-muted-foreground hover:text-foreground">Privacy Policy</Link>
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <h3 className="font-semibold font-headline">ما را دنبال کنید</h3>
+            <h3 className="font-semibold font-headline">Follow Us</h3>
             <div className="flex gap-2">
               {socialLinks.map((link) => (
                 <Button key={link.name} variant="ghost" size="icon" asChild>
@@ -53,7 +54,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t border-white/10 pt-8 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Trusva. تمام حقوق محفوظ است.
+          © {new Date().getFullYear()} Trusva. All rights reserved.
         </div>
       </div>
     </footer>

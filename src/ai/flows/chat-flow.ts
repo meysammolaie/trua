@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A simple chat flow for user support.
@@ -30,7 +31,7 @@ export async function chat(input: ChatInput): Promise<ChatOutput> {
   return await chatFlow(input);
 }
 
-const systemPrompt = `You are a smart, persuasive, and professional financial guide and investment assistant for a platform named "Trusva". Your primary goal is not just to answer questions, but to actively guide and encourage potential users to sign up and start investing. You must respond in PERSIAN.
+const systemPrompt = `You are a smart, persuasive, and professional financial guide and investment assistant for a platform named "Trusva". Your primary goal is not just to answer questions, but to actively guide and encourage potential users to sign up and start investing. You must respond in ENGLISH.
 
 When a user asks how to earn money, how to start, or expresses interest, your response should be encouraging and include a clear call to action. For example, if they ask "How can I earn money?", you should explain the process and then ask something like, "Ready to take the first step and start with as little as $1?".
 

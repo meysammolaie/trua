@@ -67,7 +67,7 @@ const getTicketDetailsFlow = ai.defineFlow(
               id: doc.id,
               senderId: data.senderId,
               message: data.message,
-              createdAt: (data.createdAt as Timestamp).toDate().toLocaleString('fa-IR'),
+              createdAt: (data.createdAt as Timestamp).toDate().toLocaleString('en-US'),
           }
       });
       
@@ -77,7 +77,7 @@ const getTicketDetailsFlow = ai.defineFlow(
         status: ticketData.status,
         userId: ticketData.userId,
         userFullName: ticketData.userFullName,
-        createdAt: (ticketData.createdAt as Timestamp).toDate().toLocaleString('fa-IR'),
+        createdAt: (ticketData.createdAt as Timestamp).toDate().toLocaleString('en-US'),
         messages,
       };
 

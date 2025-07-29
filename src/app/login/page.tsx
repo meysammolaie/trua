@@ -45,18 +45,18 @@ import {
 } from "@/components/ui/alert-dialog"
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." }),
-  password: z.string().min(1, { message: "لطفاً رمز عبور خود را وارد کنید." }),
+  email: z.string().email({ message: "Please enter a valid email." }),
+  password: z.string().min(1, { message: "Please enter your password." }),
   // Honeypot field for bot protection
-  website: z.string().max(0, { message: "ربات شناسایی شد." }).optional(),
+  website: z.string().max(0, { message: "Bot detected." }).optional(),
 });
 
 const twoFactorSchema = z.object({
-    code: z.string().length(6, { message: "کد باید ۶ رقم باشد." }),
+    code: z.string().length(6, { message: "Code must be 6 digits." }),
 });
 
 const resetPasswordSchema = z.object({
-    resetEmail: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." })
+    resetEmail: z.string().email({ message: "Please enter a valid email." })
 });
 
 const logLoginHistory = async (userId: string) => {
@@ -143,20 +143,20 @@ export default function LoginPage() {
       } else {
          await logLoginHistory(userCredential.user.uid);
          toast({
-            title: "ورود موفق",
-            description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
+            title: "Login Successful",
+            description: "You have successfully logged in. Redirecting to dashboard...",
          });
       }
 
     } catch (error) {
        console.error("Error signing in:", error);
-       let description = "ایمیل یا رمز عبور نامعتبر است.";
+       let description = "Invalid email or password.";
        if (error instanceof FirebaseError) {
          if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            description = "ایمیل یا رمز عبور وارد شده صحیح نمی‌باشد.";
+            description = "The email or password you entered is incorrect.";
          }
        }
-       toast({ variant: "destructive", title: "خطا در ورود", description });
+       toast({ variant: "destructive", title: "Login Error", description });
     }
   }
   
@@ -167,12 +167,12 @@ export default function LoginPage() {
     if (values.code === '123456') {
         await logLoginHistory(tempUser.uid);
         toast({
-            title: "ورود موفق",
-            description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
+            title: "Login Successful",
+            description: "You have successfully logged in. Redirecting to dashboard...",
         });
         setLoginStep('credentials');
     } else {
-        twoFactorForm.setError("code", { message: "کد تایید نامعتبر است." });
+        twoFactorForm.setError("code", { message: "Invalid verification code." });
     }
   }
 
@@ -183,15 +183,15 @@ export default function LoginPage() {
       await createUserDocument(userCredential);
       await logLoginHistory(userCredential.user.uid);
       toast({
-        title: "ورود موفق",
-        description: "شما با موفقیت از طریق گوگل وارد شدید.",
+        title: "Login Successful",
+        description: "You have successfully logged in with Google.",
       });
     } catch (error) {
       console.error("Google Sign-In Error:", error);
       toast({
         variant: "destructive",
-        title: "خطا در ورود با گوگل",
-        description: "مشکلی در هنگام ورود با گوگل پیش آمد. لطفاً دوباره تلاش کنید.",
+        title: "Google Sign-In Error",
+        description: "There was a problem signing in with Google. Please try again.",
       });
     }
   };
@@ -200,16 +200,16 @@ export default function LoginPage() {
     try {
         await sendPasswordResetEmail(auth, values.resetEmail);
         toast({
-            title: "ایمیل ارسال شد",
-            description: "یک ایمیل حاوی لینک بازنشانی رمز عبور برای شما ارسال شد. لطفاً پوشه اسپم را نیز بررسی کنید."
+            title: "Email Sent",
+            description: "A password reset link has been sent to your email. Please also check your spam folder."
         })
         return true; 
     } catch (error) {
          console.error("Password Reset Error:", error);
          toast({
             variant: "destructive",
-            title: "خطا",
-            description: "خطایی در ارسال ایمیل بازنشانی رخ داد. مطمئن شوید ایمیل را درست وارد کرده‌اید."
+            title: "Error",
+            description: "An error occurred while sending the reset email. Make sure you entered the correct email."
         })
         return false;
     }
@@ -220,7 +220,7 @@ export default function LoginPage() {
      return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">در حال انتقال به داشبورد...</p>
+        <p className="mt-4 text-muted-foreground">Redirecting to dashboard...</p>
       </div>
     );
   }
@@ -229,7 +229,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="absolute top-4 left-4">
         <Button variant="outline" asChild>
-          <Link href="/">بازگشت به خانه</Link>
+          <Link href="/">Back to Home</Link>
         </Button>
       </div>
       <Card className="mx-auto w-full max-w-sm">
@@ -238,12 +238,12 @@ export default function LoginPage() {
             <VerdantVaultLogo className="h-12 w-12" />
           </Link>
           <CardTitle className="text-2xl font-headline">
-            {loginStep === 'credentials' ? 'ورود به Trusva' : 'تایید دو مرحله‌ای'}
+            {loginStep === 'credentials' ? 'Login to Trusva' : 'Two-Factor Authentication'}
           </CardTitle>
           <CardDescription>
             {loginStep === 'credentials' 
-              ? 'برای دسترسی به داشبورد خود، اطلاعات خود را وارد کنید.'
-              : 'کد ۶ رقمی از اپلیکیشن احراز هویت خود را وارد کنید.'}
+              ? 'Enter your credentials to access your dashboard.'
+              : 'Enter the 6-digit code from your authenticator app.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -255,10 +255,10 @@ export default function LoginPage() {
                     control={loginForm.control}
                     name="email"
                     render={({ field }) => (
-                        <FormItem className="text-right">
-                        <FormLabel>ایمیل</FormLabel>
+                        <FormItem>
+                        <FormLabel>Email</FormLabel>
                         <FormControl>
-                            <Input type="email" placeholder="m@example.com" dir="ltr" {...field}/>
+                            <Input type="email" placeholder="m@example.com" {...field}/>
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -268,20 +268,20 @@ export default function LoginPage() {
                     control={loginForm.control}
                     name="password"
                     render={({ field }) => (
-                        <FormItem className="text-right">
+                        <FormItem>
                         <div className="flex items-center">
-                            <FormLabel>رمز عبور</FormLabel>
+                            <FormLabel>Password</FormLabel>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="link" type="button" className="mr-auto p-0 h-auto text-sm underline">رمز عبور خود را فراموش کرده‌اید؟</Button>
+                                    <Button variant="link" type="button" className="ml-auto p-0 h-auto text-sm underline">Forgot your password?</Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <Form {...resetForm}>
                                     <form onSubmit={resetForm.handleSubmit(handlePasswordReset)}>
                                     <AlertDialogHeader>
-                                    <AlertDialogTitle>بازیابی رمز عبور</AlertDialogTitle>
+                                    <AlertDialogTitle>Reset Password</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        ایمیل حساب کاربری خود را وارد کنید تا لینک بازیابی برای شما ارسال شود.
+                                        Enter your account's email address and we will send you a link to reset your password.
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <div className="py-4">
@@ -289,10 +289,10 @@ export default function LoginPage() {
                                             control={resetForm.control}
                                             name="resetEmail"
                                             render={({ field }) => (
-                                                <FormItem className="text-right">
-                                                <FormLabel>ایمیل</FormLabel>
+                                                <FormItem>
+                                                <FormLabel>Email</FormLabel>
                                                 <FormControl>
-                                                    <Input type="email" placeholder="m@example.com" dir="ltr" {...field}/>
+                                                    <Input type="email" placeholder="m@example.com" {...field}/>
                                                 </FormControl>
                                                 <FormMessage />
                                                 </FormItem>
@@ -300,10 +300,10 @@ export default function LoginPage() {
                                             />
                                     </div>
                                     <AlertDialogFooter>
-                                    <AlertDialogCancel type="button">انصراف</AlertDialogCancel>
+                                    <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
                                     <AlertDialogAction type="submit" disabled={resetForm.formState.isSubmitting}>
-                                        {resetForm.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                                        ارسال
+                                        {resetForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Send
                                     </AlertDialogAction>
                                     </AlertDialogFooter>
                                     </form>
@@ -313,7 +313,7 @@ export default function LoginPage() {
 
                         </div>
                         <FormControl>
-                            <Input type="password" dir="ltr" {...field} />
+                            <Input type="password" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -333,7 +333,7 @@ export default function LoginPage() {
                       )}
                     />
                     <Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting}>
-                    {loginForm.formState.isSubmitting ? "در حال ورود..." : "ورود"}
+                    {loginForm.formState.isSubmitting ? "Logging in..." : "Login"}
                     </Button>
                 </form>
                 </Form>
@@ -343,18 +343,18 @@ export default function LoginPage() {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                     <span className="bg-background px-2 text-muted-foreground">
-                    یا ادامه با
+                    Or continue with
                     </span>
                 </div>
                 </div>
                 <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loginForm.formState.isSubmitting}>
-                <Chrome className="ml-2 h-4 w-4" />
-                ورود با گوگل
+                <Chrome className="mr-2 h-4 w-4" />
+                Login with Google
                 </Button>
                 <div className="mt-4 text-center text-sm">
-                    حساب کاربری ندارید؟{" "}
+                    Don&apos;t have an account?{" "}
                     <Link href="/signup" className="underline">
-                    ثبت نام کنید
+                    Sign up
                     </Link>
                 </div>
             </div>
@@ -366,10 +366,10 @@ export default function LoginPage() {
                         name="code"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>کد تایید</FormLabel>
+                            <FormLabel>Verification Code</FormLabel>
                             <FormControl>
                                 <div className="relative">
-                                <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <ShieldCheck className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input dir="ltr" placeholder="123456" {...field} className="tracking-[0.5em] text-center" maxLength={6}/>
                                 </div>
                             </FormControl>
@@ -378,10 +378,10 @@ export default function LoginPage() {
                         )}
                     />
                     <Button type="submit" className="w-full" disabled={twoFactorForm.formState.isSubmitting}>
-                      {twoFactorForm.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                      تایید و ورود
+                      {twoFactorForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Verify & Login
                     </Button>
-                     <Button variant="link" onClick={() => setLoginStep('credentials')}>بازگشت</Button>
+                     <Button variant="link" onClick={() => setLoginStep('credentials')}>Back</Button>
                 </form>
              </Form>
           )}

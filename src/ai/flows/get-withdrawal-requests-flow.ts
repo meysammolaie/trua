@@ -89,9 +89,9 @@ const getWithdrawalRequestsFlow = ai.defineFlow(
         return {
             ...data,
             id: doc.id,
-            userFullName: user ? `${user.firstName} ${user.lastName}`.trim() : 'کاربر نامشخص',
-            userEmail: user ? user.email : 'ایمیل نامشخص',
-            createdAt: data.createdAt.toDate().toLocaleDateString('fa-IR'),
+            userFullName: user ? `${user.firstName} ${user.lastName}`.trim() : 'Unknown User',
+            userEmail: user ? user.email : 'Unknown Email',
+            createdAt: data.createdAt.toDate().toLocaleDateString('en-US'),
         };
     });
 
@@ -100,13 +100,9 @@ const getWithdrawalRequestsFlow = ai.defineFlow(
     const pendingCount = requests.filter(r => r.status === 'pending').length;
     
     // NEW: Accurate Platform Wallet Calculation
-    // Platform wallet = (All platform fees + all lottery fees) - (all completed profit payouts + all commissions)
+    // For this app's logic, the platform wallet is the revenue generated from its 1% fee.
     const allFees = feesSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as DailyFeeDocument));
-    const platformIncome = allFees.filter(f => f.type === 'platform_fee').reduce((sum, f) => sum + f.amount, 0);
-    
-    // For now, we assume the platform wallet is the income generated from its 1% fee.
-    // A more complex calculation would track all transactions in/out of a "platform" account.
-    const platformWallet = platformIncome;
+    const platformWallet = allFees.filter(f => f.type === 'platform_fee').reduce((sum, f) => sum + f.amount, 0);
 
 
     return { 

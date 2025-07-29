@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching all details for the investment funds.
@@ -62,28 +63,28 @@ const getFundDetailsFlow = ai.defineFlow(
     const funds: z.infer<typeof FundSchema>[] = [
         { 
             id: 'usdt', 
-            name: 'صندوق تتر', 
+            name: 'USDT Fund', 
             unit: 'USDT', 
             walletAddress: settings.usdtWalletAddress,
             price: { usd: 1.00 } // Always $1
         },
         { 
             id: 'bitcoin', 
-            name: 'صندوق بیت‌کوین', 
+            name: 'Bitcoin Fund', 
             unit: 'BTC', 
             walletAddress: settings.bitcoinWalletAddress,
             price: bitcoinPrice
         },
         { 
             id: 'gold', 
-            name: 'صندوق طلا', 
+            name: 'Gold Fund', 
             unit: 'PAXG', 
             walletAddress: settings.goldWalletAddress,
             price: goldPrice
         },
         { 
             id: 'silver', 
-            name: 'صندوق نقره', 
+            name: 'Silver Fund', 
             unit: 'KAG', 
             walletAddress: settings.silverWalletAddress,
             price: silverPrice

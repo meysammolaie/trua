@@ -1,21 +1,22 @@
+
 import { MousePointerClick, Ticket, TrendingUp, Wallet, DollarSign, PiggyBank, Briefcase } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 
 const steps = [
   {
-    title: "۱. انتخاب صندوق و سرمایه‌گذاری",
-    description: "از بین صندوق‌های متنوع ما انتخاب کرده و با حداقل ۱ دلار شروع کنید.",
+    title: "1. Choose Fund & Invest",
+    description: "Choose from our diverse funds and start with as little as $1.",
     icon: <MousePointerClick className="w-10 h-10 text-primary" />,
   },
   {
-    title: "۲. کسب سود روزانه",
-    description: "هوش مصنوعی ما به صورت روزانه سود را محاسبه و به کیف پول شما واریز می‌کند.",
+    title: "2. Earn Daily Profits",
+    description: "Our AI calculates and deposits profits into your wallet daily.",
     icon: <TrendingUp className="w-10 h-10 text-primary" />,
   },
   {
-    title: "۳. شانس در قرعه‌کشی ماهانه",
-    description: "به ازای هر ۱۰ دلار سرمایه‌گذاری، یک بلیت قرعه‌کشی دریافت کرده و برنده جوایز بزرگ شوید.",
+    title: "3. Win the Monthly Lottery",
+    description: "For every $10 invested, get a lottery ticket and win big prizes.",
     icon: <Ticket className="w-10 h-10 text-primary" />,
   },
 ];
@@ -26,10 +27,10 @@ export function HowItWorksSection() {
       <div className="container px-4 md:px-6">
         <div className="mb-12 text-center">
           <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl">
-            در ۳ مرحله ساده به درآمد دلاری برسید
+            Earn in Dollars in 3 Simple Steps
           </h2>
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed">
-            پلتفرم ما برای سادگی و شفافیت طراحی شده است. برای شروع این مراحل را دنبال کنید.
+            Our platform is designed for simplicity and transparency. Follow these steps to get started.
           </p>
         </div>
         <div className="grid gap-8 sm:grid-cols-1 lg:grid-cols-3">
@@ -47,12 +48,12 @@ export function HowItWorksSection() {
         {/* Transparency Section */}
         <div className="mt-24 md:mt-32">
              <div className="mb-12 text-center">
-                <Badge variant="secondary">شفافیت در اعداد</Badge>
+                <Badge variant="secondary">Transparency in Numbers</Badge>
                 <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl mt-4">
-                    سرمایه شما چگونه برای شما کار می‌کند؟
+                    How Your Capital Works For You
                 </h2>
                 <p className="mx-auto max-w-[800px] text-muted-foreground md:text-xl/relaxed">
-                    در Trusva، کارمزدها به جیب پلتفرم نمی‌رود، بلکه به عنوان سوخت موتور سودآوری، به استخر سود عمومی بازگشته و بین خود سرمایه‌گذاران توزیع می‌شود. هرچه تعداد سرمایه‌گذاران و تراکنش‌ها بیشتر شود، این استخر بزرگتر شده و سود روزانه همه افزایش می‌یابد.
+                    At Trusva, fees don't go into the platform's pocket. They fuel the profit engine, returning to the public profit pool to be distributed among investors. The more investors and transactions, the larger this pool grows, increasing daily profits for everyone.
                 </p>
             </div>
 
@@ -64,18 +65,18 @@ export function HowItWorksSection() {
                                 <DollarSign className="w-6 h-6 text-primary"/>
                             </div>
                             <div>
-                                <CardTitle>۱. سرمایه‌گذاری اولیه</CardTitle>
-                                <CardDescription>واریز ۱۰۰۰ دلار به یکی از صندوق‌ها</CardDescription>
+                                <CardTitle>1. Initial Investment</CardTitle>
+                                <CardDescription>Deposit $1,000 into one of the funds</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-2 text-sm">
-                        <div className="flex justify-between"><span>مبلغ واریزی:</span> <span className="font-mono font-bold">$۱۰۰۰.۰۰</span></div>
-                        <div className="flex justify-between text-red-400"><span>کارمزد ورود (۳٪):</span> <span className="font-mono">-$۳۰.۰۰</span></div>
-                        <div className="flex justify-between text-red-400"><span>کارمزد قرعه‌کشی (۲٪):</span> <span className="font-mono">-$۲۰.۰۰</span></div>
-                        <div className="flex justify-between text-red-400"><span>کارمزد پلتفرم (۱٪):</span> <span className="font-mono">-$۱۰.۰۰</span></div>
+                        <div className="flex justify-between"><span>Deposit Amount:</span> <span className="font-mono font-bold">$1,000.00</span></div>
+                        <div className="flex justify-between text-red-400"><span>Entry Fee (3%):</span> <span className="font-mono">-$30.00</span></div>
+                        <div className="flex justify-between text-red-400"><span>Lottery Fee (2%):</span> <span className="font-mono">-$20.00</span></div>
+                        <div className="flex justify-between text-red-400"><span>Platform Fee (1%):</span> <span className="font-mono">-$10.00</span></div>
                         <hr className="border-dashed my-2"/>
-                        <div className="flex justify-between font-bold text-lg"><span>سرمایه خالص فعال شما:</span> <span className="font-mono text-green-400">$۹۴۰.۰۰</span></div>
+                        <div className="flex justify-between font-bold text-lg"><span>Your Net Active Capital:</span> <span className="font-mono text-green-400">$940.00</span></div>
                     </CardContent>
                 </Card>
                 <Card className="flex flex-col">
@@ -85,17 +86,17 @@ export function HowItWorksSection() {
                                 <PiggyBank className="w-6 h-6 text-primary"/>
                             </div>
                             <div>
-                                <CardTitle>۲. پتانسیل رشد سود</CardTitle>
-                                <CardDescription>افزایش موجودی با رشد پلتفرم</CardDescription>
+                                <CardTitle>2. Profit Growth Potential</CardTitle>
+                                <CardDescription>Balance increase with platform growth</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-2 text-sm">
-                        <p className="text-muted-foreground">فرض کنید سود توزیعی روزانه پلتفرم ۱.۵٪ باشد (این عدد صرفا مثال است و به فعالیت کل کاربران بستگی دارد):</p>
-                        <div className="flex justify-between"><span>سود روزانه شما (با سرمایه فعلی):</span> <span className="font-mono font-bold text-green-400">~ $۱۴.۱۰</span></div>
-                        <div className="flex justify-between"><span>سود روزانه شما (با ۵,۰۰۰ کاربر فعال):</span> <span className="font-mono font-bold text-green-400">~ $۷۰.۵۰</span></div>
-                        <div className="flex justify-between"><span>سود روزانه شما (با ۲۰,۰۰۰ کاربر فعال):</span> <span className="font-mono font-bold text-green-400">~ $۲۸۲.۰۰</span></div>
-                        <p className="text-muted-foreground pt-2">سود به صورت روزانه به کیف پول شما اضافه شده و هر لحظه قابل برداشت است.</p>
+                        <p className="text-muted-foreground">Assuming the daily distributed profit of the platform is 1.5% (this number is an example and depends on total user activity):</p>
+                        <div className="flex justify-between"><span>Your Daily Profit (current):</span> <span className="font-mono font-bold text-green-400">~ $14.10</span></div>
+                        <div className="flex justify-between"><span>Your Daily Profit (with 5,000 users):</span> <span className="font-mono font-bold text-green-400">~ $70.50</span></div>
+                        <div className="flex justify-between"><span>Your Daily Profit (with 20,000 users):</span> <span className="font-mono font-bold text-green-400">~ $282.00</span></div>
+                        <p className="text-muted-foreground pt-2">Profits are added to your wallet daily and are withdrawable at any time.</p>
                     </CardContent>
                 </Card>
             </div>
@@ -105,10 +106,10 @@ export function HowItWorksSection() {
         <div className="mt-24 md:mt-32">
              <div className="mb-12 text-center">
                 <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-5xl mt-4">
-                   نقدشوندگی: قدرت در دستان شماست
+                   Liquidity: Power in Your Hands
                 </h2>
                 <p className="mx-auto max-w-[800px] text-muted-foreground md:text-xl/relaxed">
-                    در Trusva، شما کنترل کامل بر روی سرمایه خود دارید. هر زمان که تصمیم بگیرید، می‌توانید اصل سرمایه فعال خود را نقد کرده و به کیف پول خود بازگردانید.
+                    At Trusva, you have complete control over your capital. Whenever you decide, you can liquidate your active principal and return it to your wallet.
                 </p>
             </div>
 
@@ -120,18 +121,18 @@ export function HowItWorksSection() {
                                 <Wallet className="w-6 h-6 text-primary"/>
                             </div>
                             <div>
-                                <CardTitle>بازپرداخت سرمایه</CardTitle>
-                                <CardDescription>مثال خروج از سرمایه‌گذاری</CardDescription>
+                                <CardTitle>Capital Return</CardTitle>
+                                <CardDescription>Example of exiting an investment</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-2 text-sm">
-                        <p className="text-muted-foreground">فرض کنید تصمیم به نقد کردن سرمایه ۹۴۰ دلاری خود می‌گیرید:</p>
-                        <div className="flex justify-between"><span>سرمایه فعال شما:</span> <span className="font-mono font-bold">$۹۴۰.۰۰</span></div>
-                        <div className="flex justify-between text-red-400"><span>کارمزد خروج (۲٪):</span> <span className="font-mono">-$۱۸.۸۰</span></div>
+                        <p className="text-muted-foreground">Suppose you decide to liquidate your $940 investment:</p>
+                        <div className="flex justify-between"><span>Your active capital:</span> <span className="font-mono font-bold">$940.00</span></div>
+                        <div className="flex justify-between text-red-400"><span>Exit Fee (2%):</span> <span className="font-mono">-$18.80</span></div>
                         <hr className="border-dashed my-2"/>
-                        <div className="flex justify-between font-bold text-lg"><span>مبلغ نهایی بازگشتی به کیف پول:</span> <span className="font-mono text-green-400">$۹۲۱.۲۰</span></div>
-                        <p className="text-muted-foreground pt-2">این مبلغ بلافاصله به کیف پول شما اضافه شده و قابل برداشت است. کارمزد خروج نیز به استخر سود سایر کاربران اضافه می‌شود.</p>
+                        <div className="flex justify-between font-bold text-lg"><span>Final amount returned to wallet:</span> <span className="font-mono text-green-400">$921.20</span></div>
+                        <p className="text-muted-foreground pt-2">This amount is immediately added to your wallet and is available for withdrawal. The exit fee is also added to the profit pool for other users.</p>
                     </CardContent>
                 </Card>
             </div>
