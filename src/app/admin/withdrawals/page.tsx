@@ -138,7 +138,7 @@ export default function AdminWithdrawalsPage() {
                     </CardHeader>
                     <CardContent>
                         {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.platformWallet ?? 0)}</div>}
-                        <p className="text-xs text-muted-foreground">موجودی دارایی‌های فعال</p>
+                        <p className="text-xs text-muted-foreground">موجودی درآمد خالص پلتفرم</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -153,7 +153,7 @@ export default function AdminWithdrawalsPage() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">موجودی پس از برداشت‌ها</CardTitle>
+                        <CardTitle className="text-sm font-medium">موجودی پس از پرداخت‌ها</CardTitle>
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
