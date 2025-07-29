@@ -11,6 +11,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Form,
@@ -31,11 +32,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network, Target, Bot } from "lucide-react";
+import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network, Target, Bot, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getPlatformSettingsAction, updatePlatformSettingsAction } from "@/app/actions/platform-settings";
+import { getPlatformSettingsAction, updatePlatformSettingsAction, clearTestDataAction } from "@/app/actions/platform-settings";
 import { PlatformSettingsSchema } from "@/ai/schemas";
 import type { PlatformSettings } from "@/ai/flows/platform-settings-flow";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
 const settingsSchema = PlatformSettingsSchema;
@@ -53,6 +65,7 @@ const dayNames = {
 export default function AdminSettingsPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [isClearing, setIsClearing] = useState(false);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -69,7 +82,7 @@ export default function AdminSettingsPage() {
       bitcoinWalletAddress: "",
       minWithdrawalAmount: 10,
       withdrawalDay: "saturday",
-      bonusUnlockTarget: 1000000,
+      bonusUnlockTarget: 50000000,
       automaticProfitDistribution: true,
       lastDistributionAt: null,
     },
@@ -115,6 +128,27 @@ export default function AdminSettingsPage() {
             description: error instanceof Error ? error.message : "There was a problem saving the new settings.",
         });
     }
+  }
+
+  const handleClearData = async () => {
+      setIsClearing(true);
+      toast({title: "Operation in Progress", description: "Clearing all test data from the database. This may take a moment..."})
+      try {
+        const result = await clearTestDataAction();
+        if (result.success) {
+            toast({title: "Success", description: result.message});
+        } else {
+            throw new Error(result.message);
+        }
+      } catch (error) {
+          toast({
+            variant: "destructive",
+            title: "Error Clearing Data",
+            description: error instanceof Error ? error.message : "An unknown error occurred."
+          })
+      } finally {
+          setIsClearing(false);
+      }
   }
 
   if (loading) {
@@ -388,6 +422,40 @@ export default function AdminSettingsPage() {
             </div>
         </form>
       </Form>
+
+       <Card className="border-destructive">
+            <CardHeader>
+                <CardTitle>Data Management</CardTitle>
+                <CardDescription>
+                    These are dangerous actions and should be used with caution before a production launch.
+                </CardDescription>
+            </CardHeader>
+            <CardFooter>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                         <Button variant="destructive" disabled={isClearing}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Clear All Test Data
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action is irreversible. It will permanently delete all users (except the admin account) and all their associated data, including investments, transactions, tickets, etc.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearData} disabled={isClearing}>
+                            {isClearing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                            Yes, delete all data
+                        </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardFooter>
+        </Card>
     </>
   );
 }
