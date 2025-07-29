@@ -38,17 +38,17 @@ import { InvestmentWithUser } from "@/ai/flows/get-all-investments-flow";
 import { getAllInvestmentsAction } from "@/app/actions/investment";
 
 const fundNames: Record<string, string> = {
-    gold: "طلا",
-    silver: "نقره",
-    usdt: "تتر",
-    bitcoin: "بیت‌کوین"
+    gold: "Gold",
+    silver: "Silver",
+    usdt: "USDT",
+    bitcoin: "Bitcoin"
 };
 
 const statusNames: Record<string, string> = {
-    pending: "در انتظار",
-    active: "فعال",
-    completed: "تکمیل شده",
-    rejected: "رد شده",
+    pending: "Pending",
+    active: "Active",
+    completed: "Completed",
+    rejected: "Rejected",
 };
 
 const formatCurrency = (amount: number) => {
@@ -92,8 +92,8 @@ function AdminInvestmentsPageContent() {
                 console.error("Error fetching investments:", error);
                 toast({
                     variant: "destructive",
-                    title: "خطا در واکشی اطلاعات",
-                    description: "مشکلی در دریافت لیست سرمایه‌گذاری‌ها رخ داد.",
+                    title: "Error Fetching Data",
+                    description: "There was a problem retrieving the investment list.",
                 });
             })
             .finally(() => setLoading(false));
@@ -161,44 +161,44 @@ function AdminInvestmentsPageContent() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">مدیریت سرمایه‌گذاری‌ها</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Investment Management</h1>
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">کل مبلغ سرمایه‌گذاری فعال</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Active Investment</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                 <div className="text-2xl font-bold font-mono">{formatCurrency(stats.totalAmount)}</div>
             )}
-            <p className="text-xs text-muted-foreground">مجموع تمام سرمایه‌گذاری‌های تایید شده</p>
+            <p className="text-xs text-muted-foreground">Sum of all approved investments</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">درخواست‌های در انتظار</CardTitle>
+            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
              {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                 <div className="text-2xl font-bold">{stats.pendingCount.toLocaleString()}</div>
              )}
-            <p className="text-xs text-muted-foreground">نیاز به تایید یا رد توسط مدیر</p>
+            <p className="text-xs text-muted-foreground">Needs admin approval or rejection</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">میانگین سرمایه‌گذاری</CardTitle>
+            <CardTitle className="text-sm font-medium">Average Investment</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
              {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                 <div className="text-2xl font-bold font-mono">{formatCurrency(stats.averageAmount)}</div>
              )}
-            <p className="text-xs text-muted-foreground">میانگین مبلغ سرمایه‌گذاری‌های فعال</p>
+            <p className="text-xs text-muted-foreground">Average amount of active investments</p>
           </CardContent>
         </Card>
       </div>
@@ -206,10 +206,10 @@ function AdminInvestmentsPageContent() {
        <Card>
             <CardHeader>
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex-1 text-right">
-                        <CardTitle>لیست سرمایه‌گذاری‌ها</CardTitle>
+                    <div className="flex-1">
+                        <CardTitle>Investments List</CardTitle>
                         <CardDescription>
-                            تمام سرمایه‌گذاری‌های ثبت‌شده در پلتفرم را مشاهده و مدیریت کنید.
+                            View and manage all investments on the platform.
                         </CardDescription>
                     </div>
                      <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
@@ -217,38 +217,38 @@ function AdminInvestmentsPageContent() {
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
-                                placeholder="جستجو کاربر، ایمیل، شناسه..."
+                                placeholder="Search user, email, ID..."
                                 className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <Button variant="outline">
-                           <FileDown className="h-4 w-4 ml-2" />
-                            دریافت خروجی
+                           <FileDown className="h-4 w-4 mr-2" />
+                            Export
                         </Button>
                     </div>
                 </div>
                  <div className="flex flex-col md:flex-row items-center gap-2 mt-4">
                     <Select value={fundFilter} onValueChange={setFundFilter}>
                         <SelectTrigger className="w-full md:w-[180px]">
-                            <SelectValue placeholder="فیلتر بر اساس صندوق" />
+                            <SelectValue placeholder="Filter by fund" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">همه صندوق‌ها</SelectItem>
+                            <SelectItem value="all">All Funds</SelectItem>
                             {Object.entries(fundNames).map(([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-full md:w-[180px]">
-                            <SelectValue placeholder="فیلتر بر اساس وضعیت" />
+                            <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                            <SelectItem value="pending">در انتظار</SelectItem>
-                            <SelectItem value="active">فعال</SelectItem>
-                            <SelectItem value="completed">تکمیل شده</SelectItem>
-                            <SelectItem value="rejected">رد شده</SelectItem>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
                         </SelectContent>
                     </Select>
                     <DateRangePicker className="w-full md:w-auto" />
@@ -258,13 +258,13 @@ function AdminInvestmentsPageContent() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>کاربر</TableHead>
-                            <TableHead className="hidden md:table-cell">صندوق</TableHead>
-                             <TableHead className="text-right">مبلغ</TableHead>
-                            <TableHead className="hidden md:table-cell text-center">تاریخ</TableHead>
-                            <TableHead>وضعیت</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead className="hidden md:table-cell">Fund</TableHead>
+                             <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="hidden md:table-cell text-center">Date</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead>
-                                <span className="sr-only">عملیات</span>
+                                <span className="sr-only">Actions</span>
                             </TableHead>
                         </TableRow>
                     </TableHeader>
@@ -274,14 +274,14 @@ function AdminInvestmentsPageContent() {
                                 <TableCell colSpan={6} className="text-center py-10">
                                     <div className="flex justify-center items-center gap-2">
                                         <Loader2 className="h-5 w-5 animate-spin"/>
-                                        <span>در حال بارگذاری سرمایه‌گذاری‌ها...</span>
+                                        <span>Loading investments...</span>
                                     </div>
                                 </TableCell>
                             </TableRow>
                         ) : filteredInvestments.length === 0 ? (
                              <TableRow>
                                 <TableCell colSpan={6} className="text-center py-10">
-                                    هیچ سرمایه‌گذاری‌ای با این فیلترها یافت نشد.
+                                    No investments found with these filters.
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -309,7 +309,7 @@ function AdminInvestmentsPageContent() {
                                     <TableCell>
                                         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSelectedInvestmentId(inv.id); }}>
                                             <Eye className="h-4 w-4" />
-                                            <span className="sr-only">مشاهده جزئیات</span>
+                                            <span className="sr-only">View Details</span>
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -320,7 +320,7 @@ function AdminInvestmentsPageContent() {
             </CardContent>
              <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                    نمایش <strong>{filteredInvestments.length}</strong> از <strong>{allInvestments.length}</strong> سرمایه‌گذاری
+                    Showing <strong>{filteredInvestments.length}</strong> of <strong>{allInvestments.length}</strong> investments
                 </div>
             </CardFooter>
        </Card>

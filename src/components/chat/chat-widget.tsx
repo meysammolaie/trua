@@ -82,7 +82,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
       console.error("Chat error:", error);
       const errorMessage: Message = {
         sender: "bot",
-        text: "متاسفانه مشکلی در ارتباط با هوش مصنوعی پیش آمده. لطفاً دوباره تلاش کنید.",
+        text: "I'm sorry, there was a problem connecting to the AI. Please try again.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -108,7 +108,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         setMessages([
           {
             sender: "bot",
-            text: "سلام! من هوش مصنوعی Trusva هستم. من می‌توانم به سوالات شما در مورد نحوه محاسبه سود، کارمزدها، صندوق‌ها و امنیت پلتفرم پاسخ دهم. چگونه می‌توانم شما را راهنمایی کنم؟",
+            text: "Hello! I am the Trusva AI. I can answer your questions about how profits are calculated, fees, funds, and platform security. How can I help you?",
           },
         ]);
       }, 500);
@@ -126,7 +126,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = false; 
-        recognition.lang = 'fa-IR';
+        recognition.lang = 'en-US';
         recognitionRef.current = recognition;
 
         recognition.onstart = () => setIsListening(true);
@@ -193,8 +193,8 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
     } else {
         toast({
             variant: "destructive",
-            title: "مرورگر شما پشتیبانی نمی‌کند",
-            description: "قابلیت گفتگوی صوتی در مرورگر شما فعال نیست."
+            title: "Browser Not Supported",
+            description: "Voice chat is not enabled in your browser."
         })
     }
   }
@@ -218,10 +218,10 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             <AvatarFallback>AI</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle>هوش مصنوعی Trusva</CardTitle>
+            <CardTitle>Trusva AI</CardTitle>
              <div className="flex items-center gap-1">
               <div className={cn("h-2 w-2 rounded-full transition-colors bg-green-500")}/>
-              <CardDescription>آنلاین</CardDescription>
+              <CardDescription>Online</CardDescription>
             </div>
           </div>
         </div>
@@ -290,7 +290,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                     <Input
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="پیام خود را تایپ کنید..."
+                        placeholder="Type your message..."
                         disabled={isLoading}
                     />
                      <Button type="submit" disabled={isLoading || input.trim() === ""}>
@@ -327,10 +327,10 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                     <Bot className="w-12 h-12"/>
                 </motion.div>
                  <p className="text-muted-foreground text-center min-h-[20px] font-semibold">
-                    {isLoading ? "در حال پردازش..." : isSpeaking ? "..." : (isListening ? "در حال شنیدن..." : "در حال اتصال...")}
+                    {isLoading ? "Processing..." : isSpeaking ? "..." : (isListening ? "Listening..." : "Connecting...")}
                 </p>
                 <div className="text-xs text-muted-foreground text-center mt-4 h-4">
-                   آخرین پیام: {messages.filter(m=>m.sender==='user').slice(-1)[0]?.text || "..."}
+                   Last message: {messages.filter(m=>m.sender==='user').slice(-1)[0]?.text || "..."}
                 </div>
             </motion.div>
           )}

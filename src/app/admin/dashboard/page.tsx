@@ -40,7 +40,7 @@ const cardVariants = {
 
 const userGrowthChartConfig = {
   users: {
-    label: "کاربر جدید",
+    label: "New Users",
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
@@ -76,13 +76,13 @@ export default function AdminDashboardPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">داشبورد مدیریت</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Admin Dashboard</h1>
       </div>
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">کل سرمایه در گردش</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Value Locked (TVL)</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -90,7 +90,7 @@ export default function AdminDashboardPage() {
                     <>
                         <div className="text-2xl font-bold font-mono">{formatCurrency(data?.stats.totalTVL ?? 0)}</div>
                         <p className="text-xs text-muted-foreground">
-                        مجموع سرمایه‌گذاری‌های فعال
+                        Sum of all active investments
                         </p>
                     </>
                 )}
@@ -100,7 +100,7 @@ export default function AdminDashboardPage() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">مجموع کاربران</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
                     <>
                         <div className="text-2xl font-bold">{data?.stats.totalUsers.toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">
-                        کاربر ثبت‌شده در کل
+                        Total registered users
                         </p>
                     </>
                 )}
@@ -118,7 +118,7 @@ export default function AdminDashboardPage() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">سرمایه‌گذاری‌های فعال</CardTitle>
+                <CardTitle className="text-sm font-medium">Active Investments</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -126,7 +126,7 @@ export default function AdminDashboardPage() {
                     <>
                         <div className="text-2xl font-bold">{data?.stats.activeInvestments.toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">
-                        تعداد سرمایه‌گذاری‌های در انتظار و فعال
+                        Count of pending and active investments
                         </p>
                     </>
                 )}
@@ -136,7 +136,7 @@ export default function AdminDashboardPage() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">درآمد ماهانه (کارمزد)</CardTitle>
+                <CardTitle className="text-sm font-medium">Monthly Revenue (Fees)</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -144,7 +144,7 @@ export default function AdminDashboardPage() {
                     <>
                         <div className="text-2xl font-bold font-mono">{formatCurrency(data?.stats.monthlyRevenue ?? 0)}</div>
                         <p className="text-xs text-muted-foreground">
-                        درآمد از کارمزدها در ۳۰ روز گذشته
+                        Revenue from fees in the last 30 days
                         </p>
                     </>
                 )}
@@ -157,9 +157,9 @@ export default function AdminDashboardPage() {
             <motion.div className="xl:col-span-2" variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.5 }}>
                 <Card>
                     <CardHeader>
-                        <CardTitle>روند رشد کاربران</CardTitle>
+                        <CardTitle>User Growth Trend</CardTitle>
                         <CardDescription>
-                            تعداد کاربران جدید ثبت‌نام شده در ۶ ماه گذشته.
+                            Number of new users registered in the last 6 months.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -189,9 +189,9 @@ export default function AdminDashboardPage() {
             <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.6 }}>
                 <Card>
                     <CardHeader>
-                        <CardTitle>تفکیک سرمایه‌گذاری</CardTitle>
+                        <CardTitle>Investment Breakdown</CardTitle>
                         <CardDescription>
-                            توزیع سرمایه فعال در صندوق‌های مختلف.
+                            Distribution of active capital across different funds.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -216,14 +216,14 @@ export default function AdminDashboardPage() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.7 }}>
             <Card>
                 <CardHeader>
-                    <CardTitle>فعالیت‌های اخیر</CardTitle>
+                    <CardTitle>Recent Activities</CardTitle>
                     <CardDescription>
-                    نمایش آخرین رویدادهای مهم در پلتفرم.
+                    Displaying the latest important events on the platform.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      {loading ? <div className="h-[150px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : 
-                     data?.recentActivities.length === 0 ? <p className="text-muted-foreground text-center">فعالیتی برای نمایش وجود ندارد.</p> :
+                     data?.recentActivities.length === 0 ? <p className="text-muted-foreground text-center">No activities to display.</p> :
                      (
                         data?.recentActivities.map((activity, index) => (
                             <div key={index} className="flex items-start gap-4">
@@ -235,8 +235,8 @@ export default function AdminDashboardPage() {
                                     <time className="text-xs text-muted-foreground">{activity.time}</time>
                                 </div>
                                 <Badge variant={activity.status === 'success' ? 'secondary' : 'outline'}>
-                                    {activity.type === 'new_user' && 'کاربر جدید'}
-                                    {activity.type === 'investment' && 'سرمایه‌گذاری'}
+                                    {activity.type === 'new_user' && 'New User'}
+                                    {activity.type === 'investment' && 'Investment'}
                                 </Badge>
                             </div>
                         ))

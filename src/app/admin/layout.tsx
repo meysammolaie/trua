@@ -44,18 +44,18 @@ import { MobileDashboardNav } from "@/components/layout/mobile-dashboard-nav";
 
 
 const navItems = [
-  { href: "/admin/dashboard", icon: Home, label: "داشبورد" },
-  { href: "/admin/users", icon: Users, label: "کاربران" },
-  { href: "/admin/investments", icon: Package, label: "سرمایه‌ها" },
-  { href: "/admin/withdrawals", icon: ArrowDownUp, label: "برداشت‌ها" },
-  { href: "/admin/transactions", icon: Wallet, label: "تراکنش‌ها" },
-  { href: "/admin/support", icon: MessageSquare, label: "پشتیبانی" },
-  { href: "/admin/notifications", icon: Bell, label: "اعلان‌ها" },
-  { href: "/admin/tasks", icon: ClipboardCheck, label: "مدیریت وظایف", sidebarOnly: true },
-  { href: "/admin/commissions", icon: Gift, label: "کمیسیون‌ها", sidebarOnly: true },
-  { href: "/admin/reports", icon: LineChart, label: "گزارشات", sidebarOnly: true },
-  { href: "/admin/lottery", icon: Ticket, label: "قرعه‌کشی", sidebarOnly: true },
-  { href: "/admin/settings", icon: Settings, label: "تنظیمات", sidebarOnly: true },
+  { href: "/admin/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/admin/users", icon: Users, label: "Users" },
+  { href: "/admin/investments", icon: Package, label: "Investments" },
+  { href: "/admin/withdrawals", icon: ArrowDownUp, label: "Withdrawals" },
+  { href: "/admin/transactions", icon: Wallet, label: "Transactions" },
+  { href: "/admin/support", icon: MessageSquare, label: "Support" },
+  { href: "/admin/notifications", icon: Bell, label: "Notifications" },
+  { href: "/admin/tasks", icon: ClipboardCheck, label: "Task Management", sidebarOnly: true },
+  { href: "/admin/commissions", icon: Gift, label: "Commissions", sidebarOnly: true },
+  { href: "/admin/reports", icon: LineChart, label: "Reports", sidebarOnly: true },
+  { href: "/admin/lottery", icon: Ticket, label: "Lottery", sidebarOnly: true },
+  { href: "/admin/settings", icon: Settings, label: "Settings", sidebarOnly: true },
 ];
 
 
@@ -73,15 +73,15 @@ export default function AdminLayout({
     try {
       await signOut(auth);
       toast({
-        title: "خروج موفق",
-        description: "شما با موفقیت از حساب خود خارج شدید.",
+        title: "Logout Successful",
+        description: "You have been successfully logged out.",
       });
       router.push("/");
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "خطا در خروج",
-        description: "مشکلی در هنگام خروج از حساب کاربری رخ داد.",
+        title: "Logout Error",
+        description: "There was a problem logging out.",
       });
     }
   };
@@ -90,7 +90,7 @@ export default function AdminLayout({
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-transparent">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">در حال بارگذاری...</p>
+        <p className="mt-4 text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -118,7 +118,7 @@ export default function AdminLayout({
 
   const getPageTitle = () => {
     const activeItem = navItems.find(item => (item.href === "/admin" && pathname === item.href) || (item.href !== "/admin" && pathname.startsWith(item.href)));
-    return activeItem?.label || "پنل مدیریت";
+    return activeItem?.label || "Admin Panel";
   };
 
 
@@ -129,7 +129,7 @@ export default function AdminLayout({
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/admin/dashboard" className="flex items-center gap-2 font-semibold">
               <Shield className="h-6 w-6 text-primary" />
-              <span className="">پنل مدیریت</span>
+              <span className="">Admin Panel</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -152,14 +152,14 @@ export default function AdminLayout({
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="flex flex-col bg-card/80 backdrop-blur-lg">
+            <SheetContent side="left" className="flex flex-col bg-card/80 backdrop-blur-lg">
               <nav className="grid gap-2 text-lg font-medium">
                 <Link
                   href="/admin/dashboard"
                   className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
                   <Shield className="h-6 w-6 text-primary" />
-                  <span >پنل مدیریت</span>
+                  <span >Admin Panel</span>
                 </Link>
                 {navItems.map(item => <NavLink key={item.href} item={item} isSheet />)}
               </nav>
@@ -177,11 +177,11 @@ export default function AdminLayout({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-card/80 backdrop-blur-lg">
-              <DropdownMenuLabel>حساب مدیر</DropdownMenuLabel>
+              <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>پروفایل</DropdownMenuItem>
+              <DropdownMenuItem>Profile</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>خروج</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

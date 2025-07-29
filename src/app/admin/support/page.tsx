@@ -52,7 +52,7 @@ export default function AdminSupportPage() {
             setData(result);
             setFilteredTickets(result.tickets);
         } catch (error) {
-            toast({ variant: "destructive", title: "خطا", description: "مشکلی در واکشی تیکت‌ها رخ داد." });
+            toast({ variant: "destructive", title: "Error", description: "There was a problem fetching tickets." });
         } finally {
             setLoading(false);
         }
@@ -79,7 +79,7 @@ export default function AdminSupportPage() {
              <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">کل تیکت‌ها</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Tickets</CardTitle>
                         <Inbox className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -88,7 +88,7 @@ export default function AdminSupportPage() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">تیکت‌های باز</CardTitle>
+                        <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
                         <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -97,7 +97,7 @@ export default function AdminSupportPage() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">در حال بررسی</CardTitle>
+                        <CardTitle className="text-sm font-medium">In Progress</CardTitle>
                         <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -106,7 +106,7 @@ export default function AdminSupportPage() {
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">بسته شده</CardTitle>
+                        <CardTitle className="text-sm font-medium">Closed</CardTitle>
                         <CheckCircle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -118,16 +118,16 @@ export default function AdminSupportPage() {
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>
-                            <CardTitle>مرکز پشتیبانی</CardTitle>
+                            <CardTitle>Support Center</CardTitle>
                             <CardDescription>
-                                تیکت‌های پشتیبانی کاربران را مدیریت و پاسخ‌دهی کنید.
+                                Manage and respond to user support tickets.
                             </CardDescription>
                         </div>
                         <div className="relative">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
-                                placeholder="جستجو در تیکت‌ها..."
+                                placeholder="Search tickets..."
                                 className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -139,11 +139,11 @@ export default function AdminSupportPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>موضوع</TableHead>
-                                <TableHead>کاربر</TableHead>
-                                <TableHead>وضعیت</TableHead>
-                                <TableHead>اولویت</TableHead>
-                                <TableHead>آخرین بروزرسانی</TableHead>
+                                <TableHead>Subject</TableHead>
+                                <TableHead>User</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Priority</TableHead>
+                                <TableHead>Last Updated</TableHead>
                                 <TableHead><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -151,7 +151,7 @@ export default function AdminSupportPage() {
                             {loading ? (
                                 <TableRow><TableCell colSpan={6} className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
                             ) : filteredTickets.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} className="text-center py-10">هیچ تیکتی یافت نشد.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={6} className="text-center py-10">No tickets found.</TableCell></TableRow>
                             ) : (
                                 filteredTickets.map((ticket) => (
                                     <TableRow key={ticket.id}>
@@ -167,8 +167,8 @@ export default function AdminSupportPage() {
                                         <TableCell>
                                             <Button asChild variant="outline" size="sm">
                                                 <Link href={`/admin/support/${ticket.id}`}>
-                                                    مشاهده و پاسخ
-                                                    <ArrowRight className="mr-2 h-4 w-4" />
+                                                    View & Reply
+                                                    <ArrowRight className="ml-2 h-4 w-4" />
                                                 </Link>
                                             </Button>
                                         </TableCell>

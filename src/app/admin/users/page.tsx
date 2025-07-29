@@ -57,8 +57,8 @@ export default function AdminUsersPage() {
                 console.error("Failed to fetch users:", error);
                 toast({
                     variant: "destructive",
-                    title: "خطا در واکشی کاربران",
-                    description: "مشکلی در ارتباط با سرور رخ داد."
+                    title: "Error fetching users",
+                    description: "A server error occurred."
                 })
             })
             .finally(() => {
@@ -84,12 +84,12 @@ export default function AdminUsersPage() {
 
     const handleToggleStatus = async (user: User) => {
         const newStatus = user.status === 'active' ? 'blocked' : 'active';
-        const actionText = newStatus === 'active' ? 'فعال' : 'مسدود';
+        const actionText = newStatus === 'active' ? 'unblock' : 'block';
         try {
             const result = await updateUserStatusAction({ userId: user.uid, newStatus: newStatus });
             if (result.success) {
                 toast({
-                    title: `کاربر ${actionText} شد`,
+                    title: `User ${actionText}ed`,
                     description: result.message,
                 });
                 fetchUsers(); // Refresh the user list
@@ -99,8 +99,8 @@ export default function AdminUsersPage() {
         } catch (error) {
              toast({
                 variant: "destructive",
-                title: `خطا در ${actionText} کردن کاربر`,
-                description: error instanceof Error ? error.message : "یک خطای ناشناخته رخ داد.",
+                title: `Error ${actionText}ing user`,
+                description: error instanceof Error ? error.message : "An unknown error occurred.",
             });
         }
     };
@@ -108,15 +108,15 @@ export default function AdminUsersPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">مدیریت کاربران</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">User Management</h1>
       </div>
        <Card>
             <CardHeader>
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex-1 text-right">
-                        <CardTitle>کاربران</CardTitle>
+                    <div className="flex-1">
+                        <CardTitle>Users</CardTitle>
                         <CardDescription>
-                            لیست کاربران پلتفرم را مشاهده و مدیریت کنید.
+                            View and manage the list of platform users.
                         </CardDescription>
                     </div>
                      <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
@@ -124,15 +124,15 @@ export default function AdminUsersPage() {
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
-                                placeholder="جستجوی کاربر..."
+                                placeholder="Search users..."
                                 className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <Button variant="outline">
-                           <FileDown className="h-4 w-4 ml-2" />
-                            دریافت خروجی
+                           <FileDown className="h-4 w-4 mr-2" />
+                            Export
                         </Button>
                     </div>
                 </div>
@@ -141,12 +141,12 @@ export default function AdminUsersPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>کاربر</TableHead>
-                            <TableHead className="hidden md:table-cell">تاریخ ثبت‌نام</TableHead>
-                            <TableHead className="hidden md:table-cell">مجموع سرمایه</TableHead>
-                            <TableHead>وضعیت</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead className="hidden md:table-cell">Registration Date</TableHead>
+                            <TableHead className="hidden md:table-cell">Total Investment</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead>
-                                <span className="sr-only">عملیات</span>
+                                <span className="sr-only">Actions</span>
                             </TableHead>
                         </TableRow>
                     </TableHeader>
@@ -156,14 +156,14 @@ export default function AdminUsersPage() {
                                 <TableCell colSpan={5} className="text-center py-10">
                                     <div className="flex justify-center items-center gap-2">
                                         <Loader2 className="h-5 w-5 animate-spin"/>
-                                        <span>در حال بارگذاری کاربران...</span>
+                                        <span>Loading users...</span>
                                     </div>
                                 </TableCell>
                             </TableRow>
                         ) : filteredUsers.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center py-10">
-                                    هیچ کاربری با این مشخصات یافت نشد.
+                                    No users found with these criteria.
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -187,7 +187,7 @@ export default function AdminUsersPage() {
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={user.status === 'active' ? 'secondary' : 'destructive'}>
-                                            {user.status === 'active' ? 'فعال' : 'مسدود شده'}
+                                            {user.status === 'active' ? 'Active' : 'Blocked'}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
@@ -199,21 +199,21 @@ export default function AdminUsersPage() {
                                             </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>عملیات</DropdownMenuLabel>
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                 <DropdownMenuItem asChild>
-                                                    <Link href={`/admin/users/${user.uid}`}>مشاهده جزئیات</Link>
+                                                    <Link href={`/admin/users/${user.uid}`}>View Details</Link>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem disabled>ویرایش کاربر</DropdownMenuItem>
+                                                <DropdownMenuItem disabled>Edit User</DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 {user.status === 'active' ? (
                                                      <DropdownMenuItem className="text-red-500" onClick={() => handleToggleStatus(user)}>
-                                                        <UserX className="ml-2 h-4 w-4" />
-                                                        مسدود کردن
+                                                        <UserX className="mr-2 h-4 w-4" />
+                                                        Block
                                                     </DropdownMenuItem>
                                                 ) : (
                                                      <DropdownMenuItem className="text-green-500" onClick={() => handleToggleStatus(user)}>
-                                                        <UserCheck className="ml-2 h-4 w-4" />
-                                                        فعال کردن
+                                                        <UserCheck className="mr-2 h-4 w-4" />
+                                                        Unblock
                                                     </DropdownMenuItem>
                                                 )}
                                                
@@ -228,7 +228,7 @@ export default function AdminUsersPage() {
             </CardContent>
              <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                    نمایش <strong>{filteredUsers.length}</strong> از <strong>{allUsers.length}</strong> کاربر
+                    Showing <strong>{filteredUsers.length}</strong> of <strong>{allUsers.length}</strong> users
                 </div>
                  {/* Pagination can be added here */}
             </CardFooter>

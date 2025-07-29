@@ -42,8 +42,8 @@ export default function AdminLotteryPage() {
         } catch (error) {
              toast({
                 variant: "destructive",
-                title: "خطا در واکشی اطلاعات",
-                description: error instanceof Error ? error.message : "مشکلی در دریافت اطلاعات قرعه‌کشی رخ داد.",
+                title: "Error Fetching Data",
+                description: error instanceof Error ? error.message : "There was a problem retrieving lottery information.",
             });
         } finally {
             setIsLoadingData(false);
@@ -57,15 +57,15 @@ export default function AdminLotteryPage() {
     const handleManualDraw = async () => {
         setIsDrawing(true);
         toast({
-            title: "عملیات در حال انجام",
-            description: "فرآیند اجرای دستی قرعه‌کشی آغاز شد...",
+            title: "Operation in Progress",
+            description: "The manual lottery draw process has started...",
         });
         
         try {
             const result = await runLotteryDrawAction({});
             if (result.success) {
                 toast({
-                    title: "قرعه‌کشی با موفقیت انجام شد!",
+                    title: "Lottery Draw Successful!",
                     description: result.message,
                 });
                 // Refresh data to show new stats and winner
@@ -76,8 +76,8 @@ export default function AdminLotteryPage() {
         } catch (error) {
             toast({
                 variant: "destructive",
-                title: "خطا در اجرای قرعه‌کشی",
-                description: error instanceof Error ? error.message : "مشکلی در ارتباط با سرور رخ داد.",
+                title: "Error Running Lottery",
+                description: error instanceof Error ? error.message : "A server error occurred.",
             });
         } finally {
             setIsDrawing(false);
@@ -87,13 +87,13 @@ export default function AdminLotteryPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">مدیریت قرعه‌کشی</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Lottery Management</h1>
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">موجودی صندوق قرعه‌کشی</CardTitle>
+            <CardTitle className="text-sm font-medium">Lottery Pool Balance</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -101,13 +101,13 @@ export default function AdminLotteryPage() {
                 <div className="text-2xl font-bold font-mono">{formatCurrency(lotteryData?.lotteryPool ?? 0)}</div>
             )}
             <p className="text-xs text-muted-foreground">
-              مجموع کارمزد قرعه‌کشی از سرمایه‌گذاری‌ها
+              Total lottery fees from investments
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">تعداد کل بلیت‌ها</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Tickets</CardTitle>
             <Ticket className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -115,13 +115,13 @@ export default function AdminLotteryPage() {
                 <div className="text-2xl font-bold">{lotteryData?.totalTickets.toLocaleString()}</div>
              )}
             <p className="text-xs text-muted-foreground">
-              بر اساس هر ۱۰ دلار یک بلیت
+              Based on 1 ticket per $10 invested
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">تعداد شرکت‌کنندگان</CardTitle>
+            <CardTitle className="text-sm font-medium">Participants</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -129,7 +129,7 @@ export default function AdminLotteryPage() {
                 <div className="text-2xl font-bold">{lotteryData?.participantsCount.toLocaleString()}</div>
              )}
             <p className="text-xs text-muted-foreground">
-              کاربران منحصر به فرد با سرمایه‌گذاری
+              Unique users with an investment
             </p>
           </CardContent>
         </Card>
@@ -138,8 +138,8 @@ export default function AdminLotteryPage() {
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
         <Card>
             <CardHeader>
-                <CardTitle>قرعه‌کشی بعدی</CardTitle>
-                <CardDescription>زمان باقی‌مانده تا پایان دوره و انجام قرعه‌کشی بعدی.</CardDescription>
+                <CardTitle>Next Lottery Draw</CardTitle>
+                <CardDescription>Time remaining until the end of the period and the next draw.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="w-full max-w-md mx-auto py-4">
@@ -149,11 +149,11 @@ export default function AdminLotteryPage() {
             <CardFooter className="border-t pt-4">
                  <Button onClick={handleManualDraw} className="w-full" disabled={isDrawing || isLoadingData}>
                     {isDrawing ? (
-                        <Loader2 className="h-4 w-4 ml-2 animate-spin"/>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin"/>
                     ) : (
-                        <PlayCircle className="h-4 w-4 ml-2"/>
+                        <PlayCircle className="h-4 w-4 mr-2"/>
                     )}
-                    {isDrawing ? "در حال اجرا..." : "اجرای دستی قرعه‌کشی"}
+                    {isDrawing ? "Running..." : "Run Manual Draw"}
                  </Button>
             </CardFooter>
         </Card>
@@ -163,20 +163,20 @@ export default function AdminLotteryPage() {
                 <CardTitle>
                     <div className="flex items-center gap-2">
                         <History className="h-5 w-5"/>
-                        <span>برندگان اخیر</span>
+                        <span>Recent Winners</span>
                     </div>
                 </CardTitle>
                 <CardDescription>
-                    لیست برندگان خوش‌شانس دوره‌های قبل.
+                    List of lucky winners from previous rounds.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>کاربر</TableHead>
-                            <TableHead>تاریخ</TableHead>
-                            <TableHead className="text-right">مبلغ جایزه</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Prize Amount</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -207,7 +207,7 @@ export default function AdminLotteryPage() {
                         ) : (
                              <TableRow>
                                 <TableCell colSpan={3} className="text-center py-10">
-                                    هنوز برنده‌ای ثبت نشده است.
+                                    No winners have been recorded yet.
                                 </TableCell>
                             </TableRow>
                         )}

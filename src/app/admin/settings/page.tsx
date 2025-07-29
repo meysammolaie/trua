@@ -41,13 +41,13 @@ import type { PlatformSettings } from "@/ai/flows/platform-settings-flow";
 const settingsSchema = PlatformSettingsSchema;
 
 const dayNames = {
-    saturday: 'شنبه',
-    sunday: 'یکشنبه',
-    monday: 'دوشنبه',
-    tuesday: 'سه‌شنبه',
-    wednesday: 'چهارشنبه',
-    thursday: 'پنج‌شنبه',
-    friday: 'جمعه'
+    saturday: 'Saturday',
+    sunday: 'Sunday',
+    monday: 'Monday',
+    tuesday: 'Tuesday',
+    wednesday: 'Wednesday',
+    thursday: 'Thursday',
+    friday: 'Friday'
 };
 
 export default function AdminSettingsPage() {
@@ -86,8 +86,8 @@ export default function AdminSettingsPage() {
       } catch (error) {
         toast({
           variant: "destructive",
-          title: "خطا در بارگذاری تنظیمات",
-          description: "مشکلی در دریافت تنظیمات فعلی پلتفرم رخ داد.",
+          title: "Error Loading Settings",
+          description: "There was a problem retrieving the current platform settings.",
         });
       } finally {
         setLoading(false);
@@ -102,8 +102,8 @@ export default function AdminSettingsPage() {
         const result = await updatePlatformSettingsAction(values);
         if (result.success) {
             toast({
-                title: "تنظیمات ذخیره شد",
-                description: "تنظیمات جدید پلتفرم با موفقیت اعمال شد.",
+                title: "Settings Saved",
+                description: "The new platform settings have been applied successfully.",
             });
         } else {
             throw new Error(result.message);
@@ -111,8 +111,8 @@ export default function AdminSettingsPage() {
     } catch (error) {
          toast({
             variant: "destructive",
-            title: "خطا در ذخیره تنظیمات",
-            description: error instanceof Error ? error.message : "مشکلی در ذخیره تنظیمات جدید رخ داد.",
+            title: "Error Saving Settings",
+            description: error instanceof Error ? error.message : "There was a problem saving the new settings.",
         });
     }
   }
@@ -121,7 +121,7 @@ export default function AdminSettingsPage() {
     return (
         <div className="flex justify-center items-center h-full">
             <Loader2 className="w-8 h-8 animate-spin" />
-            <p className="mr-4">در حال بارگذاری تنظیمات...</p>
+            <p className="ml-4">Loading settings...</p>
         </div>
     )
   }
@@ -129,16 +129,16 @@ export default function AdminSettingsPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">تنظیمات پلتفرم</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Platform Settings</h1>
       </div>
        <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid gap-6">
                 <Card>
                 <CardHeader>
-                    <CardTitle>مدیریت کارمزدها و برداشت</CardTitle>
+                    <CardTitle>Fee & Withdrawal Management</CardTitle>
                     <CardDescription>
-                    قوانین مالی پلتفرم مانند کارمزدها و شرایط برداشت را تنظیم کنید.
+                    Configure the platform's financial rules like fees and withdrawal conditions.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -147,9 +147,9 @@ export default function AdminSettingsPage() {
                     name="entryFee"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>کارمزد ورود</FormLabel>
+                        <FormLabel>Entry Fee</FormLabel>
                          <div className="relative">
-                            <Input type="number" {...field} className="pr-8" />
+                            <Input type="number" {...field} className="pl-8" />
                             <Percent className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
                          </div>
                         <FormMessage />
@@ -161,9 +161,9 @@ export default function AdminSettingsPage() {
                     name="lotteryFee"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>کارمزد قرعه‌کشی</FormLabel>
+                        <FormLabel>Lottery Fee</FormLabel>
                         <div className="relative">
-                            <Input type="number" {...field} className="pr-8" />
+                            <Input type="number" {...field} className="pl-8" />
                             <Percent className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
                          </div>
                         <FormMessage />
@@ -175,9 +175,9 @@ export default function AdminSettingsPage() {
                     name="exitFee"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>کارمزد خروج</FormLabel>
+                        <FormLabel>Exit Fee</FormLabel>
                         <div className="relative">
-                            <Input type="number" {...field} className="pr-8" />
+                            <Input type="number" {...field} className="pl-8" />
                             <Percent className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
                          </div>
                         <FormMessage />
@@ -189,9 +189,9 @@ export default function AdminSettingsPage() {
                     name="platformFee"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>کارمزد پلتفرم</FormLabel>
+                        <FormLabel>Platform Fee</FormLabel>
                         <div className="relative">
-                            <Input type="number" {...field} className="pr-8" />
+                            <Input type="number" {...field} className="pl-8" />
                             <Percent className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
                          </div>
                         <FormMessage />
@@ -203,9 +203,9 @@ export default function AdminSettingsPage() {
                         name="minWithdrawalAmount"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>حداقل مبلغ برداشت</FormLabel>
+                            <FormLabel>Minimum Withdrawal Amount</FormLabel>
                             <div className="relative">
-                                <Input type="number" {...field} className="pr-8" />
+                                <Input type="number" {...field} className="pl-8" />
                                 <DollarSign className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             </div>
                             <FormMessage />
@@ -217,12 +217,12 @@ export default function AdminSettingsPage() {
                         name="withdrawalDay"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>روز مجاز برداشت</FormLabel>
+                                <FormLabel>Allowed Withdrawal Day</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                              <CalendarDays className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <SelectValue placeholder="یک روز را انتخاب کنید" className="pr-8"/>
+                                            <SelectValue placeholder="Select a day" className="pl-8"/>
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -240,9 +240,9 @@ export default function AdminSettingsPage() {
                         name="networkFee"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>کارمزد شبکه برای برداشت</FormLabel>
+                            <FormLabel>Network Fee for Withdrawal</FormLabel>
                             <div className="relative">
-                                <Input type="number" {...field} className="pr-8" />
+                                <Input type="number" {...field} className="pl-8" />
                                 <Network className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             </div>
                             <FormMessage />
@@ -254,8 +254,8 @@ export default function AdminSettingsPage() {
 
                  <Card>
                     <CardHeader>
-                        <CardTitle>مدیریت کیف پول‌ها</CardTitle>
-                        <CardDescription>آدرس‌های کیف پول برای واریز کاربران را تنظیم کنید.</CardDescription>
+                        <CardTitle>Wallet Management</CardTitle>
+                        <CardDescription>Set up wallet addresses for user deposits.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6">
                          <FormField
@@ -263,7 +263,7 @@ export default function AdminSettingsPage() {
                             name="usdtWalletAddress"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>آدرس کیف پول تتر (USDT)</FormLabel>
+                                <FormLabel>USDT Wallet Address</FormLabel>
                                 <FormControl>
                                     <Input {...field} dir="ltr" />
                                 </FormControl>
@@ -276,7 +276,7 @@ export default function AdminSettingsPage() {
                             name="bitcoinWalletAddress"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>آدرس کیف پول بیت‌کوین (BTC)</FormLabel>
+                                <FormLabel>Bitcoin (BTC) Wallet Address</FormLabel>
                                 <FormControl>
                                     <Input {...field} dir="ltr" />
                                 </FormControl>
@@ -289,7 +289,7 @@ export default function AdminSettingsPage() {
                             name="goldWalletAddress"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>آدرس کیف پول طلا (مثلاً PAXG)</FormLabel>
+                                <FormLabel>Gold (e.g., PAXG) Wallet Address</FormLabel>
                                 <FormControl>
                                     <Input {...field} dir="ltr" />
                                 </FormControl>
@@ -302,7 +302,7 @@ export default function AdminSettingsPage() {
                             name="silverWalletAddress"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>آدرس کیف پول نقره (مثلاً KAG)</FormLabel>
+                                <FormLabel>Silver (e.g., KAG) Wallet Address</FormLabel>
                                 <FormControl>
                                     <Input {...field} dir="ltr" />
                                 </FormControl>
@@ -315,8 +315,8 @@ export default function AdminSettingsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>تنظیمات سیستم</CardTitle>
-                        <CardDescription>تنظیمات کلی و وضعیت عملیاتی پلتفرم.</CardDescription>
+                        <CardTitle>System Settings</CardTitle>
+                        <CardDescription>General platform settings and operational status.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6">
                          <FormField
@@ -325,9 +325,9 @@ export default function AdminSettingsPage() {
                             render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base">حالت تعمیر و نگهداری</FormLabel>
+                                        <FormLabel className="text-base">Maintenance Mode</FormLabel>
                                         <FormDescription>
-                                            با فعال‌سازی این گزینه، سایت برای کاربران غیرقابل دسترس خواهد شد.
+                                            By activating this option, the site will be inaccessible to users.
                                         </FormDescription>
                                     </div>
                                     <FormControl>
@@ -344,13 +344,13 @@ export default function AdminSettingsPage() {
                             name="bonusUnlockTarget"
                             render={({ field }) => (
                                 <FormItem className="rounded-lg border p-4">
-                                <FormLabel>هدف آزادسازی جایزه (دلار)</FormLabel>
+                                <FormLabel>Bonus Unlock Target ($)</FormLabel>
                                 <div className="relative">
-                                    <Input type="number" {...field} className="pr-8" />
+                                    <Input type="number" {...field} className="pl-8" />
                                     <Target className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                 </div>
                                 <FormDescription>
-                                   مبلغ کل TVL پلتفرم که پس از رسیدن به آن، جوایز کاربران آزاد می‌شود.
+                                   The total platform TVL at which user bonuses will be unlocked.
                                 </FormDescription>
                                 <FormMessage />
                                 </FormItem>
@@ -362,9 +362,9 @@ export default function AdminSettingsPage() {
                             render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base">توزیع خودکار سود روزانه</FormLabel>
+                                        <FormLabel className="text-base">Automatic Daily Profit Distribution</FormLabel>
                                         <FormDescription>
-                                            با فعال‌سازی این گزینه، سودها هر شب به صورت خودکار توزیع می‌شوند.
+                                            If enabled, profits will be distributed automatically every night.
                                         </FormDescription>
                                     </div>
                                     <FormControl>
@@ -381,8 +381,8 @@ export default function AdminSettingsPage() {
                 
                  <div className="flex justify-end">
                     <Button type="submit" disabled={form.formState.isSubmitting}>
-                         {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                         {form.formState.isSubmitting ? "در حال ذخیره..." : "ذخیره تغییرات"}
+                         {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                         {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
                     </Button>
                 </div>
             </div>

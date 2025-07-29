@@ -57,55 +57,55 @@ export default function AnalyticsPage() {
   }, {} as ChartConfig);
 
   const tvlChartConfig: ChartConfig = {
-    tvl: { label: "ارزش کل", color: "hsl(var(--primary))" }
+    tvl: { label: "Total Value", color: "hsl(var(--primary))" }
   };
 
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">تحلیل بازار</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Market Analysis</h1>
       </div>
       
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">کل سرمایه فعال (TVL)</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Value Locked (TVL)</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <div className="text-2xl font-bold font-mono">{formatCurrency(data?.totalTVL ?? 0)}</div>
                 )}
-                 <p className="text-xs text-muted-foreground">مجموع سرمایه خالص در تمام صندوق‌ها</p>
+                 <p className="text-xs text-muted-foreground">Sum of net capital in all funds</p>
             </CardContent>
             </Card>
         </motion.div>
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">سرمایه‌گذاران فعال</CardTitle>
+                <CardTitle className="text-sm font-medium">Active Investors</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <div className="text-2xl font-bold">{data?.totalActiveInvestors.toLocaleString() ?? 0}</div>
                 )}
-                 <p className="text-xs text-muted-foreground">تعداد کاربران با سرمایه فعال</p>
+                 <p className="text-xs text-muted-foreground">Number of users with active capital</p>
             </CardContent>
             </Card>
         </motion.div>
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">صندوق قرعه‌کشی</CardTitle>
+                <CardTitle className="text-sm font-medium">Lottery Pool</CardTitle>
                 <Ticket className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : (
                     <div className="text-2xl font-bold font-mono">{formatCurrency(data?.totalLotteryPool ?? 0)}</div>
                 )}
-                <p className="text-xs text-muted-foreground">آماده برای قرعه‌کشی بعدی</p>
+                <p className="text-xs text-muted-foreground">Ready for the next draw</p>
             </CardContent>
             </Card>
         </motion.div>
@@ -115,15 +115,15 @@ export default function AnalyticsPage() {
             <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.5 }}>
                  <Card>
                     <CardHeader>
-                        <CardTitle>تفکیک سرمایه در صندوق‌ها</CardTitle>
+                        <CardTitle>Capital Breakdown in Funds</CardTitle>
                         <CardDescription>
-                            مشاهده کنید که چگونه سرمایه کل بین صندوق‌های مختلف توزیع شده است.
+                            See how the total capital is distributed among the different funds.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {loading ? <div className="h-[300px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
                             <ChartContainer config={fundChartConfig} className="h-[300px] w-full">
-                                <BarChart accessibilityLayer data={data?.fundStats} layout="vertical" margin={{ left: 10 }}>
+                                <BarChart accessibilityLayer data={data?.fundStats} layout="vertical" margin={{ right: 10 }}>
                                     <CartesianGrid horizontal={false} />
                                     <YAxis
                                     dataKey="name"
@@ -152,9 +152,9 @@ export default function AnalyticsPage() {
             <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.6 }}>
                  <Card>
                     <CardHeader>
-                        <CardTitle>روند رشد پلتفرم</CardTitle>
+                        <CardTitle>Platform Growth Trend</CardTitle>
                         <CardDescription>
-                            نمودار رشد کل سرمایه فعال (TVL) در پلتفرم در طول زمان.
+                            Chart of Total Value Locked (TVL) growth over time.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -177,19 +177,19 @@ export default function AnalyticsPage() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.7 }}>
             <Card className="bg-gradient-to-br from-primary/10 to-transparent">
                 <CardHeader>
-                    <CardTitle>شما، موتور رشد ما هستید!</CardTitle>
+                    <CardTitle>You Are Our Growth Engine!</CardTitle>
                     <CardDescription>
-                        در Trusva، سود شما مستقیماً به رشد جامعه بستگی دارد. هر سرمایه‌گذار جدید، استخر سود روزانه را بزرگ‌تر می‌کند و این یعنی درآمد بیشتر برای همه!
+                        At Trusva, your profit is directly tied to the community's growth. Every new investor makes the daily profit pool larger, which means more income for everyone!
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <p className="text-foreground/90 mb-4">
-                        با دعوت از دوستانتان، شما نه تنها **کمیسیون مستقیم** از اولین سرمایه‌گذاری آن‌ها دریافت می‌کنید، بلکه به طور دائمی به **بزرگ‌تر شدن سود روزانه خودتان** نیز کمک می‌کنید. این یک موقعیت برد-برد است.
+                        By inviting your friends, you not only receive a **direct commission** from their first investment but also permanently contribute to **increasing your own daily profit**. It's a win-win situation.
                     </p>
                     <Button asChild>
                         <Link href="/dashboard/referrals">
-                           <ArrowLeftRight className="w-4 h-4 ml-2"/>
-                            شروع به معرفی و کسب درآمد کنید
+                           <ArrowLeftRight className="w-4 h-4 mr-2"/>
+                            Start Referring & Earning
                         </Link>
                     </Button>
                 </CardContent>

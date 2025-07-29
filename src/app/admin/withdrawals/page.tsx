@@ -30,10 +30,10 @@ import { DateRangePicker } from "@/components/date-range-picker";
 import { DateRange } from "react-day-picker";
 
 const statusNames: Record<string, string> = {
-    pending: "در انتظار",
-    approved: "تایید شده",
-    rejected: "رد شده",
-    completed: "پرداخت شده",
+    pending: "Pending",
+    approved: "Approved",
+    rejected: "Rejected",
+    completed: "Completed",
 };
 
 const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -57,8 +57,8 @@ export default function AdminWithdrawalsPage() {
             console.error("Error fetching withdrawal requests:", error);
             toast({
                 variant: "destructive",
-                title: "خطا در واکشی اطلاعات",
-                description: "مشکلی در دریافت لیست درخواست‌های برداشت رخ داد.",
+                title: "Error Fetching Data",
+                description: "There was a problem retrieving the withdrawal request list.",
             });
         } finally {
             setLoading(false);
@@ -127,38 +127,38 @@ export default function AdminWithdrawalsPage() {
     return (
         <>
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">مدیریت درخواست‌های برداشت</h1>
+                <h1 className="text-lg font-semibold md:text-2xl">Withdrawal Request Management</h1>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">موجودی کیف پول پلتفرم</CardTitle>
+                        <CardTitle className="text-sm font-medium">Platform Wallet Balance</CardTitle>
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.platformWallet ?? 0)}</div>}
-                        <p className="text-xs text-muted-foreground">موجودی درآمد خالص پلتفرم</p>
+                        <p className="text-xs text-muted-foreground">Net revenue balance of the platform</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">مجموع برداشت‌های در انتظار</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Pending Withdrawals</CardTitle>
                         <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalPending ?? 0)}</div>}
-                        <p className="text-xs text-muted-foreground">در {stats?.pendingCount.toLocaleString() ?? 0} درخواست</p>
+                        <p className="text-xs text-muted-foreground">in {stats?.pendingCount.toLocaleString() ?? 0} requests</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">موجودی پس از پرداخت‌ها</CardTitle>
+                        <CardTitle className="text-sm font-medium">Balance After Payouts</CardTitle>
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold font-mono">{formatCurrency((stats?.platformWallet ?? 0) - (stats?.totalPending ?? 0))}</div>}
-                        <p className="text-xs text-muted-foreground">موجودی پلتفرم با کسر درخواست‌های در انتظار</p>
+                        <p className="text-xs text-muted-foreground">Platform balance minus pending requests</p>
                     </CardContent>
                 </Card>
             </div>
@@ -166,22 +166,22 @@ export default function AdminWithdrawalsPage() {
             <Card>
                 <CardHeader>
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                        <div className="flex-1 text-right">
-                            <CardTitle>لیست درخواست‌های برداشت</CardTitle>
-                            <CardDescription>درخواست‌های برداشت وجه کاربران را مشاهده و مدیریت کنید.</CardDescription>
+                        <div className="flex-1">
+                            <CardTitle>Withdrawal Requests List</CardTitle>
+                            <CardDescription>View and manage user withdrawal requests.</CardDescription>
                         </div>
                         <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
                             <div className="relative w-full md:w-auto">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     type="search"
-                                    placeholder="جستجو کاربر، ایمیل، آدرس..."
+                                    placeholder="Search user, email, address..."
                                     className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <Button variant="outline"><FileDown className="h-4 w-4 ml-2" />دریافت خروجی</Button>
+                            <Button variant="outline"><FileDown className="h-4 w-4 mr-2" />Export</Button>
                         </div>
                     </div>
                      <div className="flex flex-col md:flex-row items-center gap-2 mt-4">
@@ -192,19 +192,19 @@ export default function AdminWithdrawalsPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>کاربر</TableHead>
-                                <TableHead className="text-right">مبلغ درخواستی</TableHead>
-                                <TableHead className="text-right hidden md:table-cell">مبلغ نهایی</TableHead>
-                                <TableHead className="hidden sm:table-cell text-center">تاریخ</TableHead>
-                                <TableHead>وضعیت</TableHead>
-                                <TableHead><span className="sr-only">عملیات</span></TableHead>
+                                <TableHead>User</TableHead>
+                                <TableHead className="text-right">Requested Amount</TableHead>
+                                <TableHead className="text-right hidden md:table-cell">Net Amount</TableHead>
+                                <TableHead className="hidden sm:table-cell text-center">Date</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {loading ? (
                                 <TableRow><TableCell colSpan={6} className="text-center py-10"><Loader2 className="h-5 w-5 animate-spin mx-auto"/></TableCell></TableRow>
                             ) : filteredRequests.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} className="text-center py-10">هیچ درخواستی یافت نشد.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={6} className="text-center py-10">No requests found.</TableCell></TableRow>
                             ) : (
                                 filteredRequests.map((req) => (
                                     <TableRow key={req.id} className="cursor-pointer" onClick={() => setSelectedRequest(req)}>
@@ -220,7 +220,7 @@ export default function AdminWithdrawalsPage() {
                                         </TableCell>
                                         <TableCell>
                                              <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedRequest(req)}}>
-                                                بررسی
+                                                Review
                                             </Button>
                                         </TableCell>
                                     </TableRow>
@@ -230,7 +230,7 @@ export default function AdminWithdrawalsPage() {
                     </Table>
                 </CardContent>
                 <CardFooter>
-                    <div className="text-xs text-muted-foreground">نمایش <strong>{filteredRequests.length}</strong> از <strong>{data?.requests.length ?? 0}</strong> درخواست</div>
+                    <div className="text-xs text-muted-foreground">Showing <strong>{filteredRequests.length}</strong> of <strong>{data?.requests.length ?? 0}</strong> requests</div>
                 </CardFooter>
             </Card>
             

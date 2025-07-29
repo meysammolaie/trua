@@ -29,10 +29,10 @@ import { createNotificationAction } from "@/app/actions/notifications";
 import { Loader2, Send } from "lucide-react";
 
 const notificationSchema = z.object({
-  title: z.string().min(5, "عنوان باید حداقل ۵ حرف داشته باشد."),
-  message: z.string().min(10, "پیام باید حداقل ۱۰ حرف داشته باشد."),
+  title: z.string().min(5, "Title must be at least 5 characters."),
+  message: z.string().min(10, "Message must be at least 10 characters."),
   target: z.enum(["all", "specific"], {
-    required_error: "باید نوع هدف را انتخاب کنید.",
+    required_error: "You must select a target type.",
   }),
   userId: z.string().optional(),
 }).refine((data) => {
@@ -41,7 +41,7 @@ const notificationSchema = z.object({
     }
     return true;
 }, {
-    message: "شناسه کاربر برای ارسال اعلان خصوصی الزامی است.",
+    message: "User ID is required for specific notifications.",
     path: ["userId"],
 });
 
@@ -61,7 +61,7 @@ export default function AdminNotificationsPage() {
     try {
       const result = await createNotificationAction(values);
       if (result.success) {
-        toast({ title: "اعلان ارسال شد", description: result.message });
+        toast({ title: "Notification Sent", description: result.message });
         form.reset();
       } else {
         throw new Error(result.message);
@@ -69,8 +69,8 @@ export default function AdminNotificationsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "خطا در ارسال اعلان",
-        description: error instanceof Error ? error.message : "مشکلی پیش آمد.",
+        title: "Error Sending Notification",
+        description: error instanceof Error ? error.message : "An error occurred.",
       });
     }
   };
@@ -80,9 +80,9 @@ export default function AdminNotificationsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>ارسال اعلان به کاربران</CardTitle>
+        <CardTitle>Send Notification to Users</CardTitle>
         <CardDescription>
-          برای کاربران خود پیام‌های مهم، بروزرسانی‌ها یا پیشنهادات ویژه ارسال کنید.
+          Send important messages, updates, or special offers to your users.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -93,7 +93,7 @@ export default function AdminNotificationsPage() {
               name="target"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel>گیرنده اعلان</FormLabel>
+                  <FormLabel>Notification Recipient</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -104,13 +104,13 @@ export default function AdminNotificationsPage() {
                         <FormControl>
                           <RadioGroupItem value="all" />
                         </FormControl>
-                        <FormLabel className="font-normal">ارسال به همه کاربران</FormLabel>
+                        <FormLabel className="font-normal">Send to all users</FormLabel>
                       </FormItem>
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
                           <RadioGroupItem value="specific" />
                         </FormControl>
-                        <FormLabel className="font-normal">ارسال به یک کاربر خاص</FormLabel>
+                        <FormLabel className="font-normal">Send to a specific user</FormLabel>
                       </FormItem>
                     </RadioGroup>
                   </FormControl>
@@ -125,9 +125,9 @@ export default function AdminNotificationsPage() {
                 name="userId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>شناسه کاربر (User ID)</FormLabel>
+                    <FormLabel>User ID</FormLabel>
                     <FormControl>
-                      <Input dir="ltr" placeholder="شناسه کاربری را اینجا وارد کنید" {...field} />
+                      <Input dir="ltr" placeholder="Enter User ID here" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -140,9 +140,9 @@ export default function AdminNotificationsPage() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>عنوان اعلان</FormLabel>
+                  <FormLabel>Notification Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="مثلا: بروزرسانی مهم پلتفرم" {...field} />
+                    <Input placeholder="e.g., Important Platform Update" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -154,9 +154,9 @@ export default function AdminNotificationsPage() {
               name="message"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>متن کامل پیام</FormLabel>
+                  <FormLabel>Full Message Body</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="پیام خود را اینجا بنویسید..." className="min-h-[120px]" {...field} />
+                    <Textarea placeholder="Write your message here..." className="min-h-[120px]" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -165,11 +165,11 @@ export default function AdminNotificationsPage() {
 
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? (
-                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Send className="ml-2 h-4 w-4" />
+                <Send className="mr-2 h-4 w-4" />
               )}
-              ارسال اعلان
+              Send Notification
             </Button>
           </form>
         </Form>

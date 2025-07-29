@@ -37,9 +37,9 @@ import { createTaskAction, getTasksAction, deleteTaskAction, Task } from "@/app/
 import { Badge } from "@/components/ui/badge";
 
 const taskSchema = z.object({
-  title: z.string().min(5, "عنوان باید حداقل ۵ حرف داشته باشد."),
-  description: z.string().min(10, "توضیحات باید حداقل ۱۰ حرف داشته باشد."),
-  rewardAmount: z.coerce.number().positive("مقدار پاداش باید مثبت باشد."),
+  title: z.string().min(5, "Title must be at least 5 characters."),
+  description: z.string().min(10, "Description must be at least 10 characters."),
+  rewardAmount: z.coerce.number().positive("Reward amount must be positive."),
   rewardType: z.enum(["usd", "gold"]),
 });
 
@@ -64,7 +64,7 @@ export default function AdminTasksPage() {
       const existingTasks = await getTasksAction();
       setTasks(existingTasks);
     } catch (error) {
-      toast({ variant: "destructive", title: "خطا", description: "مشکلی در دریافت لیست وظایف رخ داد." });
+      toast({ variant: "destructive", title: "Error", description: "There was a problem getting the task list." });
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export default function AdminTasksPage() {
     try {
       const result = await createTaskAction(values);
       if (result.success) {
-        toast({ title: "موفق", description: "وظیفه جدید با موفقیت ایجاد شد." });
+        toast({ title: "Success", description: "New task created successfully." });
         form.reset();
         await fetchTasks();
       } else {
@@ -87,8 +87,8 @@ export default function AdminTasksPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "خطا در ایجاد وظیفه",
-        description: error instanceof Error ? error.message : "مشکلی پیش آمد.",
+        title: "Error Creating Task",
+        description: error instanceof Error ? error.message : "An error occurred.",
       });
     }
   };
@@ -97,7 +97,7 @@ export default function AdminTasksPage() {
     try {
         const result = await deleteTaskAction({ taskId });
         if(result.success) {
-            toast({ title: "موفق", description: "وظیفه با موفقیت حذف شد." });
+            toast({ title: "Success", description: "Task deleted successfully." });
             await fetchTasks();
         } else {
             throw new Error(result.message);
@@ -105,8 +105,8 @@ export default function AdminTasksPage() {
     } catch (error) {
          toast({
             variant: "destructive",
-            title: "خطا در حذف وظیفه",
-            description: error instanceof Error ? error.message : "مشکلی پیش آمد.",
+            title: "Error Deleting Task",
+            description: error instanceof Error ? error.message : "An error occurred.",
         });
     }
   }
@@ -116,9 +116,9 @@ export default function AdminTasksPage() {
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>ایجاد وظیفه جدید</CardTitle>
+          <CardTitle>Create New Task</CardTitle>
           <CardDescription>
-            برای کاربران وظایف جدید تعریف کنید تا با انجام آن‌ها پاداش دریافت کنند.
+            Define new tasks for users to complete and earn rewards.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -129,9 +129,9 @@ export default function AdminTasksPage() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>عنوان وظیفه</FormLabel>
+                    <FormLabel>Task Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="مثلا: معرفی ۵ دوست به پلتفرم" {...field} />
+                      <Input placeholder="e.g., Refer 5 friends to the platform" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -142,9 +142,9 @@ export default function AdminTasksPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>توضیحات کامل وظیفه</FormLabel>
+                    <FormLabel>Full Task Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="شرایط و نحوه انجام وظیفه را به طور کامل شرح دهید." {...field} />
+                      <Textarea placeholder="Fully describe the conditions and how to complete the task." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,7 +155,7 @@ export default function AdminTasksPage() {
                 name="rewardAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>مقدار پاداش (دلار)</FormLabel>
+                    <FormLabel>Reward Amount ($)</FormLabel>
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
@@ -165,11 +165,11 @@ export default function AdminTasksPage() {
               />
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? (
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <PlusCircle className="ml-2 h-4 w-4" />
+                  <PlusCircle className="mr-2 h-4 w-4" />
                 )}
-                ایجاد وظیفه
+                Create Task
               </Button>
             </form>
           </Form>
@@ -178,17 +178,17 @@ export default function AdminTasksPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>لیست وظایف فعال</CardTitle>
-          <CardDescription>وظایف تعریف‌شده در سیستم را مدیریت کنید.</CardDescription>
+          <CardTitle>Active Tasks List</CardTitle>
+          <CardDescription>Manage the tasks defined in the system.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>عنوان</TableHead>
-                <TableHead>پاداش</TableHead>
-                <TableHead>تاریخ ایجاد</TableHead>
-                <TableHead>عملیات</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Reward</TableHead>
+                <TableHead>Creation Date</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -201,7 +201,7 @@ export default function AdminTasksPage() {
               ) : tasks.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-10">
-                    هیچ وظیفه‌ای تعریف نشده است.
+                    No tasks have been defined.
                   </TableCell>
                 </TableRow>
               ) : (

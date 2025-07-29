@@ -22,7 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ArrowUpRight, DollarSign, Ticket, UserX, UserCheck, ArrowRight, Wallet, TrendingUp } from "lucide-react";
+import { Loader2, ArrowUpRight, DollarSign, Ticket, UserX, UserCheck, ArrowLeft, Wallet, TrendingUp } from "lucide-react";
 import { GetUserDetailsOutput } from "@/ai/flows/get-user-details-flow";
 import { getUserDetailsAction } from "@/app/actions/user-details";
 import { updateUserStatusAction } from "@/app/actions/user-status";
@@ -50,8 +50,8 @@ export default function AdminUserDetailPage() {
             console.error("Error fetching user details:", error);
             toast({
                 variant: "destructive",
-                title: "خطا در واکشی اطلاعات کاربر",
-                description: error instanceof Error ? error.message : "مشکلی در دریافت اطلاعات کاربر رخ داد.",
+                title: "Error fetching user details",
+                description: error instanceof Error ? error.message : "An error occurred while fetching user data.",
             });
         } finally {
             setLoading(false);
@@ -68,12 +68,12 @@ export default function AdminUserDetailPage() {
         if (!details) return;
 
         const newStatus = details.profile.status === 'active' ? 'blocked' : 'active';
-        const actionText = newStatus === 'active' ? 'فعال' : 'مسدود';
+        const actionText = newStatus === 'active' ? 'unblock' : 'block';
         try {
             const result = await updateUserStatusAction({ userId: userId, newStatus: newStatus });
             if (result.success) {
                 toast({
-                    title: `کاربر ${actionText} شد`,
+                    title: `User ${actionText}ed`,
                     description: result.message,
                 });
                 await fetchUserDetails(userId); // Refresh details
@@ -83,8 +83,8 @@ export default function AdminUserDetailPage() {
         } catch (error) {
              toast({
                 variant: "destructive",
-                title: `خطا در ${actionText} کردن کاربر`,
-                description: error instanceof Error ? error.message : "یک خطای ناشناخته رخ داد.",
+                title: `Error ${actionText}ing user`,
+                description: error instanceof Error ? error.message : "An unknown error occurred.",
             });
         }
     };
@@ -93,7 +93,7 @@ export default function AdminUserDetailPage() {
         return (
             <div className="flex justify-center items-center h-full">
                 <Loader2 className="w-8 h-8 animate-spin" />
-                <p className="mr-4">در حال بارگذاری اطلاعات کاربر...</p>
+                <p className="ml-4">Loading user details...</p>
             </div>
         )
     }
@@ -101,7 +101,7 @@ export default function AdminUserDetailPage() {
     if (!details) {
         return (
              <div className="flex justify-center items-center h-full">
-                <p>اطلاعات کاربری یافت نشد.</p>
+                <p>User details not found.</p>
              </div>
         )
     }
@@ -114,11 +114,11 @@ export default function AdminUserDetailPage() {
                 <div className="flex items-center gap-4">
                      <Button variant="outline" asChild>
                         <Link href="/admin/users">
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                            بازگشت به لیست
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to List
                         </Link>
                     </Button>
-                    <h1 className="text-lg font-semibold md:text-2xl">جزئیات کاربر</h1>
+                    <h1 className="text-lg font-semibold md:text-2xl">User Details</h1>
                 </div>
             </div>
 
@@ -134,9 +134,9 @@ export default function AdminUserDetailPage() {
                             <CardDescription>{profile.email}</CardDescription>
                             <div className="flex items-center gap-2 pt-1">
                                 <Badge variant={profile.status === 'active' ? 'secondary' : 'destructive'}>
-                                    {profile.status === 'active' ? 'فعال' : 'مسدود شده'}
+                                    {profile.status === 'active' ? 'Active' : 'Blocked'}
                                 </Badge>
-                                <span className="text-xs text-muted-foreground">عضویت از {profile.createdAt}</span>
+                                <span className="text-xs text-muted-foreground">Member since {profile.createdAt}</span>
                             </div>
                         </div>
                     </CardHeader>
@@ -145,30 +145,30 @@ export default function AdminUserDetailPage() {
                             variant={profile.status === 'active' ? 'destructive' : 'secondary'}
                             onClick={handleToggleStatus}
                         >
-                            {profile.status === 'active' ? <UserX className="ml-2 h-4 w-4" /> : <UserCheck className="ml-2 h-4 w-4" />}
-                            {profile.status === 'active' ? 'مسدود کردن کاربر' : 'فعال کردن کاربر'}
+                            {profile.status === 'active' ? <UserX className="mr-2 h-4 w-4" /> : <UserCheck className="mr-2 h-4 w-4" />}
+                            {profile.status === 'active' ? 'Block User' : 'Unblock User'}
                          </Button>
                     </CardFooter>
                 </Card>
                 <Card className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4 p-4">
                     <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
                         <DollarSign className="h-6 w-6 text-muted-foreground mb-2"/>
-                        <p className="text-xs text-muted-foreground">سرمایه فعال (خالص)</p>
+                        <p className="text-xs text-muted-foreground">Active Investment (Net)</p>
                         <p className="font-bold font-mono text-lg">{formatCurrency(stats.activeInvestment)}</p>
                     </div>
                      <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
                         <TrendingUp className="h-6 w-6 text-muted-foreground mb-2"/>
-                        <p className="text-xs text-muted-foreground">کل سود</p>
+                        <p className="text-xs text-muted-foreground">Total Profit</p>
                         <p className="font-bold font-mono text-lg">{formatCurrency(stats.totalProfit)}</p>
                     </div>
                     <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
                         <Wallet className="h-6 w-6 text-muted-foreground mb-2"/>
-                        <p className="text-xs text-muted-foreground">موجودی کیف پول</p>
+                        <p className="text-xs text-muted-foreground">Wallet Balance</p>
                         <p className="font-bold font-mono text-lg">{formatCurrency(stats.walletBalance)}</p>
                     </div>
                     <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-muted">
                         <Ticket className="h-6 w-6 text-muted-foreground mb-2"/>
-                        <p className="text-xs text-muted-foreground">تیکت قرعه‌کشی</p>
+                        <p className="text-xs text-muted-foreground">Lottery Tickets</p>
                         <p className="font-bold font-mono text-lg">{stats.lotteryTickets.toLocaleString()}</p>
                     </div>
                 </Card>
@@ -176,28 +176,28 @@ export default function AdminUserDetailPage() {
             
              <Card className="mt-6">
                 <CardHeader>
-                    <CardTitle>تاریخچه تراکنش‌ها</CardTitle>
+                    <CardTitle>Transaction History</CardTitle>
                     <CardDescription>
-                        لیست تمام فعالیت‌های مالی ثبت‌شده توسط این کاربر.
+                        A list of all financial activities recorded by this user.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>شناسه</TableHead>
-                                <TableHead>نوع</TableHead>
-                                <TableHead>صندوق/جزئیات</TableHead>
-                                <TableHead>تاریخ</TableHead>
-                                <TableHead>وضعیت</TableHead>
-                                <TableHead className="text-right">مبلغ</TableHead>
+                                <TableHead>ID</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Fund/Details</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                            {transactions.length === 0 ? (
                              <TableRow>
                                 <TableCell colSpan={6} className="text-center py-10">
-                                    این کاربر هنوز هیچ تراکنشی ثبت نکرده است.
+                                    This user has not recorded any transactions yet.
                                 </TableCell>
                             </TableRow>
                            ) : (
@@ -208,7 +208,7 @@ export default function AdminUserDetailPage() {
                                     <TableCell>{tx.fund}</TableCell>
                                     <TableCell>{tx.date}</TableCell>
                                     <TableCell>
-                                        <Badge variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'تکمیل شده' ? 'default' : 'outline'}>{tx.status}</Badge>
+                                        <Badge variant={tx.status === 'Active' ? 'secondary' : tx.status === 'Completed' ? 'default' : 'outline'}>{tx.status}</Badge>
                                     </TableCell>
                                     <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
                                         {formatCurrency(tx.amount)}

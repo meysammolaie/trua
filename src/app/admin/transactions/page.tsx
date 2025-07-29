@@ -46,23 +46,23 @@ import { DateRange } from "react-day-picker";
 
 
 const typeNames: Record<string, string> = {
-    all: "همه انواع",
-    investment: "سرمایه‌گذاری",
-    withdrawal_request: "برداشت",
-    profit_payout: "سود",
-    commission: "کمیسیون",
-    bonus: "جایزه",
-    principal_return: "بازگشت اصل پول"
+    all: "All Types",
+    investment: "Investment",
+    withdrawal_request: "Withdrawal",
+    profit_payout: "Profit",
+    commission: "Commission",
+    bonus: "Bonus",
+    principal_return: "Principal Return"
 };
 
 const statusNames: Record<string, string> = {
-    all: "همه وضعیت‌ها",
-    pending: "در انتظار",
-    active: "فعال",
-    completed: "موفق",
-    failed: "ناموفق",
-    rejected: "رد شده",
-    refunded: "بازپرداخت شده",
+    all: "All Statuses",
+    pending: "Pending",
+    active: "Active",
+    completed: "Completed",
+    failed: "Failed",
+    rejected: "Rejected",
+    refunded: "Refunded",
 };
 
 const formatCurrency = (amount: number) => `$${Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -91,8 +91,8 @@ export default function AdminTransactionsPage() {
                 console.error("Error fetching transactions:", error);
                 toast({
                     variant: "destructive",
-                    title: "خطا در واکشی اطلاعات",
-                    description: "مشکلی در دریافت لیست تراکنش‌ها رخ داد.",
+                    title: "Error Fetching Data",
+                    description: "There was a problem retrieving the transaction list.",
                 });
             })
             .finally(() => setLoading(false));
@@ -171,13 +171,13 @@ export default function AdminTransactionsPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">مدیریت تراکنش‌ها</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Transaction Management</h1>
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">تعداد کل تراکنش‌ها</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
             <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -185,13 +185,13 @@ export default function AdminTransactionsPage() {
                 <div className="text-2xl font-bold">{allTransactions.length.toLocaleString()}</div>
             }
             <p className="text-xs text-muted-foreground">
-              تمام رویدادهای مالی و سیستمی
+              All financial and system events
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">تراکنش‌های موفق</CardTitle>
+            <CardTitle className="text-sm font-medium">Successful Transactions</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -199,13 +199,13 @@ export default function AdminTransactionsPage() {
                 <div className="text-2xl font-bold">{allTransactions.filter(t => ['completed', 'active'].includes(t.status || '')).length.toLocaleString()}</div>
              }
             <p className="text-xs text-muted-foreground">
-             تراکنش‌های تکمیل‌شده و فعال
+             Completed and active transactions
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">تراکنش‌های در انتظار</CardTitle>
+            <CardTitle className="text-sm font-medium">Pending Transactions</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -213,7 +213,7 @@ export default function AdminTransactionsPage() {
                 <div className="text-2xl font-bold">{allTransactions.filter(t => t.status === 'pending').length.toLocaleString()}</div>
              }
             <p className="text-xs text-muted-foreground">
-               نیاز به بررسی و تایید دارد
+               Requires review and approval
             </p>
           </CardContent>
         </Card>
@@ -222,10 +222,10 @@ export default function AdminTransactionsPage() {
        <Card>
             <CardHeader>
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex-1 text-right">
-                        <CardTitle>لیست تمام تراکنش‌ها</CardTitle>
+                    <div className="flex-1">
+                        <CardTitle>All Transactions List</CardTitle>
                         <CardDescription>
-                            تمام تراکنش‌های مالی ثبت‌شده در پلتفرم را مشاهده و مدیریت کنید.
+                            View and manage all financial transactions on the platform.
                         </CardDescription>
                     </div>
                      <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
@@ -233,34 +233,34 @@ export default function AdminTransactionsPage() {
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
-                                placeholder="جستجو بر اساس کاربر یا شناسه..."
+                                placeholder="Search by user or ID..."
                                 className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <Button variant="outline">
-                           <FileDown className="h-4 w-4 ml-2" />
-                            دریافت خروجی
+                           <FileDown className="h-4 w-4 mr-2" />
+                            Export
                         </Button>
                     </div>
                 </div>
                  <div className="flex flex-col md:flex-row items-center gap-2 mt-4">
                     <Select value={typeFilter} onValueChange={setTypeFilter}>
                         <SelectTrigger className="w-full md:w-[180px]">
-                            <SelectValue placeholder="فیلتر بر اساس نوع" />
+                            <SelectValue placeholder="Filter by type" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">همه انواع</SelectItem>
+                            <SelectItem value="all">All Types</SelectItem>
                             {Object.entries(typeNames).map(([value, name]) => value !== 'all' && <SelectItem key={value} value={value}>{name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-full md:w-[180px]">
-                            <SelectValue placeholder="فیلتر بر اساس وضعیت" />
+                            <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                            <SelectItem value="all">All Statuses</SelectItem>
                             {Object.entries(statusNames).map(([value, name]) => value !== 'all' && <SelectItem key={value} value={value}>{name}</SelectItem>)}
                         </SelectContent>
                     </Select>
@@ -271,14 +271,14 @@ export default function AdminTransactionsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>کاربر</TableHead>
-                            <TableHead>شناسه</TableHead>
-                            <TableHead className="hidden md:table-cell">نوع</TableHead>
-                            <TableHead className="hidden md:table-cell text-center">تاریخ</TableHead>
-                            <TableHead>وضعیت</TableHead>
-                             <TableHead className="text-right">مبلغ</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead>ID</TableHead>
+                            <TableHead className="hidden md:table-cell">Type</TableHead>
+                            <TableHead className="hidden md:table-cell text-center">Date</TableHead>
+                            <TableHead>Status</TableHead>
+                             <TableHead className="text-right">Amount</TableHead>
                             <TableHead>
-                                <span className="sr-only">عملیات</span>
+                                <span className="sr-only">Actions</span>
                             </TableHead>
                         </TableRow>
                     </TableHeader>
@@ -288,14 +288,14 @@ export default function AdminTransactionsPage() {
                                 <TableCell colSpan={7} className="text-center py-10">
                                     <div className="flex justify-center items-center gap-2">
                                         <Loader2 className="h-5 w-5 animate-spin"/>
-                                        <span>در حال بارگذاری تراکنش‌ها...</span>
+                                        <span>Loading transactions...</span>
                                     </div>
                                 </TableCell>
                             </TableRow>
                          ) : filteredTransactions.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} className="text-center py-10">
-                                    هیچ تراکنشی با این فیلترها یافت نشد.
+                                    No transactions found with these filters.
                                 </TableCell>
                             </TableRow>
                          ) : (
@@ -336,10 +336,10 @@ export default function AdminTransactionsPage() {
                                             </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                                                <DropdownMenuItem disabled>مشاهده جزئیات تراکنش</DropdownMenuItem>
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <DropdownMenuItem disabled>View Transaction Details</DropdownMenuItem>
                                                 <DropdownMenuItem asChild>
-                                                   <Link href={`/admin/users/${tx.userId}`}>مشاهده پروفایل کاربر</Link>
+                                                   <Link href={`/admin/users/${tx.userId}`}>View User Profile</Link>
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -352,7 +352,7 @@ export default function AdminTransactionsPage() {
             </CardContent>
              <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                    نمایش <strong>{filteredTransactions.length}</strong> از <strong>{allTransactions.length}</strong> تراکنش
+                    Showing <strong>{filteredTransactions.length}</strong> of <strong>{allTransactions.length}</strong> transactions
                 </div>
                  {/* Pagination can be added here */}
             </CardFooter>

@@ -46,8 +46,8 @@ export default function AdminReportsPage() {
             console.error("Failed to fetch transaction data:", error);
             toast({
                 variant: "destructive",
-                title: "خطای واکشی",
-                description: "مشکلی در دریافت اطلاعات گزارشات مالی رخ داد."
+                title: "Fetch Error",
+                description: "There was a problem retrieving financial reports."
             })
         } finally {
             setLoading(false);
@@ -60,12 +60,12 @@ export default function AdminReportsPage() {
 
     const handleDistributeProfits = async () => {
         setIsDistributing(true);
-        toast({ title: "عملیات در حال انجام", description: "توزیع سود آغاز شد..."});
+        toast({ title: "Operation in Progress", description: "Profit distribution has started..."});
         try {
             const result = await distributeProfitsAction();
             if (result.success) {
                 toast({
-                    title: "عملیات موفق",
+                    title: "Operation Successful",
                     description: result.message,
                 });
                 await fetchData(); // Refresh data after distribution
@@ -75,8 +75,8 @@ export default function AdminReportsPage() {
         } catch (error) {
              toast({
                 variant: "destructive",
-                title: "خطا در توزیع سود",
-                description: error instanceof Error ? error.message : "یک خطای ناشناخته رخ داد."
+                title: "Profit Distribution Error",
+                description: error instanceof Error ? error.message : "An unknown error occurred."
             });
         } finally {
             setIsDistributing(false);
@@ -85,12 +85,12 @@ export default function AdminReportsPage() {
     
     const handleUnlockBonuses = async () => {
         setIsUnlocking(true);
-        toast({ title: "عملیات در حال انجام", description: "آزادسازی جوایز آغاز شد..."});
+        toast({ title: "Operation in Progress", description: "Unlocking bonuses has started..."});
         try {
             const result = await unlockBonusesAction();
             if (result.success) {
                 toast({
-                    title: "عملیات موفق",
+                    title: "Operation Successful",
                     description: result.message,
                 });
                 await fetchData(); // Refresh data after unlocking
@@ -100,8 +100,8 @@ export default function AdminReportsPage() {
         } catch (error) {
              toast({
                 variant: "destructive",
-                title: "خطا در آزادسازی جوایز",
-                description: error instanceof Error ? error.message : "یک خطای ناشناخته رخ داد."
+                title: "Bonus Unlocking Error",
+                description: error instanceof Error ? error.message : "An unknown error occurred."
             });
         } finally {
             setIsUnlocking(false);
@@ -109,13 +109,13 @@ export default function AdminReportsPage() {
     }
 
     const typeNames: Record<string, string> = {
-        investment: "سرمایه‌گذاری",
-        profit_payout: "واریز سود",
-        commission: "کمیسیون",
-        principal_return: "بازگشت اصل پول",
-        withdrawal_request: "درخواست برداشت",
-        withdrawal_refund: "لغو برداشت",
-        bonus: "جایزه"
+        investment: "Investment",
+        profit_payout: "Profit Payout",
+        commission: "Commission",
+        principal_return: "Principal Return",
+        withdrawal_request: "Withdrawal Request",
+        withdrawal_refund: "Withdrawal Refund",
+        bonus: "Bonus"
     };
     
     const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -123,12 +123,12 @@ export default function AdminReportsPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">گزارشات مالی و عملیات</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Financial Reports & Operations</h1>
         <div className="flex items-center gap-2">
             <DateRangePicker />
             <Button variant="outline">
-                <FileDown className="h-4 w-4 ml-2" />
-                دریافت خروجی
+                <FileDown className="h-4 w-4 mr-2" />
+                Export
             </Button>
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function AdminReportsPage() {
        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">موجودی کل پلتفرم (TVL)</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Platform TVL</CardTitle>
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -144,13 +144,13 @@ export default function AdminReportsPage() {
                 <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalPlatformWallet ?? 0)}</div>
             }
             <p className="text-xs text-muted-foreground">
-              مجموع سرمایه خالص و فعال کاربران
+              Total net active capital of users
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">استخر سود (آماده توزیع)</CardTitle>
+            <CardTitle className="text-sm font-medium">Profit Pool (To Distribute)</CardTitle>
             <PiggyBank className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -158,13 +158,13 @@ export default function AdminReportsPage() {
                 <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalProfitPool ?? 0)}</div>
             }
             <p className="text-xs text-muted-foreground">
-              مجموع کارمزدهای ورود و خروج
+              Sum of entry and exit fees
             </p>
           </CardContent>
         </Card>
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">مجموع درآمد پلتفرم</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Platform Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -172,13 +172,13 @@ export default function AdminReportsPage() {
                 <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalPlatformRevenue ?? 0)}</div>
             }
             <p className="text-xs text-muted-foreground">
-              فقط از محل کارمزد ۱٪ پلتفرم
+              From the 1% platform fee only
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">موجودی کل صندوق قرعه‌کشی</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Lottery Pool</CardTitle>
             <Ticket className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -186,7 +186,7 @@ export default function AdminReportsPage() {
                 <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.totalLotteryPool ?? 0)}</div>
             }
             <p className="text-xs text-muted-foreground">
-              آماده برای قرعه‌کشی‌های ماهانه
+              Ready for monthly draws
             </p>
           </CardContent>
         </Card>
@@ -195,57 +195,57 @@ export default function AdminReportsPage() {
        <div className="grid gap-4 md:grid-cols-2 lg:gap-8">
         <Card>
             <CardHeader>
-                <CardTitle>توزیع سود روزانه</CardTitle>
+                <CardTitle>Daily Profit Distribution</CardTitle>
                 <CardDescription>
-                    با اجرای این عملیات، سود انباشته شده از کارمزدها (ورود و خروج) بین سرمایه‌گذاران فعال هر صندوق توزیع می‌شود.
+                    By running this operation, accumulated profit from fees (entry/exit) will be distributed among active investors of each fund.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                  <Button className="w-full" onClick={handleDistributeProfits} disabled={isDistributing || loading}>
                     {isDistributing ? (
                         <>
-                            <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                            در حال توزیع سود...
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Distributing...
                         </>
                     ) : (
                         <>
-                             <PlayCircle className="h-4 w-4 ml-2" />
-                            اجرای توزیع سود
+                             <PlayCircle className="h-4 w-4 mr-2" />
+                            Run Profit Distribution
                         </>
                     )}
                  </Button>
             </CardContent>
              <CardFooter>
                 <p className="text-xs text-muted-foreground">
-                    این عملیات، کارمزدهای جدید را بین کاربران فعال توزیع می‌کند.
+                    This operation distributes new fees to active users.
                 </p>
              </CardFooter>
         </Card>
          <Card>
             <CardHeader>
-                <CardTitle>آزادسازی جوایز</CardTitle>
+                <CardTitle>Unlock Bonuses</CardTitle>
                 <CardDescription>
-                   این عملیات تمام جوایز قفل‌شده کاربران را آزاد و به کیف پولشان اضافه می‌کند.
+                   This operation will unlock all locked user bonuses and add them to their wallets.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                  <Button variant="secondary" className="w-full" onClick={handleUnlockBonuses} disabled={isUnlocking || loading}>
                     {isUnlocking ? (
                         <>
-                            <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                            در حال آزادسازی...
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Unlocking...
                         </>
                     ) : (
                         <>
-                             <Unlock className="h-4 w-4 ml-2" />
-                            اجرای آزادسازی جوایز
+                             <Unlock className="h-4 w-4 mr-2" />
+                            Run Bonus Unlock
                         </>
                     )}
                  </Button>
             </CardContent>
              <CardFooter>
                 <p className="text-xs text-muted-foreground">
-                    این دکمه را فقط زمانی بزنید که شرط آزادسازی جوایز محقق شده باشد.
+                    Only press this button when the condition for unlocking bonuses has been met.
                 </p>
              </CardFooter>
         </Card>
@@ -253,19 +253,19 @@ export default function AdminReportsPage() {
 
        <Card>
             <CardHeader>
-                <CardTitle>آمار صندوق‌ها برای توزیع سود</CardTitle>
+                <CardTitle>Fund Stats for Profit Distribution</CardTitle>
                 <CardDescription>
-                   این جدول وضعیت هر صندوق را قبل از اجرای عملیات توزیع سود نشان می‌دهد.
+                   This table shows the status of each fund before running the profit distribution operation.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                  <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>صندوق</TableHead>
-                            <TableHead className="text-right">استخر سود روزانه</TableHead>
-                            <TableHead className="text-right">سرمایه فعال صندوق</TableHead>
-                             <TableHead className="text-center">تعداد سرمایه‌گذاران</TableHead>
+                            <TableHead>Fund</TableHead>
+                            <TableHead className="text-right">Daily Profit Pool</TableHead>
+                            <TableHead className="text-right">Active Investment</TableHead>
+                             <TableHead className="text-center">Investor Count</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -280,7 +280,7 @@ export default function AdminReportsPage() {
                         ) : stats?.fundStats.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={4} className="text-center py-10">
-                                   داده‌ای برای نمایش وجود ندارد.
+                                   No data to display.
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -300,20 +300,20 @@ export default function AdminReportsPage() {
 
        <Card>
             <CardHeader>
-                <CardTitle>رویدادهای مالی اخیر</CardTitle>
+                <CardTitle>Recent Financial Events</CardTitle>
                 <CardDescription>
-                    لیست آخرین رویدادهای مالی ثبت شده در سیستم.
+                    A list of the latest financial events recorded in the system.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>شناسه</TableHead>
-                            <TableHead>نوع رویداد</TableHead>
-                            <TableHead>جزئیات</TableHead>
-                            <TableHead>تاریخ</TableHead>
-                            <TableHead className="text-right">مبلغ</TableHead>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Event Type</TableHead>
+                            <TableHead>Details</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -322,14 +322,14 @@ export default function AdminReportsPage() {
                                 <TableCell colSpan={5} className="text-center py-10">
                                     <div className="flex justify-center items-center gap-2">
                                         <Loader2 className="h-5 w-5 animate-spin"/>
-                                        <span>در حال بارگذاری رویدادها...</span>
+                                        <span>Loading events...</span>
                                     </div>
                                 </TableCell>
                             </TableRow>
                         ) : transactions.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center py-10">
-                                   هیچ رویداد مالی برای نمایش وجود ندارد.
+                                   No financial events to display.
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -354,7 +354,7 @@ export default function AdminReportsPage() {
             </CardContent>
              <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                    نمایش <strong>{transactions.length}</strong> از آخرین رویدادهای مالی
+                    Showing <strong>{transactions.length}</strong> of the latest financial events
                 </div>
             </CardFooter>
        </Card>
