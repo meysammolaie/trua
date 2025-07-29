@@ -15,6 +15,8 @@ export const PlatformSettingsSchema = z.object({
   minWithdrawalAmount: z.coerce.number().min(0).default(10),
   withdrawalDay: z.enum(['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday']).default('saturday'),
   bonusUnlockTarget: z.coerce.number().positive().default(1000000), // New field for bonus unlock
+  automaticProfitDistribution: z.boolean().default(true),
+  lastDistributionAt: z.string().nullable().optional(),
 });
 
 export const GetInvestmentDetailsInputSchema = z.object({

@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network, Target } from "lucide-react";
+import { Percent, Globe, AlertTriangle, KeyRound, Loader2, DollarSign, CalendarDays, Network, Target, Bot } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPlatformSettingsAction, updatePlatformSettingsAction } from "@/app/actions/platform-settings";
 import { PlatformSettingsSchema } from "@/ai/schemas";
@@ -70,6 +70,8 @@ export default function AdminSettingsPage() {
       minWithdrawalAmount: 10,
       withdrawalDay: "saturday",
       bonusUnlockTarget: 1000000,
+      automaticProfitDistribution: true,
+      lastDistributionAt: null,
     },
   });
 
@@ -351,6 +353,26 @@ export default function AdminSettingsPage() {
                                    مبلغ کل TVL پلتفرم که پس از رسیدن به آن، جوایز کاربران آزاد می‌شود.
                                 </FormDescription>
                                 <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="automaticProfitDistribution"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">توزیع خودکار سود روزانه</FormLabel>
+                                        <FormDescription>
+                                            با فعال‌سازی این گزینه، سودها هر شب به صورت خودکار توزیع می‌شوند.
+                                        </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
                                 </FormItem>
                             )}
                         />

@@ -68,6 +68,8 @@ const getPlatformSettingsFlow = ai.defineFlow(
             minWithdrawalAmount: 10,
             withdrawalDay: 'saturday',
             bonusUnlockTarget: 1000000,
+            automaticProfitDistribution: true,
+            lastDistributionAt: null,
         };
       }
     } catch (error) {

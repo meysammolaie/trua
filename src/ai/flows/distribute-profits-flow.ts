@@ -10,7 +10,8 @@
 import { genkit } from 'genkit';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp, setDoc } from 'firebase/firestore';
+import { getPlatformSettings } from './platform-settings-flow';
 
 const ai = genkit({
   plugins: [],
@@ -39,6 +40,44 @@ const FUNDS = ['gold', 'silver', 'usdt', 'bitcoin'];
 export async function distributeProfits(): Promise<z.infer<typeof DistributeProfitsOutputSchema>> {
   return await distributeProfitsFlow({});
 }
+
+// Scheduled job runner
+export const distributeProfitsJob = ai.defineFlow(
+  {
+    name: 'distributeProfitsJob',
+    trigger: {
+      type: 'schedule',
+      schedule: '59 23 * * *', // Runs every day at 23:59
+      timeZone: 'UTC',
+    },
+  },
+  async () => {
+    console.log("Running scheduled profit distribution...");
+    const settings = await getPlatformSettings();
+
+    if (!settings.automaticProfitDistribution) {
+      console.log("Automatic profit distribution is disabled. Skipping.");
+      return;
+    }
+
+    const now = new Date();
+    const lastRun = settings.lastDistributionAt ? new Date(settings.lastDistributionAt) : null;
+    if (lastRun && lastRun.getUTCDate() === now.getUTCDate() && lastRun.getUTCMonth() === now.getUTCMonth() && lastRun.getUTCFullYear() === now.getUTCFullYear()) {
+        console.log("Profit distribution has already run today (manually or automatically). Skipping.");
+        return;
+    }
+
+    const result = await distributeProfitsFlow({});
+    if (result.success && (result.details?.length ?? 0 > 0)) {
+        console.log(`Scheduled profit distribution successful: ${result.message}`);
+    } else if (!result.success) {
+        console.error(`Scheduled profit distribution failed: ${result.message}`);
+    } else {
+        console.log("No new profits to distribute today.");
+    }
+  }
+);
+
 
 const distributeProfitsFlow = ai.defineFlow(
   {
@@ -153,6 +192,11 @@ const distributeProfitsFlow = ai.defineFlow(
         }
       
         await overallBatch.commit();
+        
+        // After successful distribution, update the last run time
+        const settingsRef = doc(db, 'platform_settings', 'main_settings');
+        await setDoc(settingsRef, { lastDistributionAt: now.toISOString() }, { merge: true });
+
 
         return {
             success: true,
