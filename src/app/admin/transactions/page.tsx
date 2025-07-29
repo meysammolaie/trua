@@ -245,9 +245,9 @@ export default function AdminTransactionsPage() {
                         </Button>
                     </div>
                 </div>
-                 <div className="flex flex-col md:flex-row items-center gap-2 mt-4">
+                 <div className="flex flex-col md:flex-row items-center gap-2 mt-4 flex-wrap">
                     <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger className="w-full md:w-[180px]">
+                        <SelectTrigger className="w-full sm:w-auto flex-grow sm:flex-grow-0 sm:w-[180px]">
                             <SelectValue placeholder="Filter by type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -256,7 +256,7 @@ export default function AdminTransactionsPage() {
                         </SelectContent>
                     </Select>
                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-full md:w-[180px]">
+                        <SelectTrigger className="w-full sm:w-auto flex-grow sm:flex-grow-0 sm:w-[180px]">
                             <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -264,7 +264,7 @@ export default function AdminTransactionsPage() {
                             {Object.entries(statusNames).map(([value, name]) => value !== 'all' && <SelectItem key={value} value={value}>{name}</SelectItem>)}
                         </SelectContent>
                     </Select>
-                    <DateRangePicker onDateChange={setDateRange} className="w-full md:w-auto" />
+                    <DateRangePicker onDateChange={setDateRange} className="w-full sm:w-auto flex-grow sm:flex-grow-0" />
                 </div>
             </CardHeader>
             <CardContent>
@@ -272,11 +272,10 @@ export default function AdminTransactionsPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>User</TableHead>
-                            <TableHead>ID</TableHead>
-                            <TableHead className="hidden md:table-cell">Type</TableHead>
-                            <TableHead className="hidden md:table-cell text-center">Date</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead className="hidden sm:table-cell">Type</TableHead>
+                            <TableHead className="hidden md:table-cell">Status</TableHead>
                              <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="hidden lg:table-cell text-center">Date</TableHead>
                             <TableHead>
                                 <span className="sr-only">Actions</span>
                             </TableHead>
@@ -285,7 +284,7 @@ export default function AdminTransactionsPage() {
                     <TableBody>
                          {loading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-10">
+                                <TableCell colSpan={6} className="text-center py-10">
                                     <div className="flex justify-center items-center gap-2">
                                         <Loader2 className="h-5 w-5 animate-spin"/>
                                         <span>Loading transactions...</span>
@@ -294,7 +293,7 @@ export default function AdminTransactionsPage() {
                             </TableRow>
                          ) : filteredTransactions.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-10">
+                                <TableCell colSpan={6} className="text-center py-10">
                                     No transactions found with these filters.
                                 </TableCell>
                             </TableRow>
@@ -302,48 +301,39 @@ export default function AdminTransactionsPage() {
                             filteredTransactions.map((tx) => (
                                 <TableRow key={tx.id}>
                                 <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="hidden h-9 w-9 sm:flex">
-                                                <AvatarImage src={`https://i.pravatar.cc/40?u=${tx.userId}`} alt="Avatar" />
-                                                <AvatarFallback>{tx.userFullName.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="grid gap-1">
-                                                <p className="text-sm font-medium leading-none">{tx.userFullName}</p>
-                                                <p className="text-sm text-muted-foreground">{tx.userEmail}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="font-mono">{tx.id.substring(0,8)}...</TableCell>
-                                    <TableCell className="hidden md:table-cell">{getTransactionTypeName(tx.type)}</TableCell>
-                                    <TableCell className="hidden md:table-cell text-center">{tx.createdAt}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getStatusBadgeVariant(tx.status)}>
-                                        <div className="flex items-center gap-2">
-                                                {getStatusIcon(tx.status)}
-                                                <span>{statusNames[tx.status || 'all'] || tx.status}</span>
-                                        </div>
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                        {tx.amount > 0 ? '+' : ''}{formatCurrency(tx.amount)}
-                                    </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">Toggle menu</span>
-                                            </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem disabled>View Transaction Details</DropdownMenuItem>
-                                                <DropdownMenuItem asChild>
-                                                   <Link href={`/admin/users/${tx.userId}`}>View User Profile</Link>
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+                                    <div className="font-medium">{tx.userFullName}</div>
+                                    <div className="text-xs text-muted-foreground">{tx.userEmail}</div>
+                                </TableCell>
+                                <TableCell className="hidden sm:table-cell">{getTransactionTypeName(tx.type)}</TableCell>
+                                <TableCell className="hidden md:table-cell">
+                                    <Badge variant={getStatusBadgeVariant(tx.status)}>
+                                    <div className="flex items-center gap-2">
+                                            {getStatusIcon(tx.status)}
+                                            <span>{statusNames[tx.status || 'all'] || tx.status}</span>
+                                    </div>
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className={`text-right font-mono ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                    {tx.amount > 0 ? '+' : ''}{formatCurrency(tx.amount)}
+                                </TableCell>
+                                <TableCell className="hidden lg:table-cell text-center">{tx.createdAt}</TableCell>
+                                <TableCell>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            <span className="sr-only">Toggle menu</span>
+                                        </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuItem disabled>View Transaction Details</DropdownMenuItem>
+                                            <DropdownMenuItem asChild>
+                                               <Link href={`/admin/users/${tx.userId}`}>View User Profile</Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
                                 </TableRow>
                             ))
                         )}

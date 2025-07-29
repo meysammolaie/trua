@@ -229,9 +229,9 @@ function AdminInvestmentsPageContent() {
                         </Button>
                     </div>
                 </div>
-                 <div className="flex flex-col md:flex-row items-center gap-2 mt-4">
+                 <div className="flex flex-col md:flex-row items-center gap-2 mt-4 flex-wrap">
                     <Select value={fundFilter} onValueChange={setFundFilter}>
-                        <SelectTrigger className="w-full md:w-[180px]">
+                        <SelectTrigger className="w-full sm:w-auto flex-grow sm:flex-grow-0 sm:w-[180px]">
                             <SelectValue placeholder="Filter by fund" />
                         </SelectTrigger>
                         <SelectContent>
@@ -240,7 +240,7 @@ function AdminInvestmentsPageContent() {
                         </SelectContent>
                     </Select>
                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-full md:w-[180px]">
+                        <SelectTrigger className="w-full sm:w-auto flex-grow sm:flex-grow-0 sm:w-[180px]">
                             <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -251,7 +251,7 @@ function AdminInvestmentsPageContent() {
                             <SelectItem value="rejected">Rejected</SelectItem>
                         </SelectContent>
                     </Select>
-                    <DateRangePicker className="w-full md:w-auto" />
+                    <DateRangePicker className="w-full sm:w-auto flex-grow sm:flex-grow-0" />
                 </div>
             </CardHeader>
             <CardContent>

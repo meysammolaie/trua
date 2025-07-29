@@ -142,8 +142,8 @@ export default function AdminUsersPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>User</TableHead>
-                            <TableHead className="hidden md:table-cell">Registration Date</TableHead>
-                            <TableHead className="hidden md:table-cell">Total Investment</TableHead>
+                            <TableHead className="hidden lg:table-cell">Registration Date</TableHead>
+                            <TableHead className="hidden md:table-cell text-right">Total Investment</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>
                                 <span className="sr-only">Actions</span>
@@ -181,8 +181,8 @@ export default function AdminUsersPage() {
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell">{user.createdAt}</TableCell>
-                                    <TableCell className="hidden md:table-cell font-mono">
+                                    <TableCell className="hidden lg:table-cell">{user.createdAt}</TableCell>
+                                    <TableCell className="hidden md:table-cell font-mono text-right">
                                         {formatCurrency(user.totalInvestment)}
                                     </TableCell>
                                     <TableCell>
