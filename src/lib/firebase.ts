@@ -4,13 +4,14 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  "projectId": "verdant-vault-7k4w3",
-  "appId": "1:983159235723:web:3e19f9d3265da955d1a08e",
-  "storageBucket": "verdant-vault-7k4w3.appspot.com",
-  "apiKey": "AIzaSyAy3Bv1uVw3t6av9JW2z60R4NOkgDV9nLg",
-  "authDomain": "verdant-vault-7k4w3.firebaseapp.com",
-  "messagingSenderId": "983159235723"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
+
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
