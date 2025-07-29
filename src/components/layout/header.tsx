@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { VerdantVaultLogo } from "@/components/icons";
-import { Sheet, SheetTrigger, SheetContent } from "../ui/sheet";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "../ui/sheet";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +54,16 @@ export function Header() {
                 </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="flex flex-col bg-card/80 backdrop-blur-lg">
-                    <nav className="grid gap-4 text-lg font-medium mt-8">
+                    <SheetHeader className="text-left">
+                        <SheetTitle className="flex items-center gap-2">
+                           <VerdantVaultLogo className="h-6 w-6" />
+                           <span>Trusva Menu</span>
+                        </SheetTitle>
+                        <SheetDescription>
+                            Navigate to different sections of the site or log in to your account.
+                        </SheetDescription>
+                    </SheetHeader>
+                    <nav className="grid gap-4 text-lg font-medium mt-4">
                         {navLinks.map((item) => (
                              <Link
                                 key={item.href}
