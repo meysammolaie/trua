@@ -20,7 +20,7 @@ const ClearTestDataOutputSchema = z.object({
 });
 
 export async function clearTestData(): Promise<z.infer<typeof ClearTestDataOutputSchema>> {
-  return await clearTestDataFlow();
+  return await clearTestDataFlow({});
 }
 
 const clearTestDataFlow = ai.defineFlow(
