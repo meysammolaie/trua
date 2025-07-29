@@ -48,8 +48,8 @@ export default function ReferralsPage() {
           console.error("Failed to fetch referral data:", error);
           toast({
             variant: "destructive",
-            title: "خطا در واکشی اطلاعات",
-            description: "مشکلی در دریافت گزارشات معرفی شما رخ داد.",
+            title: "Error Fetching Data",
+            description: "There was a problem retrieving your referral data.",
           });
         })
         .finally(() => setLoading(false));
@@ -62,8 +62,8 @@ export default function ReferralsPage() {
     if (!data?.referralCode) return;
     navigator.clipboard.writeText(data.referralCode);
     toast({
-      title: "کپی شد!",
-      description: "کد معرف شما در کلیپ‌بورد کپی شد.",
+      title: "Copied!",
+      description: "Your referral code has been copied to your clipboard.",
     });
   };
 
@@ -71,8 +71,8 @@ export default function ReferralsPage() {
     if (!referralLink) return;
     navigator.clipboard.writeText(referralLink);
     toast({
-        title: "کپی شد!",
-        description: "لینک معرف شما در کلیپ‌بورد کپی شد."
+        title: "Copied!",
+        description: "Your referral link has been copied to your clipboard."
     });
   }
   
@@ -80,29 +80,29 @@ export default function ReferralsPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="mr-4">در حال بارگذاری اطلاعات معرفی‌ها...</p>
+        <p className="ml-4">Loading referral data...</p>
       </div>
     );
   }
 
   if (!data) {
-    return <div className="text-center">اطلاعاتی برای نمایش وجود ندارد.</div>;
+    return <div className="text-center">No data to display.</div>;
   }
 
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">معرفی‌ها</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Referrals</h1>
       </div>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>کد و لینک معرف شما</CardTitle>
-            <CardDescription>کد یا لینک زیر را با دوستانتان به اشتراک بگذارید.</CardDescription>
+            <CardTitle>Your Referral Code & Link</CardTitle>
+            <CardDescription>Share the code or link below with your friends.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm font-medium mb-2">کد معرف</p>
+              <p className="text-sm font-medium mb-2">Referral Code</p>
               <div className="flex items-center gap-2">
                 <Input readOnly value={data.referralCode} dir="ltr" className="font-mono text-lg tracking-widest"/>
                 <Button type="button" variant="outline" size="icon" onClick={copyReferralCode}>
@@ -111,7 +111,7 @@ export default function ReferralsPage() {
               </div>
             </div>
              <div>
-              <p className="text-sm font-medium mb-2">لینک معرف</p>
+              <p className="text-sm font-medium mb-2">Referral Link</p>
               <div className="flex items-center gap-2">
                 <Input readOnly value={referralLink} dir="ltr" className="font-mono text-sm"/>
                 <Button type="button" variant="outline" size="icon" onClick={copyReferralLink}>
@@ -123,45 +123,45 @@ export default function ReferralsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">مجموع کمیسیون دریافتی</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Commission Earned</CardTitle>
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono">{formatCurrency(data.stats.totalCommissionEarned)}</div>
-            <p className="text-xs text-muted-foreground">از تمام معرفی‌های شما</p>
+            <p className="text-xs text-muted-foreground">From all of your referrals</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">تعداد کل معرفی‌ها</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Referrals</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.stats.totalReferredUsers.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">تعداد کاربرانی که با کد شما ثبت‌نام کرده‌اند</p>
+            <p className="text-xs text-muted-foreground">Users who have signed up with your code</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>گزارش کمیسیون‌ها</CardTitle>
-          <CardDescription>لیست کاربرانی که توسط شما معرفی شده و سرمایه‌گذاری کرده‌اند.</CardDescription>
+          <CardTitle>Commission Report</CardTitle>
+          <CardDescription>List of users you referred who have made an investment.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>کاربر معرفی شده</TableHead>
-                <TableHead>تاریخ کمیسیون</TableHead>
-                <TableHead className="text-right">مبلغ کمیسیون</TableHead>
+                <TableHead>Referred User</TableHead>
+                <TableHead>Commission Date</TableHead>
+                <TableHead className="text-right">Commission Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.referrals.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center py-10">
-                    هنوز هیچ کمیسیونی از معرفی‌های شما ثبت نشده است.
+                    No commissions have been recorded from your referrals yet.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -180,7 +180,7 @@ export default function ReferralsPage() {
         </CardContent>
         <CardFooter>
             <div className="text-xs text-muted-foreground">
-                نمایش <strong>{data.referrals.length}</strong> رکورد
+                Showing <strong>{data.referrals.length}</strong> records
             </div>
         </CardFooter>
       </Card>

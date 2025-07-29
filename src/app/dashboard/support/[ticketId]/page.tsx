@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowRight, Send, User, Shield } from "lucide-react";
+import { Loader2, ArrowLeft, Send, User, Shield } from "lucide-react";
 import { getTicketDetailsAction, addTicketReplyAction } from "@/app/actions/support";
 import { GetTicketDetailsOutput } from "@/ai/flows/get-ticket-details-flow";
 import { useAuth } from "@/hooks/use-auth";
@@ -40,7 +40,7 @@ export default function UserTicketDetailPage() {
             const result = await getTicketDetailsAction({ ticketId });
             setDetails(result);
         } catch (error) {
-            toast({ variant: "destructive", title: "خطا", description: "مشکلی در واکشی جزئیات تیکت رخ داد." });
+            toast({ variant: "destructive", title: "Error", description: "There was a problem fetching ticket details." });
             router.push('/dashboard/support');
         } finally {
             setLoading(false);
@@ -59,14 +59,14 @@ export default function UserTicketDetailPage() {
         try {
             const result = await addTicketReplyAction({ ticketId, senderId: user.uid, message: reply });
             if (result.success) {
-                toast({ title: "موفق", description: "پاسخ شما با موفقیت ثبت شد." });
+                toast({ title: "Success", description: "Your reply has been submitted." });
                 setReply("");
                 await fetchDetails();
             } else {
                 throw new Error(result.message);
             }
         } catch (error) {
-            toast({ variant: "destructive", title: "خطا", description: error instanceof Error ? error.message : "مشکلی در ثبت پاسخ رخ داد." });
+            toast({ variant: "destructive", title: "Error", description: error instanceof Error ? error.message : "There was a problem submitting your reply." });
         } finally {
             setIsReplying(false);
         }
@@ -77,7 +77,7 @@ export default function UserTicketDetailPage() {
     }
 
     if (!details) {
-        return <div className="text-center">تیکت یافت نشد.</div>;
+        return <div className="text-center">Ticket not found.</div>;
     }
     
     // Check if user is authorized to see this ticket
@@ -94,13 +94,13 @@ export default function UserTicketDetailPage() {
                         <div>
                              <CardTitle className="text-2xl">{details.subject}</CardTitle>
                              <CardDescription>
-                                ایجاد شده در {details.createdAt}
+                                Created on {details.createdAt}
                              </CardDescription>
                              <Badge className="mt-2">{details.status}</Badge>
                         </div>
                         <Button variant="outline" onClick={() => router.push('/dashboard/support')}>
-                           <ArrowRight className="ml-2 h-4 w-4" />
-                           بازگشت به لیست
+                           <ArrowLeft className="mr-2 h-4 w-4" />
+                           Back to List
                         </Button>
                     </div>
                 </CardHeader>
@@ -121,16 +121,16 @@ export default function UserTicketDetailPage() {
                 {details.status !== 'closed' && (
                     <CardFooter className="border-t pt-6">
                         <div className="w-full">
-                            <h3 className="font-semibold mb-2">ارسال پاسخ</h3>
+                            <h3 className="font-semibold mb-2">Send Reply</h3>
                             <Textarea 
-                                placeholder="پاسخ خود را اینجا بنویسید..." 
+                                placeholder="Write your reply here..." 
                                 value={reply}
                                 onChange={(e) => setReply(e.target.value)}
                                 className="min-h-[100px]"
                             />
                             <Button onClick={handleReply} disabled={isReplying || !reply.trim()} className="mt-2">
-                                {isReplying ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : <Send className="ml-2 h-4 w-4" />}
-                                ارسال
+                                {isReplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4" />}
+                                Send
                             </Button>
                         </div>
                     </CardFooter>

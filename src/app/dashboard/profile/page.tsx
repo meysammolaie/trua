@@ -45,17 +45,17 @@ import { LoginHistoryRecord } from "@/ai/flows/get-login-history-flow";
 import { getLoginHistoryAction } from "@/app/actions/security";
 
 const profileFormSchema = z.object({
-  firstName: z.string().min(2, { message: "نام باید حداقل ۲ حرف داشته باشد." }),
-  lastName: z.string().min(2, { message: "نام خانوادگی باید حداقل ۲ حرف داشته باشد." }),
-  email: z.string().email().describe("ایمیل شما قابل تغییر نیست."),
+  firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
+  lastName: z.string().min(2, { message: "Last name must be at least 2 characters." }),
+  email: z.string().email().describe("Your email cannot be changed."),
 });
 
 const passwordFormSchema = z.object({
-  currentPassword: z.string().min(1, { message: "رمز عبور فعلی را وارد کنید." }),
-  newPassword: z.string().min(6, { message: "رمز عبور جدید باید حداقل ۶ کاراکتر باشد." }),
+  currentPassword: z.string().min(1, { message: "Please enter your current password." }),
+  newPassword: z.string().min(6, { message: "New password must be at least 6 characters." }),
   confirmPassword: z.string(),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "رمزهای عبور جدید یکسان نیستند.",
+  message: "New passwords do not match.",
   path: ["confirmPassword"],
 });
 
@@ -129,21 +129,21 @@ export default function ProfilePage() {
             lastName: values.lastName,
         });
         toast({
-          title: "موفقیت‌آمیز",
-          description: "اطلاعات پروفایل شما با موفقیت به‌روزرسانی شد.",
+          title: "Success",
+          description: "Your profile information has been updated.",
         });
     } catch (error) {
          toast({
           variant: "destructive",
-          title: "خطا",
-          description: "خطایی در به‌روزرسانی پروفایل رخ داد.",
+          title: "Error",
+          description: "An error occurred while updating your profile.",
         });
     }
   }
 
   async function onPasswordSubmit(values: z.infer<typeof passwordFormSchema>) {
     if (!user || !user.email) {
-        toast({ variant: "destructive", title: "خطا", description: "کاربر معتبر نیست." });
+        toast({ variant: "destructive", title: "Error", description: "Invalid user." });
         return;
     }
 
@@ -155,21 +155,21 @@ export default function ProfilePage() {
         await updatePassword(user, values.newPassword);
         
         toast({
-            title: "موفقیت‌آمیز",
-            description: "رمز عبور شما با موفقیت تغییر کرد.",
+            title: "Success",
+            description: "Your password has been changed successfully.",
         });
         passwordForm.reset();
 
     } catch (error) {
-        let description = "خطایی در تغییر رمز عبور رخ داد.";
+        let description = "An error occurred while changing your password.";
         if (error instanceof FirebaseError) {
             if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                description = "رمز عبور فعلی شما اشتباه است.";
+                description = "Your current password is incorrect.";
             }
         }
         toast({
             variant: "destructive",
-            title: "خطا",
+            title: "Error",
             description: description,
         });
     }
@@ -182,14 +182,14 @@ export default function ProfilePage() {
         await updateDoc(userRef, { is2faEnabled: enabled });
         setIs2faEnabled(enabled);
         toast({
-            title: "موفقیت‌آمیز",
-            description: `احراز هویت دو مرحله‌ای ${enabled ? 'فعال' : 'غیرفعال'} شد.`
+            title: "Success",
+            description: `Two-factor authentication has been ${enabled ? 'enabled' : 'disabled'}.`
         });
     } catch (error) {
          toast({
           variant: "destructive",
-          title: "خطا",
-          description: "خطایی در تغییر وضعیت احراز هویت دو مرحله‌ای رخ داد.",
+          title: "Error",
+          description: "An error occurred while changing the 2FA status.",
         });
     }
   }
@@ -197,8 +197,8 @@ export default function ProfilePage() {
   const copyReferralCode = () => {
     navigator.clipboard.writeText(referralCode);
     toast({
-        title: "کپی شد!",
-        description: "کد معرف شما در کلیپ‌بورد کپی شد."
+        title: "Copied!",
+        description: "Your referral code has been copied to the clipboard."
     })
   }
   
@@ -213,15 +213,15 @@ export default function ProfilePage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">پروفایل و تنظیمات</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Profile & Settings</h1>
       </div>
       <div className="grid gap-6">
         {/* Profile Information Card */}
         <Card>
           <CardHeader>
-            <CardTitle>اطلاعات پروفایل</CardTitle>
+            <CardTitle>Profile Information</CardTitle>
             <CardDescription>
-              اطلاعات شخصی خود را اینجا مدیریت کنید.
+              Manage your personal information here.
             </CardDescription>
           </CardHeader>
           <Form {...profileForm}>
@@ -233,9 +233,9 @@ export default function ProfilePage() {
                     name="firstName"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>نام</FormLabel>
+                        <FormLabel>First Name</FormLabel>
                         <FormControl>
-                            <Input placeholder="نام شما" {...field} />
+                            <Input placeholder="Your first name" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -246,9 +246,9 @@ export default function ProfilePage() {
                     name="lastName"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>نام خانوادگی</FormLabel>
+                        <FormLabel>Last Name</FormLabel>
                         <FormControl>
-                            <Input placeholder="نام خانوادگی شما" {...field} />
+                            <Input placeholder="Your last name" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -260,12 +260,12 @@ export default function ProfilePage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>ایمیل</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input readOnly disabled {...field} />
                       </FormControl>
                        <FormDescription>
-                          ایمیل حساب کاربری شما قابل تغییر نیست.
+                          Your account email cannot be changed.
                        </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -273,7 +273,7 @@ export default function ProfilePage() {
                 />
                  {referralCode && (
                     <FormItem>
-                        <FormLabel>کد معرف شما</FormLabel>
+                        <FormLabel>Your Referral Code</FormLabel>
                         <div className="flex items-center gap-2">
                              <Input readOnly value={referralCode} dir="ltr" />
                              <Button type="button" variant="outline" size="icon" onClick={copyReferralCode}>
@@ -281,15 +281,15 @@ export default function ProfilePage() {
                              </Button>
                         </div>
                         <FormDescription>
-                           این کد را با دوستان خود به اشتراک بگذارید تا از مزایای معرفی بهره‌مند شوید.
+                           Share this code with your friends to earn referral bonuses.
                         </FormDescription>
                     </FormItem>
                  )}
               </CardContent>
               <CardFooter className="border-t px-6 py-4">
                 <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                    {profileForm.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                    {profileForm.formState.isSubmitting ? "در حال ذخیره..." : "ذخیره تغییرات"}
+                    {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {profileForm.formState.isSubmitting ? "Saving..." : "Save Changes"}
                 </Button>
               </CardFooter>
             </form>
@@ -299,9 +299,9 @@ export default function ProfilePage() {
         {/* Password Management Card */}
         <Card>
           <CardHeader>
-            <CardTitle>تغییر رمز عبور</CardTitle>
+            <CardTitle>Change Password</CardTitle>
             <CardDescription>
-              برای امنیت بیشتر، به طور منظم رمز عبور خود را تغییر دهید.
+              Change your password regularly for better security.
             </CardDescription>
           </CardHeader>
            <Form {...passwordForm}>
@@ -312,7 +312,7 @@ export default function ProfilePage() {
                     name="currentPassword"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>رمز عبور فعلی</FormLabel>
+                        <FormLabel>Current Password</FormLabel>
                         <FormControl>
                             <Input type="password" {...field} />
                         </FormControl>
@@ -326,7 +326,7 @@ export default function ProfilePage() {
                         name="newPassword"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>رمز عبور جدید</FormLabel>
+                            <FormLabel>New Password</FormLabel>
                             <FormControl>
                                 <Input type="password" {...field} />
                             </FormControl>
@@ -339,7 +339,7 @@ export default function ProfilePage() {
                         name="confirmPassword"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>تکرار رمز عبور جدید</FormLabel>
+                            <FormLabel>Confirm New Password</FormLabel>
                             <FormControl>
                                 <Input type="password" {...field} />
                             </FormControl>
@@ -351,8 +351,8 @@ export default function ProfilePage() {
                 </CardContent>
                 <CardFooter className="border-t px-6 py-4">
                     <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
-                        {passwordForm.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                        {passwordForm.formState.isSubmitting ? "در حال تغییر..." : "تغییر رمز عبور"}
+                        {passwordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {passwordForm.formState.isSubmitting ? "Changing..." : "Change Password"}
                     </Button>
                 </CardFooter>
             </form>
@@ -362,13 +362,13 @@ export default function ProfilePage() {
         {/* Security Settings Card */}
         <Card>
           <CardHeader>
-            <CardTitle>تنظیمات امنیتی</CardTitle>
+            <CardTitle>Security Settings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
              <div className="flex items-center justify-between rounded-lg border p-4">
                 <div>
-                    <h3 className="font-medium">احراز هویت دو مرحله‌ای (2FA)</h3>
-                    <p className="text-sm text-muted-foreground">یک لایه امنیتی بیشتر به حساب خود اضافه کنید. (کد تست: 123456)</p>
+                    <h3 className="font-medium">Two-Factor Authentication (2FA)</h3>
+                    <p className="text-sm text-muted-foreground">Add an extra layer of security to your account. (Test code: 123456)</p>
                 </div>
                 <Switch 
                     checked={is2faEnabled}
@@ -379,15 +379,15 @@ export default function ProfilePage() {
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
              <CardDescription>
-                تاریخچه ورودهای اخیر به حساب شما
+                Recent login history for your account
             </CardDescription>
           </CardFooter>
            <CardContent>
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>دستگاه</TableHead>
-                        <TableHead>تاریخ</TableHead>
+                        <TableHead>Device</TableHead>
+                        <TableHead>Date</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>

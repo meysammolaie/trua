@@ -28,8 +28,8 @@ export default function TasksPage() {
       } catch (error) {
         toast({
           variant: "destructive",
-          title: "خطا",
-          description: "مشکلی در دریافت لیست وظایف رخ داد.",
+          title: "Error",
+          description: "There was a problem fetching the task list.",
         });
       } finally {
         setLoading(false);
@@ -43,7 +43,7 @@ export default function TasksPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="mr-4">در حال بارگذاری وظایف...</p>
+        <p className="ml-4">Loading tasks...</p>
       </div>
     );
   }
@@ -51,15 +51,15 @@ export default function TasksPage() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">وظایف و پاداش‌ها</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Tasks & Rewards</h1>
       </div>
 
       {tasks.length === 0 ? (
         <Card className="text-center p-10 flex flex-col items-center">
             <Sparkles className="w-16 h-16 text-primary mb-4" />
-            <CardTitle className="text-2xl font-bold mb-2">به زودی منتظر خبرهای هیجان‌انگیز باشید!</CardTitle>
+            <CardTitle className="text-2xl font-bold mb-2">Exciting News Coming Soon!</CardTitle>
             <CardDescription className="max-w-md mx-auto">
-                ما در حال آماده‌سازی فرصت‌های جدیدی برای افزایش درآمد شما هستیم. با انجام وظایف ساده‌ای که در آینده در این بخش قرار می‌گیرند، می‌توانید دلار و طلا به عنوان پاداش دریافت کنید. گوش به زنگ باشید!
+                We are preparing new opportunities for you to increase your income. By completing simple tasks that will appear in this section in the future, you can receive USD and Gold as rewards. Stay tuned!
             </CardDescription>
         </Card>
       ) : (
@@ -78,14 +78,14 @@ export default function TasksPage() {
               <CardContent className="flex-grow">
                 <div className="p-3 rounded-lg bg-muted flex items-center justify-center gap-2">
                     <Gift className="w-5 h-5 text-yellow-500"/>
-                    <span className="font-bold">پاداش:</span>
+                    <span className="font-bold">Reward:</span>
                     <span className="font-mono text-lg text-green-400">${task.rewardAmount.toLocaleString()}</span>
                 </div>
               </CardContent>
               <div className="p-4 border-t">
                   <Button className="w-full" disabled>
-                      <CheckCircle className="ml-2 h-4 w-4"/>
-                      انجام شد (بزودی)
+                      <CheckCircle className="mr-2 h-4 w-4"/>
+                      Completed (Coming Soon)
                   </Button>
               </div>
             </Card>

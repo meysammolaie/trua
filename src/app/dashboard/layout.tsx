@@ -42,15 +42,15 @@ import { MobileDashboardNav } from "@/components/layout/mobile-dashboard-nav";
 import { Notifications } from "@/components/dashboard/notifications";
 
 const navItems = [
-  { href: "/dashboard", icon: Home, label: "داشبورد" },
-  { href: "/dashboard/invest", icon: Package, label: "سرمایه‌گذاری" },
-  { href: "/dashboard/wallet", icon: Wallet, label: "کیف پول" },
-  { href: "/dashboard/reports", icon: ArrowRightLeft, label: "تراکنش‌ها" },
-  { href: "/dashboard/analytics", icon: CandlestickChart, label: "تحلیل بازار" },
-  { href: "/dashboard/tasks", icon: ClipboardCheck, label: "وظایف" },
-  { href: "/dashboard/referrals", icon: Users, label: "معرفی‌ها" },
-  { href: "/dashboard/support", icon: MessageSquare, label: "پشتیبانی" },
-  { href: "/dashboard/profile", icon: CircleUser, label: "پروفایل" },
+  { href: "/dashboard", icon: Home, label: "Dashboard" },
+  { href: "/dashboard/invest", icon: Package, label: "Invest" },
+  { href: "/dashboard/wallet", icon: Wallet, label: "Wallet" },
+  { href: "/dashboard/reports", icon: ArrowRightLeft, label: "Transactions" },
+  { href: "/dashboard/analytics", icon: CandlestickChart, label: "Analytics" },
+  { href: "/dashboard/tasks", icon: ClipboardCheck, label: "Tasks" },
+  { href: "/dashboard/referrals", icon: Users, label: "Referrals" },
+  { href: "/dashboard/support", icon: MessageSquare, label: "Support" },
+  { href: "/dashboard/profile", icon: CircleUser, label: "Profile" },
 ];
 
 export default function DashboardLayout({
@@ -67,15 +67,15 @@ export default function DashboardLayout({
     try {
       await signOut(auth);
       toast({
-        title: "خروج موفق",
-        description: "شما با موفقیت از حساب خود خارج شدید.",
+        title: "Logout Successful",
+        description: "You have been successfully logged out.",
       });
       router.push("/");
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "خطا در خروج",
-        description: "مشکلی در هنگام خروج از حساب کاربری رخ داد.",
+        title: "Logout Error",
+        description: "There was a problem logging out.",
       });
     }
   };
@@ -84,7 +84,7 @@ export default function DashboardLayout({
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-transparent">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">در حال بارگذاری...</p>
+        <p className="mt-4 text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -152,7 +152,7 @@ export default function DashboardLayout({
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="flex flex-col bg-card/80 backdrop-blur-lg">
+            <SheetContent side="left" className="flex flex-col bg-card/80 backdrop-blur-lg">
               <nav className="grid gap-2 text-lg font-medium">
                 <Link
                   href="#"
@@ -183,12 +183,12 @@ export default function DashboardLayout({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-card/80 backdrop-blur-lg">
-              <DropdownMenuLabel>حساب من</DropdownMenuLabel>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild><Link href="/dashboard/profile">پروفایل</Link></DropdownMenuItem>
-              <DropdownMenuItem asChild><Link href="/dashboard/support">پشتیبانی</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href="/dashboard/profile">Profile</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href="/dashboard/support">Support</Link></DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>خروج</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

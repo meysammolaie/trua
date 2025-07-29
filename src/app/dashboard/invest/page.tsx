@@ -40,17 +40,17 @@ import { getFundDetailsAction } from "@/app/actions/funds";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const investmentSchema = z.object({
-  amount: z.coerce.number().positive({ message: "مقدار باید مثبت باشد." }),
-  transactionHash: z.string().min(10, { message: "لطفاً شناسه تراکنش معتبر وارد کنید." }),
+  amount: z.coerce.number().positive({ message: "Amount must be positive." }),
+  transactionHash: z.string().min(10, { message: "Please enter a valid transaction hash." }),
 });
 
 type FundId = "usdt" | "bitcoin" | "gold" | "silver";
 
 const fundIcons: Record<FundId, React.ReactNode> = {
-    usdt: <DollarSign className="w-5 h-5 ml-2" />,
-    bitcoin: <Bitcoin className="w-5 h-5 ml-2" />,
-    gold: <Crown className="w-5 h-5 ml-2" />,
-    silver: <Medal className="w-5 h-5 ml-2" />,
+    usdt: <DollarSign className="w-5 h-5 mr-2" />,
+    bitcoin: <Bitcoin className="w-5 h-5 mr-2" />,
+    gold: <Crown className="w-5 h-5 mr-2" />,
+    silver: <Medal className="w-5 h-5 mr-2" />,
 };
 
 const fundMinimums: Partial<Record<FundId, number>> = {
@@ -84,8 +84,8 @@ export default function InvestPage() {
       } catch (error) {
         toast({
           variant: "destructive",
-          title: "خطا",
-          description: "خطایی در بارگذاری اطلاعات صندوق‌ها رخ داد.",
+          title: "Error",
+          description: "There was an error loading fund information.",
         });
       } finally {
         setLoading(false);
@@ -118,21 +118,21 @@ export default function InvestPage() {
     if (!user || !activeFund) {
       toast({
         variant: "destructive",
-        title: "خطا",
-        description: "برای ثبت سرمایه‌گذاری باید ابتدا وارد شوید.",
+        title: "Error",
+        description: "You must be logged in to make an investment.",
       });
       return;
     }
 
     const amountInUSD = values.amount * (activeFund.price.usd || 0);
     if (amountInUSD < 1) {
-        form.setError("amount", { message: `حداقل سرمایه‌گذاری معادل 1 دلار است.` });
+        form.setError("amount", { message: `Minimum investment is equivalent to $1.` });
         return;
     }
 
     const fundMinimum = fundMinimums[activeFund.id as FundId];
     if (fundMinimum && values.amount < fundMinimum) {
-        form.setError("amount", { message: `حداقل مقدار برای سرمایه‌گذاری در این صندوق ${fundMinimum} ${activeFund.unit} است.` });
+        form.setError("amount", { message: `The minimum amount for this fund is ${fundMinimum} ${activeFund.unit}.` });
         return;
     }
 
@@ -146,7 +146,7 @@ export default function InvestPage() {
 
       if (result.success) {
         toast({
-          title: "درخواست شما ثبت شد",
+          title: "Request Submitted",
           description: result.message,
         });
         form.reset({ amount: 0, transactionHash: "" });
@@ -156,8 +156,8 @@ export default function InvestPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "خطا در ثبت سرمایه‌گذاری",
-        description: error instanceof Error ? error.message : "مشکلی پیش آمده است.",
+        title: "Investment Error",
+        description: error instanceof Error ? error.message : "An error occurred.",
       });
     }
   }
@@ -166,8 +166,8 @@ export default function InvestPage() {
     if (!activeFund?.walletAddress) return;
     navigator.clipboard.writeText(activeFund.walletAddress);
     toast({
-      title: "کپی شد!",
-      description: "آدرس کیف پول در کلیپ‌بورد شما کپی شد.",
+      title: "Copied!",
+      description: "The wallet address has been copied to your clipboard.",
     });
   };
 
@@ -175,25 +175,25 @@ export default function InvestPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="mr-4">در حال بارگذاری فرم سرمایه‌گذاری...</p>
+        <p className="ml-4">Loading investment form...</p>
       </div>
     );
   }
   
   if (!fundDetails) {
-    return <div className="text-center">اطلاعات صندوق‌ها یافت نشد.</div>
+    return <div className="text-center">Fund information not found.</div>
   }
 
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">سرمایه‌گذاری</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Invest</h1>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>ایجاد سرمایه‌گذاری جدید</CardTitle>
+          <CardTitle>Create New Investment</CardTitle>
           <CardDescription>
-            صندوق مورد نظر خود را انتخاب کرده و فرآیند سرمایه‌گذاری را آغاز کنید.
+            Select your desired fund and start the investment process.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -221,9 +221,9 @@ export default function InvestPage() {
                        <div className="space-y-6">
                           <Alert variant="destructive">
                             <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>هشدار بسیار مهم</AlertTitle>
+                            <AlertTitle>Very Important Notice</AlertTitle>
                             <AlertDescription>
-                              لطفاً مبلغ را <span className="font-bold">فقط از طریق شبکه BEP-20</span> به آدرس زیر واریز کنید. واریز از طریق شبکه‌های دیگر منجر به از دست رفتن دائمی سرمایه شما خواهد شد.
+                              Please deposit funds <span className="font-bold">only via the BEP-20 network</span> to the address below. Sending via other networks will result in the permanent loss of your funds.
                             </AlertDescription>
                           </Alert>
                          <FormField
@@ -231,12 +231,12 @@ export default function InvestPage() {
                            name="amount"
                            render={({ field }) => (
                              <FormItem>
-                               <FormLabel>مقدار سرمایه‌گذاری ({activeFund.unit})</FormLabel>
+                               <FormLabel>Investment Amount ({activeFund.unit})</FormLabel>
                                <FormControl>
                                  <Input type="number" step="any" {...field} placeholder="0.00" />
                                </FormControl>
                                <FormDescription>
-                                 حداقل مقدار سرمایه‌گذاری معادل ۱ دلار آمریکا می‌باشد.
+                                 Minimum investment amount is equivalent to $1 USD.
                                </FormDescription>
                                <FormMessage />
                              </FormItem>
@@ -244,7 +244,7 @@ export default function InvestPage() {
                          />
    
                          <div>
-                           <Label>آدرس کیف پول پلتفرم ({activeFund.unit})</Label>
+                           <Label>Platform Wallet Address ({activeFund.unit})</Label>
                            <div className="flex items-center gap-2 mt-2">
                              <Input readOnly value={activeFund.walletAddress} className="text-left" dir="ltr" />
                              <Button type="button" variant="outline" size="icon" onClick={handleCopyToClipboard} disabled={!activeFund.walletAddress}>
@@ -259,12 +259,12 @@ export default function InvestPage() {
                            name="transactionHash"
                            render={({ field }) => (
                              <FormItem>
-                               <FormLabel>شناسه تراکنش (TxID)</FormLabel>
+                               <FormLabel>Transaction Hash (TxID)</FormLabel>
                                <FormControl>
                                  <Input placeholder="0x..." {...field} className="text-left" dir="ltr" />
                                </FormControl>
                                 <FormDescription>
-                                 شناسه تراکنش را پس از واریز در اینجا وارد کنید.
+                                 Enter the transaction hash here after making the deposit.
                                 </FormDescription>
                                <FormMessage />
                              </FormItem>
@@ -276,28 +276,28 @@ export default function InvestPage() {
                        <div className="space-y-4">
                           <Card className="bg-muted/50">
                              <CardHeader>
-                               <CardTitle className="text-lg">خلاصه مالی</CardTitle>
+                               <CardTitle className="text-lg">Financial Summary</CardTitle>
                              </CardHeader>
                              <CardContent className="space-y-4 text-sm">
                                <div className="flex justify-between items-center">
-                                 <span className="text-muted-foreground">مبلغ سرمایه‌گذاری:</span>
+                                 <span className="text-muted-foreground">Investment Amount:</span>
                                  <span className="font-mono font-semibold">{formatCryptoValue(numericAmount)} {activeFund.unit}</span>
                                </div>
                                <div className="flex justify-between items-center">
-                                 <span className="text-muted-foreground">کارمزد ورود ({fundDetails.settings?.entryFee}%):</span>
+                                 <span className="text-muted-foreground">Entry Fee ({fundDetails.settings?.entryFee}%):</span>
                                  <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{formatCryptoValue(entryFee)} {activeFund.unit}</span>
                                </div>
                                 <div className="flex justify-between items-center">
-                                 <span className="text-muted-foreground">کارمزد قرعه‌کشی ({fundDetails.settings?.lotteryFee}%):</span>
+                                 <span className="text-muted-foreground">Lottery Fee ({fundDetails.settings?.lotteryFee}%):</span>
                                  <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{formatCryptoValue(lotteryFee)} {activeFund.unit}</span>
                                </div>
                                 <div className="flex justify-between items-center">
-                                 <span className="text-muted-foreground">کارمزد پلتفرم ({fundDetails.settings?.platformFee}%):</span>
+                                 <span className="text-muted-foreground">Platform Fee ({fundDetails.settings?.platformFee}%):</span>
                                  <span className={cn("font-mono font-semibold", numericAmount > 0 && "text-red-500")}>-{formatCryptoValue(platformFee)} {activeFund.unit}</span>
                                </div>
                                <hr />
                                 <div className="flex justify-between items-center text-base">
-                                 <span className="font-bold">سرمایه خالص شما:</span>
+                                 <span className="font-bold">Your Net Investment:</span>
                                  <div className="flex flex-col items-end">
                                     <span className={cn("font-mono font-bold", netInvestment >= 0 ? "text-green-500" : "text-red-500")}>
                                         {formatCryptoValue(netInvestment)} {activeFund.unit}
@@ -310,8 +310,8 @@ export default function InvestPage() {
                              </CardContent>
                           </Card>
                           <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || !activeFund.walletAddress}>
-                            {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                            {form.formState.isSubmitting ? "در حال ثبت..." : "ثبت سرمایه‌گذاری"}
+                            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {form.formState.isSubmitting ? "Submitting..." : "Submit Investment"}
                           </Button>
                        </div>
                      </div>
@@ -327,5 +327,3 @@ export default function InvestPage() {
     </>
   );
 }
-
-    

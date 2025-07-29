@@ -35,9 +35,9 @@ import type { PlatformSettings } from "@/ai/flows/platform-settings-flow";
 import { cn } from "@/lib/utils";
 
 const withdrawalSchema = z.object({
-  amount: z.coerce.number().positive({ message: "مبلغ باید مثبت باشد." }),
-  walletAddress: z.string().min(10, { message: "لطفاً یک آدرس کیف پول معتبر (USDT) وارد کنید." }),
-  twoFactorCode: z.string().length(6, { message: "کد تایید باید ۶ رقم باشد." }),
+  amount: z.coerce.number().positive({ message: "Amount must be positive." }),
+  walletAddress: z.string().min(10, { message: "Please enter a valid USDT wallet address." }),
+  twoFactorCode: z.string().length(6, { message: "The verification code must be 6 digits." }),
 });
 
 interface WithdrawalDialogProps {
@@ -70,15 +70,15 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
 
   async function onSubmit(values: z.infer<typeof withdrawalSchema>) {
     if (!user) {
-        toast({ variant: "destructive", title: "خطا", description: "برای ثبت درخواست باید وارد شوید." });
+        toast({ variant: "destructive", title: "Error", description: "You must be logged in to submit a request." });
         return;
     }
      if (values.amount > withdrawableBalance) {
-        form.setError("amount", { message: "مبلغ درخواستی از موجودی شما بیشتر است." });
+        form.setError("amount", { message: "The requested amount exceeds your balance." });
         return;
     }
     if (settings && values.amount < settings.minWithdrawalAmount) {
-         form.setError("amount", { message: `حداقل مبلغ برداشت ${settings.minWithdrawalAmount} دلار است.` });
+         form.setError("amount", { message: `Minimum withdrawal amount is $${settings.minWithdrawalAmount}.` });
         return;
     }
 
@@ -92,7 +92,7 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
         });
 
         if (result.success) {
-            toast({ title: "درخواست موفق", description: result.message });
+            toast({ title: "Request Successful", description: result.message });
             setOpen(false);
             form.reset();
             onWithdrawalSuccess();
@@ -103,8 +103,8 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
     } catch (error) {
         toast({
             variant: "destructive",
-            title: "خطا در ثبت درخواست",
-            description: error instanceof Error ? error.message : "یک خطای ناشناخته رخ داد.",
+            title: "Error Submitting Request",
+            description: error instanceof Error ? error.message : "An unknown error occurred.",
         })
     }
   }
@@ -123,15 +123,15 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="w-full md:w-auto" disabled={withdrawableBalance <= 0}>
-            <MinusCircle className="ml-2 h-4 w-4" />
-            ثبت درخواست برداشت
+            <MinusCircle className="mr-2 h-4 w-4" />
+            Create Withdrawal Request
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>درخواست برداشت وجه</DialogTitle>
+          <DialogTitle>Withdrawal Request</DialogTitle>
           <DialogDescription>
-            مبلغ مورد نظر و آدرس کیف پول USDT خود را برای دریافت وجه وارد کنید.
+            Enter the amount and your USDT wallet address to receive the funds.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -141,12 +141,12 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
                     name="amount"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>مبلغ برداشت (دلار)</FormLabel>
+                        <FormLabel>Withdrawal Amount ($)</FormLabel>
                         <FormControl>
                             <Input type="number" step="any" {...field} />
                         </FormControl>
                         <FormDescription>
-                            موجودی قابل برداشت: {formatCurrency(withdrawableBalance)}
+                            Withdrawable Balance: {formatCurrency(withdrawableBalance)}
                         </FormDescription>
                         <FormMessage />
                         </FormItem>
@@ -157,7 +157,7 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
                     name="walletAddress"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>آدرس کیف پول USDT (شبکه BEP-20)</FormLabel>
+                        <FormLabel>USDT Wallet Address (BEP-20 Network)</FormLabel>
                         <FormControl>
                             <Input dir="ltr" placeholder="0x..." {...field} />
                         </FormControl>
@@ -171,15 +171,15 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
                     name="twoFactorCode"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>کد تایید دو مرحله‌ای (2FA)</FormLabel>
+                        <FormLabel>Two-Factor Code (2FA)</FormLabel>
                          <FormControl>
                             <div className="relative">
-                               <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <ShieldCheck className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                <Input dir="ltr" placeholder="123456" {...field} className="tracking-[0.5em] text-center" maxLength={6}/>
                             </div>
                          </FormControl>
                          <FormDescription>
-                           کد تایید اپلیکیشن 2FA خود را وارد کنید. (کد تست: 123456)
+                           Enter the code from your 2FA authenticator app. (Test code: 123456)
                          </FormDescription>
                         <FormMessage />
                         </FormItem>
@@ -189,22 +189,22 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
 
                 {numericAmount > 0 && settings && (
                     <div className="space-y-2 rounded-lg border p-4">
-                        <h4 className="font-medium text-sm">خلاصه برداشت</h4>
+                        <h4 className="font-medium text-sm">Withdrawal Summary</h4>
                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">مبلغ درخواستی:</span>
+                            <span className="text-muted-foreground">Requested Amount:</span>
                             <span className="font-mono font-semibold">{formatCurrency(numericAmount)}</span>
                         </div>
                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">کارمزد خروج ({settings.exitFee}%):</span>
+                            <span className="text-muted-foreground">Exit Fee ({settings.exitFee}%):</span>
                             <span className={cn("font-mono font-semibold text-red-500")}>-{formatCurrency(exitFee)}</span>
                         </div>
                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">کارمزد شبکه:</span>
+                            <span className="text-muted-foreground">Network Fee:</span>
                             <span className={cn("font-mono font-semibold text-red-500")}>-{formatCurrency(networkFee)}</span>
                         </div>
                         <hr className="my-2" />
                         <div className="flex justify-between items-center font-bold text-base">
-                            <span>مبلغ دریافتی شما:</span>
+                            <span>You will receive:</span>
                             <span className={cn("font-mono", netAmount > 0 ? "text-green-500" : "text-red-500")}>
                                 {netAmount > 0 ? formatCurrency(netAmount) : formatCurrency(0)}
                             </span>
@@ -215,16 +215,16 @@ export function WithdrawalDialog({ withdrawableBalance, onWithdrawalSuccess }: W
 
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>هشدار مهم</AlertTitle>
+                  <AlertTitle>Important Warning</AlertTitle>
                   <AlertDescription>
-                    لطفاً آدرس کیف پول USDT (شبکه BEP-20) را با دقت وارد کنید. مسئولیت آدرس اشتباه بر عهده شماست و ممکن است منجر به از دست رفتن دارایی شما شود.
+                    Please enter your USDT wallet address (BEP-20 network) carefully. You are responsible for any incorrect addresses, which may lead to the loss of your assets.
                   </AlertDescription>
                 </Alert>
 
                 <DialogFooter>
                     <Button type="submit" disabled={isSubmitting} className="w-full">
-                        {isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                        {isSubmitting ? "در حال ارسال..." : "ثبت درخواست برداشت"}
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isSubmitting ? "Submitting..." : "Submit Withdrawal Request"}
                     </Button>
                 </DialogFooter>
             </form>

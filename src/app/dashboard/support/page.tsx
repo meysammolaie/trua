@@ -27,15 +27,15 @@ import { getUserTicketsAction } from "@/app/actions/support";
 import type { Ticket } from "@/ai/flows/get-user-tickets-flow";
 
 const statusVariantMap: Record<string, "secondary" | "outline" | "default"> = {
-    open: "secondary",
-    in_progress: "outline",
-    closed: "default"
+    Open: "secondary",
+    'In Progress': "outline",
+    Closed: "default"
 }
 
 const priorityVariantMap: Record<string, "destructive" | "secondary" | "default"> = {
-    high: "destructive",
-    medium: "secondary",
-    low: "default"
+    High: "destructive",
+    Medium: "secondary",
+    Low: "default"
 }
 
 export default function UserSupportPage() {
@@ -51,7 +51,7 @@ export default function UserSupportPage() {
             const result = await getUserTicketsAction({ userId: user.uid });
             setTickets(result);
         } catch (error) {
-            toast({ variant: "destructive", title: "خطا", description: "مشکلی در واکشی تیکت‌ها رخ داد." });
+            toast({ variant: "destructive", title: "Error", description: "There was a problem fetching your tickets." });
         } finally {
             setLoading(false);
         }
@@ -67,15 +67,15 @@ export default function UserSupportPage() {
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>
-                            <CardTitle>مرکز پشتیبانی</CardTitle>
+                            <CardTitle>Support Center</CardTitle>
                             <CardDescription>
-                                تیکت‌های پشتیبانی خود را مشاهده و مدیریت کنید.
+                                View and manage your support tickets.
                             </CardDescription>
                         </div>
                         <Button asChild>
                            <Link href="/dashboard/support/new">
-                                <PlusCircle className="ml-2 h-4 w-4" />
-                                ایجاد تیکت جدید
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Create New Ticket
                            </Link>
                         </Button>
                     </div>
@@ -84,10 +84,10 @@ export default function UserSupportPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>موضوع</TableHead>
-                                <TableHead>وضعیت</TableHead>
-                                <TableHead>اولویت</TableHead>
-                                <TableHead>آخرین بروزرسانی</TableHead>
+                                <TableHead>Subject</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Priority</TableHead>
+                                <TableHead>Last Updated</TableHead>
                                 <TableHead><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -95,7 +95,7 @@ export default function UserSupportPage() {
                             {loading ? (
                                 <TableRow><TableCell colSpan={5} className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
                             ) : tickets.length === 0 ? (
-                                <TableRow><TableCell colSpan={5} className="text-center py-10">هیچ تیکتی یافت نشد.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={5} className="text-center py-10">No tickets found.</TableCell></TableRow>
                             ) : (
                                 tickets.map((ticket) => (
                                     <TableRow key={ticket.id}>
@@ -110,8 +110,8 @@ export default function UserSupportPage() {
                                         <TableCell>
                                             <Button asChild variant="outline" size="sm">
                                                 <Link href={`/dashboard/support/${ticket.id}`}>
-                                                    مشاهده
-                                                    <ArrowRight className="mr-2 h-4 w-4" />
+                                                    View
+                                                    <ArrowRight className="ml-2 h-4 w-4" />
                                                 </Link>
                                             </Button>
                                         </TableCell>

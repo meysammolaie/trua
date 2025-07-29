@@ -33,17 +33,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { createTicketAction } from "@/app/actions/support";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 
 const ticketSchema = z.object({
-  subject: z.string().min(5, "موضوع باید حداقل ۵ حرف داشته باشد."),
+  subject: z.string().min(5, "Subject must be at least 5 characters."),
   department: z.enum(['technical', 'financial', 'general'], {
-    required_error: "انتخاب دپارتمان الزامی است.",
+    required_error: "Please select a department.",
   }),
   priority: z.enum(['low', 'medium', 'high'], {
-    required_error: "انتخاب اولویت الزامی است.",
+    required_error: "Please select a priority.",
   }),
-  message: z.string().min(10, "متن پیام باید حداقل ۱۰ حرف داشته باشد."),
+  message: z.string().min(10, "Message must be at least 10 characters."),
 });
 
 export default function NewTicketPage() {
@@ -65,14 +65,14 @@ export default function NewTicketPage() {
 
     async function onSubmit(values: z.infer<typeof ticketSchema>) {
         if (!user) {
-            toast({ variant: "destructive", title: "خطا", description: "برای ایجاد تیکت باید وارد شوید." });
+            toast({ variant: "destructive", title: "Error", description: "You must be logged in to create a ticket." });
             return;
         }
 
         try {
             const result = await createTicketAction({ userId: user.uid, ...values });
             if (result.success && result.ticketId) {
-                toast({ title: "موفق", description: "تیکت شما با موفقیت ثبت شد." });
+                toast({ title: "Success", description: "Your ticket has been submitted successfully." });
                 router.push(`/dashboard/support/${result.ticketId}`);
             } else {
                 throw new Error(result.message);
@@ -80,8 +80,8 @@ export default function NewTicketPage() {
         } catch (error) {
             toast({
                 variant: "destructive",
-                title: "خطا در ایجاد تیکت",
-                description: error instanceof Error ? error.message : "مشکلی پیش آمد.",
+                title: "Error Creating Ticket",
+                description: error instanceof Error ? error.message : "An error occurred.",
             });
         }
     }
@@ -91,12 +91,12 @@ export default function NewTicketPage() {
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle>ایجاد تیکت جدید</CardTitle>
-                        <CardDescription>مشکل یا سوال خود را با تیم پشتیبانی در میان بگذارید.</CardDescription>
+                        <CardTitle>Create New Ticket</CardTitle>
+                        <CardDescription>Share your problem or question with the support team.</CardDescription>
                     </div>
                     <Button variant="outline" onClick={() => router.back()}>
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                        بازگشت
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
                     </Button>
                 </div>
             </CardHeader>
@@ -108,9 +108,9 @@ export default function NewTicketPage() {
                         name="subject"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>موضوع</FormLabel>
+                                <FormLabel>Subject</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="مثلا: مشکل در برداشت وجه" {...field} />
+                                    <Input placeholder="e.g., Problem with withdrawal" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -122,15 +122,15 @@ export default function NewTicketPage() {
                             name="department"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>دپارتمان</FormLabel>
+                                <FormLabel>Department</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="انتخاب دپارتمان" /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder="Select a department" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="general">عمومی</SelectItem>
-                                        <SelectItem value="financial">مالی</SelectItem>
-                                        <SelectItem value="technical">فنی</SelectItem>
+                                        <SelectItem value="general">General</SelectItem>
+                                        <SelectItem value="financial">Financial</SelectItem>
+                                        <SelectItem value="technical">Technical</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -142,15 +142,15 @@ export default function NewTicketPage() {
                             name="priority"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>اولویت</FormLabel>
+                                <FormLabel>Priority</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="انتخاب اولویت" /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder="Select a priority" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="low">پایین</SelectItem>
-                                        <SelectItem value="medium">متوسط</SelectItem>
-                                        <SelectItem value="high">بالا</SelectItem>
+                                        <SelectItem value="low">Low</SelectItem>
+                                        <SelectItem value="medium">Medium</SelectItem>
+                                        <SelectItem value="high">High</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -163,17 +163,17 @@ export default function NewTicketPage() {
                         name="message"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>پیام شما</FormLabel>
+                                <FormLabel>Your Message</FormLabel>
                                 <FormControl>
-                                    <Textarea placeholder="مشکل خود را به طور کامل شرح دهید..." className="min-h-[150px]" {...field} />
+                                    <Textarea placeholder="Describe your issue in detail..." className="min-h-[150px]" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                         />
                          <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                            ارسال تیکت
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit Ticket
                         </Button>
                     </form>
                  </Form>

@@ -64,15 +64,15 @@ export default function ReportsPage() {
 
     const copyProof = (proof: string) => {
         navigator.clipboard.writeText(proof);
-        toast({ title: "کپی شد", description: "رسید تراکنش در کلیپ‌بورد کپی شد." });
+        toast({ title: "Copied", description: "Transaction proof copied to clipboard." });
     }
 
     const statusColors: Record<string, "secondary" | "outline" | "destructive" | "default"> = {
-        "فعال": "secondary",
-        "در انتظار": "outline",
-        "تکمیل شده": "default",
-        "موفق": "default",
-        "رد شده": "destructive",
+        "Active": "secondary",
+        "Pending": "outline",
+        "Completed": "default",
+        "Successful": "default",
+        "Rejected": "destructive",
     }
     
     const totalAssetValue = (stats?.walletBalance ?? 0) + (stats?.lockedBonus ?? 0);
@@ -81,70 +81,70 @@ export default function ReportsPage() {
     <TooltipProvider>
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">تراکنش‌ها</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Transactions</h1>
       </div>
        <div className="grid gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>ارزش کل دارایی</CardDescription>
+            <CardDescription>Total Asset Value</CardDescription>
             {loading ? <Loader2 className="h-8 w-8 animate-spin mt-2" /> : <CardTitle className="text-4xl font-mono">{formatCurrency(totalAssetValue)}</CardTitle>}
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
-              موجودی قابل برداشت + جایزه قفل شده
+              Withdrawable balance + locked bonus
             </div>
           </CardContent>
         </Card>
          <div className="grid gap-4 md:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">موجودی کیف پول (قابل برداشت)</CardTitle>
+                    <CardTitle className="text-sm font-medium">Wallet Balance (Withdrawable)</CardTitle>
                     <PiggyBank className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.walletBalance ?? 0)}</div>}
-                    <p className="text-xs text-muted-foreground">موجودی آزاد شامل اصل پول، سودها و کمیسیون‌ها</p>
+                    <p className="text-xs text-muted-foreground">Free balance including principal, profits, and commissions</p>
                 </CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">سرمایه فعال</CardTitle>
+                    <CardTitle className="text-sm font-medium">Active Investment</CardTitle>
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                      {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.activeInvestment ?? 0)}</div>}
-                    <p className="text-xs text-muted-foreground">پایه محاسبه سود روزانه شما</p>
+                    <p className="text-xs text-muted-foreground">Basis for calculating your daily profit</p>
                 </CardContent>
             </Card>
             <Card>
                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">جایزه قفل‌شده</CardTitle>
+                    <CardTitle className="text-sm font-medium">Locked Bonus</CardTitle>
                     <Lock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold font-mono">{formatCurrency(stats?.lockedBonus ?? 0)}</div>}
-                    <p className="text-xs text-muted-foreground">این مبلغ در آینده آزاد خواهد شد</p>
+                    <p className="text-xs text-muted-foreground">This amount will be unlocked in the future</p>
                 </CardContent>
             </Card>
          </div>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>تاریخچه کامل تراکنش‌ها</CardTitle>
+          <CardTitle>Full Transaction History</CardTitle>
           <CardDescription>
-            تمام فعالیت‌های مالی خود را در اینجا مشاهده و مدیریت کنید.
+            View and manage all your financial activities here.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>نوع</TableHead>
-                <TableHead>صندوق/جزئیات</TableHead>
-                <TableHead>وضعیت</TableHead>
-                <TableHead>تاریخ</TableHead>
-                <TableHead className="text-right">مبلغ (دلار)</TableHead>
-                <TableHead className="text-center">رسید</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Fund/Details</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Amount ($)</TableHead>
+                <TableHead className="text-center">Proof</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -153,14 +153,14 @@ export default function ReportsPage() {
                     <TableCell colSpan={6} className="text-center py-10">
                         <div className="flex justify-center items-center gap-2">
                             <Loader2 className="h-5 w-5 animate-spin"/>
-                            <span>در حال بارگذاری تراکنش‌ها...</span>
+                            <span>Loading transactions...</span>
                         </div>
                     </TableCell>
                 </TableRow>
               ) : transactions.length === 0 ? (
                 <TableRow>
                     <TableCell colSpan={6} className="text-center py-10">
-                        هیچ تراکنشی یافت نشد.
+                        No transactions found.
                     </TableCell>
                 </TableRow>
               ) : (
@@ -187,7 +187,7 @@ export default function ReportsPage() {
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p className="font-mono text-xs">{tx.proof}</p>
-                                    <p>برای کپی کلیک کنید</p>
+                                    <p>Click to copy</p>
                                 </TooltipContent>
                             </Tooltip>
                         ) : '-'}
@@ -200,9 +200,9 @@ export default function ReportsPage() {
         </CardContent>
          <CardFooter className="flex justify-between items-center border-t pt-4">
              <div className="text-xs text-muted-foreground">
-                نمایش <strong>{transactions.length}</strong> تراکنش
+                Showing <strong>{transactions.length}</strong> transactions
              </div>
-             <Button variant="outline" disabled={true}>بارگذاری بیشتر</Button>
+             <Button variant="outline" disabled={true}>Load more</Button>
         </CardFooter>
       </Card>
     </>
