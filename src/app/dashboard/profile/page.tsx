@@ -368,7 +368,7 @@ export default function ProfilePage() {
              <div className="flex items-center justify-between rounded-lg border p-4">
                 <div>
                     <h3 className="font-medium">احراز هویت دو مرحله‌ای (2FA)</h3>
-                    <p className="text-sm text-muted-foreground">یک لایه امنیتی بیشتر به حساب خود اضافه کنید.</p>
+                    <p className="text-sm text-muted-foreground">یک لایه امنیتی بیشتر به حساب خود اضافه کنید. (کد تست: 123456)</p>
                 </div>
                 <Switch 
                     checked={is2faEnabled}

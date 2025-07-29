@@ -101,7 +101,7 @@ export function Overview() {
     const [chartData, setChartData] = useState<ChartData>([]);
     const [loading, setLoading] = useState(true);
     const [platformTvl, setPlatformTvl] = useState(0);
-    const [bonusUnlockTarget, setBonusUnlockTarget] = useState(1000000);
+    const [bonusUnlockTarget, setBonusUnlockTarget] = useState(50000000);
 
 
     const fetchData = useCallback(async () => {
@@ -239,8 +239,14 @@ export function Overview() {
             </Card>
         </motion.div>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-        <motion.div className="xl:col-span-2 grid gap-4" variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.5 }}>
+
+       {loading ? (
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="xl:col-span-3 h-96 flex justify-center items-center"><Loader2 className="w-8 h-8 animate-spin" /></div>
+        </div>
+      ) : stats && stats.activeInvestment > 0 ? (
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+          <motion.div className="xl:col-span-2 grid gap-4" variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.5 }}>
              <Card >
               <CardHeader>
                 <CardTitle>نمای کلی پرتفوی</CardTitle>
@@ -363,7 +369,25 @@ export function Overview() {
             </CardContent>
             </Card>
         </motion.div>
-      </div>
+        </div>
+      ) : (
+        <Card className="col-span-full">
+          <CardHeader className="text-center">
+             <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4">
+                <TrendingUp className="w-12 h-12 text-primary" />
+             </div>
+            <CardTitle className="text-3xl font-bold">سفر سرمایه‌گذاری خود را آغاز کنید</CardTitle>
+            <CardDescription className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              شما هنوز هیچ سرمایه‌گذاری فعالی ندارید. همین امروز با سرمایه‌گذاری در صندوق‌های متنوع ما، به آینده مالی خود قدرت ببخشید.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+             <Button asChild size="lg">
+                <Link href="/dashboard/invest">اولین سرمایه‌گذاری خود را انجام دهید</Link>
+             </Button>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 }

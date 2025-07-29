@@ -30,13 +30,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Bitcoin, Crown, DollarSign, Medal, Copy, Loader2 } from "lucide-react";
+import { Bitcoin, Crown, DollarSign, Medal, Copy, Loader2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { submitInvestmentAction } from "@/app/actions/investment";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { FundDetails } from "@/ai/flows/get-fund-details-flow";
 import { getFundDetailsAction } from "@/app/actions/funds";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const investmentSchema = z.object({
   amount: z.coerce.number().positive({ message: "مقدار باید مثبت باشد." }),
@@ -218,6 +219,13 @@ export default function InvestPage() {
                      <div className="grid md:grid-cols-2 gap-8">
                        {/* Column 1: Investment Details */}
                        <div className="space-y-6">
+                          <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>هشدار بسیار مهم</AlertTitle>
+                            <AlertDescription>
+                              لطفاً مبلغ را <span className="font-bold">فقط از طریق شبکه BEP-20</span> به آدرس زیر واریز کنید. واریز از طریق شبکه‌های دیگر منجر به از دست رفتن دائمی سرمایه شما خواهد شد.
+                            </AlertDescription>
+                          </Alert>
                          <FormField
                            control={form.control}
                            name="amount"
@@ -243,10 +251,7 @@ export default function InvestPage() {
                                <Copy className="h-4 w-4" />
                              </Button>
                            </div>
-                           <p className="text-xs text-muted-foreground mt-2">
-                             مقدار ({activeFund.unit}) را به این آدرس واریز کرده و سپس شناسه تراکنش را در فرم زیر وارد کنید.
-                             <span className="font-bold text-yellow-500"> (شبکه BEP-20)</span>
-                           </p>
+                           
                          </div>
    
                           <FormField
