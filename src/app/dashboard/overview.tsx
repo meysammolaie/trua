@@ -59,35 +59,35 @@ type ChartData = UserDetails["investmentChartData"];
 
 const chartConfig = {
   investment: {
-    label: "سرمایه (دلار)",
+    label: "Investment ($)",
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig;
 
 const funds = [
   {
-    name: "صندوق طلا",
+    name: "Gold Fund",
     icon: <Crown className="w-6 h-6 text-yellow-500" />,
-    risk: "ریسک کم",
-    description: "پناهگاهی امن برای حفظ ارزش دارایی در بلندمدت.",
+    risk: "Low Risk",
+    description: "A safe haven to preserve asset value in the long term.",
   },
   {
-    name: "صندوق نقره",
+    name: "Silver Fund",
     icon: <Medal className="w-6 h-6 text-slate-400" />,
-    risk: "ریسک متوسط",
-    description: "ترکیبی از ثبات و پتانسیل رشد صنعتی.",
+    risk: "Medium Risk",
+    description: "A combination of stability and industrial growth potential.",
   },
   {
-    name: "صندوق دلار",
+    name: "Dollar Fund",
     icon: <Landmark className="w-6 h-6 text-green-500" />,
-    risk: "ریسک پایین",
-    description: "مناسب برای نقدشوندگی و ثبات در سبد دارایی شما.",
+    risk: "Low Risk",
+    description: "Ideal for liquidity and stability in your portfolio.",
   },
   {
-    name: "صندوق بیت‌کوین",
+    name: "Bitcoin Fund",
     icon: <Bitcoin className="w-6 h-6 text-orange-500" />,
-    risk: "ریسک بالا",
-    description: "دروازه‌ای به آینده مالی با پتانسیل رشد چشمگیر.",
+    risk: "High Risk",
+    description: "A gateway to the financial future with significant growth potential.",
   },
 ];
 
@@ -146,7 +146,7 @@ export function Overview() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl">داشبورد</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
       </div>
        {stats?.lockedBonus && stats.lockedBonus > 0 && (
          <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
@@ -154,13 +154,13 @@ export function Overview() {
                 <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-4">
                     <Gift className="w-12 h-12 text-primary flex-shrink-0" />
                     <div className="flex-grow">
-                        <CardTitle>شما یک جایزه ${stats.lockedBonus.toLocaleString()} قفل‌شده دارید!</CardTitle>
+                        <CardTitle>You have a ${stats.lockedBonus.toLocaleString()} locked bonus!</CardTitle>
                         <CardDescription className="text-foreground/80 mt-1">
-                             این مبلغ پس از رسیدن حجم کل سرمایه پلتفرم به ${bonusUnlockTarget.toLocaleString()} آزاد شده و به موجودی قابل برداشت شما اضافه خواهد شد.
+                             This amount will be unlocked and added to your withdrawable balance once the total platform investment reaches ${bonusUnlockTarget.toLocaleString()}.
                         </CardDescription>
                         <div className="mt-3">
                             <Progress value={bonusProgress} className="w-full h-2" />
-                            <p className="text-xs text-muted-foreground mt-1 text-left">
+                            <p className="text-xs text-muted-foreground mt-1 text-right">
                                 ${platformTvl.toLocaleString()} / ${bonusUnlockTarget.toLocaleString()}
                             </p>
                         </div>
@@ -173,7 +173,7 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">ارزش کل دارایی</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Asset Value</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -181,7 +181,7 @@ export function Overview() {
                     <>
                         <div className="text-2xl font-bold font-mono">${totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                          موجودی کیف پول + جایزه قفل شده
+                          Withdrawable balance + locked bonus
                         </p>
                     </>
                 )}
@@ -191,7 +191,7 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">موجودی کیف پول (قابل برداشت)</CardTitle>
+                <CardTitle className="text-sm font-medium">Wallet Balance (Withdrawable)</CardTitle>
                 <PiggyBank className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -199,7 +199,7 @@ export function Overview() {
                     <>
                         <div className="text-2xl font-bold font-mono">${(stats?.walletBalance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                           اصل پول، سودها، جوایز و کمیسیون‌ها
+                           Principal, profits, rewards, and commissions
                         </p>
                     </>
                  )}
@@ -209,7 +209,7 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">سرمایه فعال (جهت محاسبه سود)</CardTitle>
+                <CardTitle className="text-sm font-medium">Active Investment (For Profit)</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -217,7 +217,7 @@ export function Overview() {
                     <>
                         <div className="text-2xl font-bold font-mono">${(stats?.activeInvestment ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">
-                        این مبلغ بخشی از موجودی کیف پول شماست
+                        This amount is part of your wallet balance
                         </p>
                     </>
                  )}
@@ -227,7 +227,7 @@ export function Overview() {
         <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">تیکت‌های قرعه‌کشی</CardTitle>
+                <CardTitle className="text-sm font-medium">Lottery Tickets</CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -235,7 +235,7 @@ export function Overview() {
                     <>
                         <div className="text-2xl font-bold">{(stats?.lotteryTickets ?? 0).toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">
-                         برای قرعه‌کشی این ماه
+                         For this month's draw
                         </p>
                     </>
                 )}
@@ -253,8 +253,8 @@ export function Overview() {
           <motion.div className="xl:col-span-2 grid gap-4" variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.5 }}>
              <Card >
               <CardHeader>
-                <CardTitle>نمای کلی پرتفوی</CardTitle>
-                 <CardDescription>نمودار رشد سرمایه‌گذاری شما در ۶ ماه گذشته.</CardDescription>
+                <CardTitle>Portfolio Overview</CardTitle>
+                 <CardDescription>A chart of your investment growth over the last 6 months.</CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
                 {loading ? <div className="h-[250px] flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
@@ -279,9 +279,9 @@ export function Overview() {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>صندوق‌های سرمایه‌گذاری</CardTitle>
+                    <CardTitle>Investment Funds</CardTitle>
                     <CardDescription>
-                        در صندوق‌های متنوع ما سرمایه‌گذاری کنید و سود کسب کنید.
+                        Invest in our diverse funds and earn profit.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -293,12 +293,12 @@ export function Overview() {
                                     {fund.icon}
                                     <CardTitle className="text-base font-semibold">{fund.name}</CardTitle>
                                 </div>
-                                <Badge variant={fund.risk === "ریسک بالا" ? "destructive" : fund.risk === "ریسک متوسط" ? "secondary" : "default"}>{fund.risk}</Badge>
+                                <Badge variant={fund.risk === "High Risk" ? "destructive" : fund.risk === "Medium Risk" ? "secondary" : "default"}>{fund.risk}</Badge>
                             </CardHeader>
                             <CardContent className="flex-grow flex flex-col justify-between">
                                  <p className="text-xs text-muted-foreground mb-4">{fund.description}</p>
                                  <Button asChild size="sm" className="w-full mt-auto">
-                                    <Link href="/dashboard/invest">سرمایه‌گذاری</Link>
+                                    <Link href="/dashboard/invest">Invest Now</Link>
                                  </Button>
                             </CardContent>
                         </Card>
@@ -312,14 +312,14 @@ export function Overview() {
             <Card>
             <CardHeader className="flex flex-row items-center">
                 <div className="grid gap-2">
-                    <CardTitle>تراکنش‌های اخیر</CardTitle>
+                    <CardTitle>Recent Transactions</CardTitle>
                     <CardDescription>
-                        لیست آخرین رویدادهای مالی شما.
+                        A list of your recent financial events.
                     </CardDescription>
                 </div>
                 <Button asChild size="sm" className="ml-auto gap-1">
                 <Link href="/dashboard/reports">
-                    مشاهده همه
+                    View all
                     <ArrowUpRight className="h-4 w-4" />
                 </Link>
                 </Button>
@@ -328,9 +328,9 @@ export function Overview() {
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>نوع</TableHead>
-                    <TableHead>وضعیت</TableHead>
-                    <TableHead className="text-right">مبلغ</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -339,14 +339,14 @@ export function Overview() {
                             <TableCell colSpan={3} className="text-center py-10">
                                 <div className="flex justify-center items-center gap-2">
                                     <Loader2 className="h-5 w-5 animate-spin"/>
-                                    <span>در حال بارگذاری تراکنش‌ها...</span>
+                                    <span>Loading transactions...</span>
                                 </div>
                             </TableCell>
                         </TableRow>
                    ) : transactions.length === 0 ? (
                         <TableRow>
                             <TableCell colSpan={3} className="text-center py-10">
-                                هیچ تراکنشی یافت نشد.
+                                No transactions found.
                             </TableCell>
                         </TableRow>
                    ) : (
@@ -359,7 +359,7 @@ export function Overview() {
                                 </div>
                             </TableCell>
                             <TableCell>
-                                <Badge className="text-xs" variant={tx.status === 'فعال' ? 'secondary' : tx.status === 'تکمیل شده' ? 'default' : 'outline'}>
+                                <Badge className="text-xs" variant={tx.status === 'Active' ? 'secondary' : tx.status === 'Completed' ? 'default' : 'outline'}>
                                     {tx.status}
                                 </Badge>
                             </TableCell>
@@ -380,14 +380,14 @@ export function Overview() {
              <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-4">
                 <TrendingUp className="w-12 h-12 text-primary" />
              </div>
-            <CardTitle className="text-3xl font-bold">سفر سرمایه‌گذاری خود را آغاز کنید</CardTitle>
+            <CardTitle className="text-3xl font-bold">Start Your Investment Journey</CardTitle>
             <CardDescription className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              شما هنوز هیچ سرمایه‌گذاری فعالی ندارید. همین امروز با سرمایه‌گذاری در صندوق‌های متنوع ما، به آینده مالی خود قدرت ببخشید.
+              You don't have any active investments yet. Empower your financial future by investing in our diverse funds today.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
              <Button asChild size="lg">
-                <Link href="/dashboard/invest">اولین سرمایه‌گذاری خود را انجام دهید</Link>
+                <Link href="/dashboard/invest">Make Your First Investment</Link>
              </Button>
           </CardContent>
         </Card>

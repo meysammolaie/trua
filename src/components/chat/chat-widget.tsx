@@ -358,14 +358,14 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed bottom-4 right-4 z-50"
+            className="fixed bottom-4 right-4 z-50 md:bottom-4 md:right-4"
           >
             {ChatWindow}
           </motion.div>
         )}
       </AnimatePresence>
       <div
-        className="fixed bottom-4 right-4 z-50 cursor-pointer group"
+        className="fixed bottom-20 right-4 z-50 cursor-pointer group md:bottom-4 md:right-4"
         onClick={toggleOpen}
         aria-label="Toggle chat widget"
       >
@@ -385,9 +385,9 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
               >
                  <Button
                     size="icon"
-                    className="rounded-full w-16 h-16 shadow-2xl border-4 border-primary/50"
+                    className="rounded-full w-14 h-14 shadow-2xl border-4 border-primary/50"
                   >
-                     <Bot className="h-8 w-8" />
+                     <Bot className="h-7 w-7" />
                  </Button>
 
                 <motion.div
@@ -408,7 +408,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
           {isOpen && (
             <Button
               size="icon"
-              className="rounded-full w-16 h-16 shadow-2xl"
+              className="rounded-full w-14 h-14 shadow-2xl"
               onClick={(e) => {
                 e.stopPropagation();
                 toggleOpen();
@@ -422,7 +422,7 @@ export function ChatWidget({ isEmbedded = false }: ChatWidgetProps) {
                 exit={{ rotate: 90, scale: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <X className="h-8 w-8" />
+                <X className="h-7 w-7" />
               </motion.div>
             </Button>
           )}
