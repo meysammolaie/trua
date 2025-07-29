@@ -30,7 +30,7 @@ import { VerdantVaultLogo } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { FirebaseError } from "firebase/app";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect, Suspense, useState } from "react";
+import { useEffect, Suspense } from "react";
 import { Loader2, Chrome } from "lucide-react";
 
 const formSchema = z.object({
@@ -40,7 +40,8 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "رمز عبور باید حداقل ۶ کاراکتر داشته باشد." }),
   confirmPassword: z.string(),
   referralCode: z.string().optional(),
-  captcha: z.string().min(1, { message: "لطفاً به سوال امنیتی پاسخ دهید." }),
+  // Honeypot field for bot protection
+  website: z.string().max(0, { message: "ربات شناسایی شد." }).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "رمزهای عبور یکسان نیستند.",
   path: ["confirmPassword"],
@@ -53,15 +54,6 @@ function SignupForm() {
   const { toast } = useToast();
   const { user, loading } = useAuth();
   
-  // Captcha state
-  const [num1, setNum1] = useState(0);
-  const [num2, setNum2] = useState(0);
-
-  useEffect(() => {
-    setNum1(Math.floor(Math.random() * 10) + 1);
-    setNum2(Math.floor(Math.random() * 10) + 1);
-  }, []);
-  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -71,7 +63,6 @@ function SignupForm() {
       password: "",
       confirmPassword: "",
       referralCode: "",
-      captcha: "",
     },
   });
 
@@ -134,9 +125,10 @@ function SignupForm() {
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (parseInt(values.captcha, 10) !== num1 + num2) {
-      form.setError("captcha", { message: "پاسخ سوال امنیتی اشتباه است." });
-      return;
+    // Honeypot check
+    if (values.website) {
+        console.error("Honeypot field filled, likely a bot.");
+        return;
     }
 
     try {
@@ -308,12 +300,12 @@ function SignupForm() {
                 />
                  <FormField
                   control={form.control}
-                  name="captcha"
+                  name="website"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>سوال امنیتی: {num1} + {num2} = ؟</FormLabel>
+                    <FormItem className="absolute left-[-5000px]">
+                      <FormLabel>Website</FormLabel>
                       <FormControl>
-                        <Input type="number" dir="ltr" {...field} />
+                        <Input placeholder="Your website" {...field} tabIndex={-1} autoComplete="off"/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -47,7 +47,8 @@ import {
 const loginSchema = z.object({
   email: z.string().email({ message: "لطفاً یک ایمیل معتبر وارد کنید." }),
   password: z.string().min(1, { message: "لطفاً رمز عبور خود را وارد کنید." }),
-  captcha: z.string().min(1, { message: "لطفاً به سوال امنیتی پاسخ دهید." }),
+  // Honeypot field for bot protection
+  website: z.string().max(0, { message: "ربات شناسایی شد." }).optional(),
 });
 
 const twoFactorSchema = z.object({
@@ -79,19 +80,10 @@ export default function LoginPage() {
   const [loginStep, setLoginStep] = useState<'credentials' | '2fa'>('credentials');
   const [tempUser, setTempUser] = useState<User | null>(null);
   const [is2faRequired, setIs2faRequired] = useState(false);
-
-  // Captcha state
-  const [num1, setNum1] = useState(0);
-  const [num2, setNum2] = useState(0);
-
-  useEffect(() => {
-    setNum1(Math.floor(Math.random() * 10) + 1);
-    setNum2(Math.floor(Math.random() * 10) + 1);
-  }, []);
   
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", captcha: "" },
+    defaultValues: { email: "", password: "" },
   });
 
   const twoFactorForm = useForm<z.infer<typeof twoFactorSchema>>({
@@ -131,9 +123,10 @@ export default function LoginPage() {
   };
 
   async function onLoginSubmit(values: z.infer<typeof loginSchema>) {
-    if (parseInt(values.captcha, 10) !== num1 + num2) {
-      loginForm.setError("captcha", { message: "پاسخ سوال امنیتی اشتباه است." });
-      return;
+    // Honeypot check
+    if (values.website) {
+        console.error("Honeypot field filled, likely a bot.");
+        return;
     }
 
     try {
@@ -147,14 +140,12 @@ export default function LoginPage() {
           setIs2faRequired(true);
           setTempUser(userCredential.user);
           setLoginStep('2fa');
-          // Don't log history or redirect yet
       } else {
          await logLoginHistory(userCredential.user.uid);
          toast({
             title: "ورود موفق",
             description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
          });
-         // The useEffect hook will handle redirection
       }
 
     } catch (error) {
@@ -179,9 +170,7 @@ export default function LoginPage() {
             title: "ورود موفق",
             description: "شما با موفقیت وارد شدید. در حال انتقال به داشبورد...",
         });
-        // Now set the user in the auth context to trigger redirect
-        // This is handled by the onAuthStateChanged listener, so we just need to complete the flow.
-        setLoginStep('credentials'); // Reset for next time
+        setLoginStep('credentials');
     } else {
         twoFactorForm.setError("code", { message: "کد تایید نامعتبر است." });
     }
@@ -214,7 +203,7 @@ export default function LoginPage() {
             title: "ایمیل ارسال شد",
             description: "یک ایمیل حاوی لینک بازنشانی رمز عبور برای شما ارسال شد. لطفاً پوشه اسپم را نیز بررسی کنید."
         })
-        return true; // Indicate success to close dialog
+        return true; 
     } catch (error) {
          console.error("Password Reset Error:", error);
          toast({
@@ -332,12 +321,12 @@ export default function LoginPage() {
                     />
                     <FormField
                       control={loginForm.control}
-                      name="captcha"
+                      name="website"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>سوال امنیتی: {num1} + {num2} = ؟</FormLabel>
+                        <FormItem className="absolute left-[-5000px]">
+                          <FormLabel>Website</FormLabel>
                           <FormControl>
-                            <Input type="number" dir="ltr" {...field} />
+                            <Input placeholder="Your website" {...field} tabIndex={-1} autoComplete="off"/>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
