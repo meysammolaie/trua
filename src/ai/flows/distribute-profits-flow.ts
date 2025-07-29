@@ -3,13 +3,14 @@
 /**
  * @fileOverview A flow for calculating and distributing profits to investors, handled separately for each fund.
  * This flow calculates the profit pool from all undistributed entry/exit fees for each fund
- * and distributes it to the active investors of that specific fund.
+ * and distributes it to the active investors of that specific fund based on a weighted score
+ * of their investment amount and duration.
  */
 
 import { genkit } from 'genkit';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 const ai = genkit({
   plugins: [],
@@ -30,6 +31,7 @@ type InvestmentDoc = {
     userId: string;
     fundId: string;
     netAmountUSD: number;
+    createdAt: Timestamp;
 };
 
 const FUNDS = ['gold', 'silver', 'usdt', 'bitcoin'];
@@ -48,6 +50,7 @@ const distributeProfitsFlow = ai.defineFlow(
     const overallBatch = writeBatch(db);
     const overallDetails: z.infer<typeof DistributeProfitsOutputSchema>['details'] = [];
     let totalDistributedAmount = 0;
+    const now = new Date();
 
     try {
         // 1. Get all active investments across all funds first
@@ -85,30 +88,37 @@ const distributeProfitsFlow = ai.defineFlow(
                 console.log(`Profit pool for fund ${fundId} is zero or negative. Skipping.`);
                 continue;
             }
+            
+            // 5. NEW LOGIC: Calculate weighted scores for each investment
+            const weightedInvestments = fundActiveInvestments.map(inv => {
+                const investmentDate = inv.createdAt.toDate();
+                const daysActive = Math.max(1, (now.getTime() - investmentDate.getTime()) / (1000 * 3600 * 24)); // Minimum 1 day
+                const weightedScore = inv.netAmountUSD * daysActive;
+                return { ...inv, weightedScore };
+            });
 
-            // 5. Calculate total investment amount for this specific fund
-            const fundTotalActiveInvestmentAmount = fundActiveInvestments.reduce((sum, inv) => sum + inv.netAmountUSD, 0);
+            const totalWeightedScore = weightedInvestments.reduce((sum, inv) => sum + inv.weightedScore, 0);
 
-            if (fundTotalActiveInvestmentAmount <= 0) {
-                console.log(`Total active investment for fund ${fundId} is zero. Cannot distribute profits.`);
+            if (totalWeightedScore <= 0) {
+                console.log(`Total weighted score for fund ${fundId} is zero. Cannot distribute profits.`);
                 continue;
             }
 
-            // 6. Group investments by user for this fund
-            const investmentsByUser = fundActiveInvestments.reduce((acc, inv) => {
+            // 6. Group investments by user for this fund and calculate total weighted score per user
+            const investmentsByUser = weightedInvestments.reduce((acc, inv) => {
                 if (!acc[inv.userId]) {
-                    acc[inv.userId] = { totalInvestment: 0 };
+                    acc[inv.userId] = { totalWeightedScore: 0 };
                 }
-                acc[inv.userId].totalInvestment += inv.netAmountUSD;
+                acc[inv.userId].totalWeightedScore += inv.weightedScore;
                 return acc;
-            }, {} as Record<string, { totalInvestment: number }>);
+            }, {} as Record<string, { totalWeightedScore: number }>);
             
             const fundInvestorCount = Object.keys(investmentsByUser).length;
 
-            // 7. Distribute profits to each user based on their share in this fund
+            // 7. Distribute profits to each user based on their weighted share in this fund
             for (const userId in investmentsByUser) {
-                const userTotalInvestmentInFund = investmentsByUser[userId].totalInvestment;
-                const profitShare = (userTotalInvestmentInFund / fundTotalActiveInvestmentAmount) * fundProfitPool;
+                const userTotalWeightedScore = investmentsByUser[userId].totalWeightedScore;
+                const profitShare = (userTotalWeightedScore / totalWeightedScore) * fundProfitPool;
 
                 if (profitShare > 0) {
                     const transactionRef = doc(collection(db, 'transactions'));
