@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for fetching all details for the investment funds.
@@ -9,7 +8,7 @@
 
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { getPlatformSettings } from './platform-settings-flow';
 import type { PlatformSettings } from './platform-settings-flow';
 import { PlatformSettingsSchema } from '@/ai/schemas';
