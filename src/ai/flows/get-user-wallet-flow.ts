@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for fetching a user's wallet data from Firestore.
@@ -9,15 +8,14 @@
  */
 
 import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, limit, doc, getDoc } from 'firebase/firestore';
 import { getUserDetails } from './get-user-details-flow';
 import { GetUserWalletInputSchema, GetUserWalletOutputSchema, AssetSchema, TransactionSchema } from '@/ai/schemas';
 
 const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [],
 });
 
 export type GetUserWalletInput = z.infer<typeof GetUserWalletInputSchema>;
