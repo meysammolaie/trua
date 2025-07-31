@@ -1,5 +1,4 @@
-
-import { z } from 'genkit';
+import { z } from 'zod';
 
 export const PlatformSettingsSchema = z.object({
   entryFee: z.coerce.number().min(0).max(100),
