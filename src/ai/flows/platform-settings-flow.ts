@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Flows for managing platform-wide settings.
@@ -9,11 +8,11 @@
  */
 
 import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { PlatformSettingsSchema } from '@/ai/schemas';
+import { googleAI } from '@genkit-ai/googleai';
 
 const ai = genkit({
   plugins: [googleAI()],
