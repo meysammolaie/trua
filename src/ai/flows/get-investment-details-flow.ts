@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for fetching all details for a single investment record.
@@ -10,7 +9,7 @@
 
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { GetInvestmentDetailsInputSchema, GetInvestmentDetailsOutputSchema } from '@/ai/schemas';
