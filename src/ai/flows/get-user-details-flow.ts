@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for fetching all details for a single user.
@@ -7,10 +6,10 @@
  */
 
 import {genkit} from 'genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp, doc, getDoc } from 'firebase/firestore';
-import { GetUserDetailsInputSchema, UserProfileSchema, TransactionSchema, StatsSchema, ChartDataPointSchema, GetUserDetailsOutputSchema } from '@/ai/schemas';
+import { GetUserDetailsInputSchema, UserProfileSchema, TransactionSchema, StatsSchema, GetUserDetailsOutputSchema } from '@/ai/schemas';
 
 const ai = genkit({
   plugins: [],
@@ -121,7 +120,7 @@ const getUserDetailsFlow = ai.defineFlow(
     // 2.2. Wallet Balance & Total Profit (Calculated ONLY from the transaction ledger)
     let walletBalance = 0;
     let totalProfit = 0;
-    const allTransactionsForHistory: (TransactionSchema & { timestamp: number })[] = [];
+    const allTransactionsForHistory: (z.infer<typeof TransactionSchema> & { timestamp: number })[] = [];
     
     dbTransactionsSnapshot.docs.forEach(doc => {
         const data = doc.data() as DbTransactionDocument;
