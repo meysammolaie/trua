@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for updating an investment's status.
