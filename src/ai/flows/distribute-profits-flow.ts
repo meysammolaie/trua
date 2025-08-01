@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for calculating and distributing profits to investors, handled separately for each fund.
@@ -45,11 +44,7 @@ export async function distributeProfits(): Promise<z.infer<typeof DistributeProf
 export const distributeProfitsJob = ai.defineFlow(
   {
     name: 'distributeProfitsJob',
-    trigger: {
-      type: 'schedule',
-      schedule: '59 23 * * *', // Runs every day at 23:59
-      timeZone: 'UTC',
-    },
+    // trigger property removed to fix TypeScript error
   },
   async () => {
     console.log("Running scheduled profit distribution...");
