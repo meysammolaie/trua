@@ -34,6 +34,14 @@ type InvestmentDoc = {
     createdAt: Timestamp;
 };
 
+type FeeDoc = {
+  id: string;
+  fundId: string;
+  amount: number;
+  distributed: boolean;
+  type: string;
+};
+
 const FUNDS = ['gold', 'silver', 'usdt', 'bitcoin'];
 
 export async function distributeProfits(): Promise<z.infer<typeof DistributeProfitsOutputSchema>> {
@@ -73,7 +81,6 @@ export const distributeProfitsJob = ai.defineFlow(
   }
 );
 
-
 const distributeProfitsFlow = ai.defineFlow(
   {
     name: 'distributeProfitsFlow',
@@ -95,8 +102,7 @@ const distributeProfitsFlow = ai.defineFlow(
         // 2. Get all undistributed fees
         const allFeesQuery = query(collection(db, 'daily_fees'), where('distributed', '==', false), where('type', 'in', ['entry_fee', 'exit_fee']));
         const allFeesSnapshot = await getDocs(allFeesQuery);
-        const allUndistributedFees = allFeesSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-
+        const allUndistributedFees = allFeesSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()} as FeeDoc));
 
         // Process each fund separately
         for (const fundId of FUNDS) {
@@ -146,7 +152,7 @@ const distributeProfitsFlow = ai.defineFlow(
                 acc[inv.userId].totalWeightedScore += inv.weightedScore;
                 return acc;
             }, {} as Record<string, { totalWeightedScore: number }>);
-            
+
             const fundInvestorCount = Object.keys(investmentsByUser).length;
 
             // 7. Distribute profits to each user based on their weighted share in this fund
